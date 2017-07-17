@@ -158,7 +158,6 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
             if (module_context->status >= NGX_HTTP_OK && module_context->status < NGX_HTTP_SPECIAL_RESPONSE)
             {
                 // Introspection was successful. Replace the incoming Authorization header with one that has the JWT.
-                // todo add Bearer
                 request->headers_in.authorization->value.len = module_context->jwt.len;
                 request->headers_in.authorization->value.data = module_context->jwt.data;
 
@@ -359,7 +358,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         return NGX_ERROR;
     }
 
-    module_context->jwt.len = jwt_end - jwt_start;
+    module_context->jwt.len = jwt_end - jwt_start + BEARER_SIZE;
 
     module_context->jwt.data = ngx_pcalloc(request->pool, module_context->jwt.len);
 
@@ -368,7 +367,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         return NGX_ERROR;
     }
 
-    ngx_copy(module_context->jwt.data, jwt_start, module_context->jwt.len);
+    void * jwt_pointer = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
+    ngx_copy(jwt_pointer, jwt_start, module_context->jwt.len);
 
     module_context->done = 1;
 
