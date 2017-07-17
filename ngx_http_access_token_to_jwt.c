@@ -292,7 +292,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     introspection_request->request_body = introspection_request_body;
     introspection_request->headers_in.content_length_n = introspection_body->len;
 
-    introspection_request->header_only = FALSE;
+    introspection_request->header_only = TRUE;
     module_context->subrequest = introspection_request;
 
     // Change subrequest method to POST
