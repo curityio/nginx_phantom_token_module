@@ -336,7 +336,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
     // body parsing
     char *jwt_start = ngx_strstr(request->upstream->buffer.start, "\"jwt\":\"");
 
-    if (jwt_start == NULL)
+    if (jwt_start == NULL || ((u_char *)jwt_start - request->upstream->buffer.start  > request->headers_out.content_length_n))
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response\n");
         module_context->done = 1;
