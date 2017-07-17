@@ -1,7 +1,6 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-#include "jsmn.h"
 
 #define ACCESS_TOKEN_BUF_LEN 45
 
@@ -21,17 +20,15 @@ typedef struct
     ngx_http_request_t *subrequest;
 } ngx_http_access_token_to_jwt_ctx_t;
 
-static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *cf);
+static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config);
 
 static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *request);
 
-static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *cf);
+static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config);
 
-static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child);
+static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child);
 
-static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r, void *data, ngx_int_t rc);
-
-int jsoneq(const char *json, jsmntok_t *tok, const char *s);
+static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc);
 
 static char BEARER[] = "Bearer ";
 const size_t BEARER_SIZE = sizeof(BEARER) - 1;
@@ -304,80 +301,66 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     return NGX_AGAIN;
 }
 
-static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r, void *data, ngx_int_t rc)
+static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc)
 {
-    ngx_http_access_token_to_jwt_ctx_t *ctx = data;
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "auth request done s:%d", r->headers_out.status);
+    ngx_http_access_token_to_jwt_ctx_t *module_context = (ngx_http_access_token_to_jwt_ctx_t*)data;
 
-    ctx->status = r->headers_out.status;
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "auth request done s:%d", request->headers_out.status);
+
+    module_context->status = request->headers_out.status;
 
     // fail early for not 200 response
-    if (r->headers_out.status != NGX_HTTP_OK)
+    if (request->headers_out.status != NGX_HTTP_OK)
     {
-        ctx->done = 1;
+        module_context->done = 1;
 
         return rc;
     }
 
     // body parsing
+    char *jwt_start = ngx_strstr(request->upstream->buffer.start, "\"jwt\":\"");
 
-    va_list args;
-    u_char *start = r->upstream->buffer.pos - 1;
-    u_char *end = r->upstream->buffer.last;
-
-    jsmn_parser parser;
-    jsmn_init(&parser);
-    jsmntok_t t[256];
-    const char *JSON_STRING;
-    int parse_r, i;
-
-    JSON_STRING = (char *) ngx_vslprintf(start, end, "u", args);
-    parse_r = jsmn_parse(&parser, JSON_STRING, strlen(JSON_STRING), t, 256);
-
-    // incorporated from jsmn simple example
-    if (parse_r < 0)
+    if (jwt_start == NULL)
     {
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "Failed to parse JSON: %d\n", parse_r);
-        ctx->done = 1;
-        ctx->status = NGX_HTTP_UNAUTHORIZED;
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response\n");
+        module_context->done = 1;
+        module_context->status = NGX_HTTP_UNAUTHORIZED;
 
         return NGX_ERROR;
     }
 
-    /* Assume the top-level element is an object */
-    if (parse_r < 1 || t[0].type != JSMN_OBJECT)
+    jwt_start += sizeof("\"jwt\":\"") - 1;
+
+    char *jwt_end = ngx_strchr(jwt_start, '"');
+
+    if (jwt_end == NULL)
     {
-        // Object expected
-        ctx->done = 1;
-        ctx->status = NGX_HTTP_UNAUTHORIZED;
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response\n");
+        module_context->done = 1;
+        module_context->status = NGX_HTTP_UNAUTHORIZED;
 
         return NGX_ERROR;
     }
 
-    for (i = 1; i < parse_r; i++)
+    module_context->jwt.len = jwt_end - jwt_start;
+
+    module_context->jwt.data = ngx_pcalloc(request->pool, module_context->jwt.len);
+
+    if (module_context->jwt.data == NULL)
     {
-        if (jsoneq(JSON_STRING, &t[i], "jwt") == 0)
-        {
-            //todo store the jwt to cache
-            /* We may use strndup() to fetch string value */
-            char *dest[t[i + 1].end - t[i + 1].start];
-
-            ngx_memcpy(dest, JSON_STRING + t[i + 1].start, t[i + 1].end - t[i + 1].start);
-            ctx->jwt.len = t[i + 1].end - t[i + 1].start;
-            ctx->jwt.data = (u_char *) JSON_STRING + t[i + 1].start;
-            i++;
-        }
+        return NGX_ERROR;
     }
-    // todo  if the jwt is not found, change response to 401
 
-    ctx->done = 1;
+    ngx_copy(module_context->jwt.data, jwt_start, module_context->jwt.len);
+
+    module_context->done = 1;
 
     return rc;
 }
 
-static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *cf)
+static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config)
 {
-    ngx_http_core_main_conf_t *cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
+    ngx_http_core_main_conf_t *cmcf = ngx_http_conf_get_module_main_conf(config, ngx_http_core_module);
     ngx_http_handler_pt *h = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
 
     if (h == NULL)
@@ -390,9 +373,9 @@ static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *cf)
     return NGX_OK;
 }
 
-static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *cf)
+static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config)
 {
-    ngx_http_access_token_to_jwt_conf_t *conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_access_token_to_jwt_conf_t));
+    ngx_http_access_token_to_jwt_conf_t *conf = ngx_pcalloc(config->pool, sizeof(ngx_http_access_token_to_jwt_conf_t));
 
     if (conf == NULL)
     {
@@ -404,7 +387,7 @@ static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *cf)
     return conf;
 }
 
-static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
+static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child)
 {
     ngx_http_access_token_to_jwt_conf_t *prev = parent, *conf = child;
 
@@ -413,15 +396,4 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *cf, void *p
     ngx_conf_merge_str_value(conf->introspection_endpoint, prev->introspection_endpoint, "");
 
     return NGX_CONF_OK;
-}
-
-int jsoneq(const char *json, jsmntok_t *tok, const char *s)
-{
-    if (tok->type == JSMN_STRING && (int) strlen(s) == tok->end - tok->start &&
-        strncmp(json + tok->start, s, tok->size) == 0)
-    {
-        return 0;
-    }
-
-    return -1;
 }
