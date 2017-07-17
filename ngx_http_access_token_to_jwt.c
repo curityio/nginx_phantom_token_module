@@ -173,7 +173,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 
     u_char *bearer_token_pos;
 
-    if ((bearer_token_pos = ngx_strstrn(request->headers_in.authorization->value.data, BEARER, BEARER_SIZE)) == NULL)
+    //if ((bearer_token_pos = ngx_strstrn(request->headers_in.authorization->value.data, BEARER, BEARER_SIZE)) == NULL)
+    if ((bearer_token_pos = (u_char *)strcasestr((char*)request->headers_in.authorization->value.data, BEARER)) == NULL)
     {
         // return unauthorized when Authorization header is not Bearer
 
@@ -230,7 +231,9 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    introspection_body->data = ngx_snprintf(introspect_body_data, ACCESS_TOKEN_BUF_LEN, "token=%s", bearer_token_pos);
+    ngx_snprintf(introspect_body_data, ACCESS_TOKEN_BUF_LEN, "token=%s", bearer_token_pos);
+
+    introspection_body->data = introspect_body_data;
     introspection_body->len = ngx_strlen(introspection_body->data);
 
     // todo check cache, if access_token association is there just set
