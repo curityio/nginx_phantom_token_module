@@ -212,7 +212,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    ngx_http_post_subrequest_t *introspection_request_callback = ngx_palloc(request->pool, sizeof(ngx_http_post_subrequest_t));
+    ngx_http_post_subrequest_t *introspection_request_callback = ngx_pcalloc(request->pool, sizeof(ngx_http_post_subrequest_t));
 
     if (introspection_request_callback == NULL)
     {
@@ -230,14 +230,14 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     }
 
     // extract access token from header
-    u_char *introspect_body_data = ngx_palloc(request->pool, ACCESS_TOKEN_BUF_LEN);
+    u_char *introspect_body_data = ngx_pcalloc(request->pool, ACCESS_TOKEN_BUF_LEN);
 
     if (introspect_body_data == NULL)
     {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    ngx_str_t *introspection_body = ngx_palloc(request->pool, sizeof(ngx_str_t));
+    ngx_str_t *introspection_body = ngx_pcalloc(request->pool, sizeof(ngx_str_t));
 
     if (introspection_body == NULL)
     {
@@ -300,7 +300,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 
     // set authorization credentials header to Basic base64encoded_client_credentials
     size_t authorization_header_data_len = encoded_client_credentials.len + sizeof("Basic ") - 1;
-    u_char *authorization_header_data = ngx_palloc(request->pool, authorization_header_data_len);
+    u_char *authorization_header_data = ngx_pcalloc(request->pool, authorization_header_data_len);
 
     if (authorization_header_data == NULL)
     {
