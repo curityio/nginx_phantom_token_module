@@ -26,7 +26,6 @@ typedef struct
     ngx_flag_t enable;
     ngx_str_t base64encoded_client_credentials;
     ngx_str_t introspection_endpoint;
-    ngx_conf_t * vars;
 } ngx_http_access_token_to_jwt_conf_t;
 
 typedef struct
@@ -49,7 +48,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
 static char BEARER[] = "Bearer ";
 const size_t BEARER_SIZE = sizeof(BEARER) - 1;
-
+static char JWT_KEY[] = "\"jwt\":\"";
 /**
  * This module provided directive: access_token_to_jwt.
  */
@@ -334,14 +333,16 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
     }
 
     // body parsing
-    char *jwt_start = ngx_strstr(request->header_start, "\"jwt\":\"");
+    char *jwt_start = ngx_strstr(request->header_start, JWT_KEY);
 
-    if (jwt_start == NULL && request->cache) {
+    if (jwt_start == NULL && request->cache)
+    {
         ngx_read_file(&request->cache->file, request->cache->buf->pos, request->cache->length, 0);
-        jwt_start = ngx_strstr(request->cache->buf->start + request->cache->body_start, "\"jwt\":\"");
+        jwt_start = ngx_strstr(request->cache->buf->start + request->cache->body_start, JWT_KEY);
     }
 
-    if (jwt_start == NULL) {
+    if (jwt_start == NULL)
+    {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response\n");
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
@@ -349,7 +350,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         return NGX_ERROR;
     }
 
-    jwt_start += sizeof("\"jwt\":\"") - 1;
+    jwt_start += sizeof(JWT_KEY) - 1;
 
     char *jwt_end = ngx_strchr(jwt_start, '"');
 
