@@ -26,7 +26,7 @@ typedef struct
     ngx_flag_t enable;
     ngx_str_t base64encoded_client_credentials;
     ngx_str_t introspection_endpoint;
-    ngx_array_t *vars;
+    ngx_conf_t * vars;
 } ngx_http_access_token_to_jwt_conf_t;
 
 typedef struct
@@ -334,10 +334,14 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
     }
 
     // body parsing
-    char *jwt_start = ngx_strstr(request->upstream->buffer.start, "\"jwt\":\"");
+    char *jwt_start = ngx_strstr(request->header_start, "\"jwt\":\"");
 
-    if (jwt_start == NULL || ((u_char *)jwt_start - request->upstream->buffer.start  > request->headers_out.content_length_n))
-    {
+    if (jwt_start == NULL && request->cache) {
+        ngx_read_file(&request->cache->file, request->cache->buf->pos, request->cache->length, 0);
+        jwt_start = ngx_strstr(request->cache->buf->start + request->cache->body_start, "\"jwt\":\"");
+    }
+
+    if (jwt_start == NULL) {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response\n");
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
