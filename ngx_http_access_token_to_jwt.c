@@ -136,7 +136,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
                       "Module not configured properly: missing client credential");
 
-        return NGX_ABORT;
+        return NGX_DECLINED;
     }
 
     if (module_location_config->introspection_endpoint.len == 0)
@@ -144,7 +144,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         ngx_log_debug0(NGX_LOG_WARN, request->connection->log, 0,
                        "Module not configured properly: missing introspection endpoint");
 
-        return NGX_ABORT;
+        return NGX_DECLINED;
     }
 
     ngx_http_access_token_to_jwt_ctx_t *module_context = ngx_http_get_module_ctx(request, ngx_http_access_token_to_jwt_module);
