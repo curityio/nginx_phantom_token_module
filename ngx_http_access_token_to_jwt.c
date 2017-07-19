@@ -335,7 +335,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
     // body parsing
     char *jwt_start = ngx_strstr(request->header_start, JWT_KEY);
 
-    if (jwt_start == NULL && request->cache)
+    if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec != 0)
     {
         ngx_read_file(&request->cache->file, request->cache->buf->pos, request->cache->length, 0);
         jwt_start = ngx_strstr(request->cache->buf->start + request->cache->body_start, JWT_KEY);
@@ -347,7 +347,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
-        return NGX_ERROR;
+        return rc;
     }
 
     jwt_start += sizeof(JWT_KEY) - 1;
@@ -360,7 +360,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
-        return NGX_ERROR;
+        return rc;
     }
 
     module_context->jwt.len = jwt_end - jwt_start + BEARER_SIZE;
@@ -369,7 +369,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
     if (module_context->jwt.data == NULL)
     {
-        return NGX_ERROR;
+        return rc;
     }
 
     void * jwt_pointer = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
