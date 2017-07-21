@@ -125,17 +125,6 @@ Download the NGINX source code from [nginx.org](<http://nginx.org/>) and then bu
         make
         make install
 
-If you use nginx >= 1.9.1 you can compile Dynamic module.
-
-        wget 'http://nginx.org/download/nginx-1.x.x.tar.gz'
-        tar -xzvf nginx-1.x.x.tar.gz
-        cd nginx-1.x.x/
-        ./configure --add-dynamic-module=/path/to/ngx_http_access_token_to_jwt_module
-
-        make
-        make install
-
-Then add `load_module modules/ngx_http_access_token_to_jwt_module.so;` to the top of your configuration file.
 
 ## Testing and compatibility
 TBD
@@ -144,4 +133,4 @@ TBD
 
 ## More Information
 For more information, please contact [Curity](http://curity.io).
-Copyright (C) 2016-2017 Curity AB. All rights reserved
+Copyright (C) 2017 Curity AB. All rights reserved

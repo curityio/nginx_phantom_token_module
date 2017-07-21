@@ -335,7 +335,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
     // body parsing
     char *jwt_start = ngx_strstr(request->header_start, JWT_KEY);
 
-    if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec != 0)
+    if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
     {
         ngx_read_file(&request->cache->file, request->cache->buf->pos, request->cache->length, 0);
         jwt_start = ngx_strstr(request->cache->buf->start + request->cache->body_start, JWT_KEY);
