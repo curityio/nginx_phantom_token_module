@@ -23,7 +23,6 @@
 
 typedef struct
 {
-    ngx_flag_t enable;
     ngx_str_t base64encoded_client_credentials;
     ngx_str_t introspection_endpoint;
 } ngx_http_access_token_to_jwt_conf_t;
@@ -54,14 +53,6 @@ static char JWT_KEY[] = "\"jwt\":\"";
  */
 static ngx_command_t ngx_http_access_token_to_jwt_commands[] =
 {
-    {
-        ngx_string("access_token_to_jwt"),
-        NGX_HTTP_LOC_CONF | NGX_CONF_FLAG,
-        ngx_conf_set_flag_slot,
-        NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, enable),
-        NULL
-    },
     {
         ngx_string("access_token_to_jwt_base64encoded_client_credentials"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
@@ -119,13 +110,6 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     ngx_http_access_token_to_jwt_conf_t *module_location_config = ngx_http_get_module_loc_conf(
             request, ngx_http_access_token_to_jwt_module);
 
-    // Return OK if the module is not active or properly configured
-    if (!module_location_config->enable)
-    {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Module disabled");
-
-        return NGX_DECLINED;
-    }
 
     ngx_str_t encoded_client_credentials = module_location_config->base64encoded_client_credentials;
 
@@ -404,8 +388,6 @@ static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config)
         return NGX_CONF_ERROR;
     }
 
-    conf->enable = NGX_CONF_UNSET;
-
     return conf;
 }
 
@@ -413,7 +395,6 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
 {
     ngx_http_access_token_to_jwt_conf_t *prev = parent, *conf = child;
 
-    ngx_conf_merge_value(conf->enable, prev->enable, 0);
     ngx_conf_merge_str_value(conf->base64encoded_client_credentials, prev->base64encoded_client_credentials, "");
     ngx_conf_merge_str_value(conf->introspection_endpoint, prev->introspection_endpoint, "");
 

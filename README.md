@@ -5,13 +5,8 @@ NGINX module that introspects access tokens according to RFC 7662
 This module, when enabled, filters incoming requests, denying access to those which do NOT have a valid `Authorization: Bearer` header. From this header, the `access_token` is exctracted and introspected using the configured endpoint. Curity replies to this request according to RFC 7662. For an active _access_token_, the body of Curity's response is a JSON which contains the JWT that replaces the _access_token_ in the header of the request forwarded to the backend. In case of a not active _access_token_, 401 Unauthorized is returned.
 
 ## Configuration directives
-access_token_to_jwt
--------------------
-* **syntax**: `access_token_to_jwt on|off`
-* **default**: `off`
-* **context**: `location`
 
-Enable or disable the module.
+All the directives below are required in order for the module to take effect.
 
 access_token_to_jwt_base64encoded_client_credentials
 -------------------
@@ -39,7 +34,6 @@ The name of the location that proxies requests to Curity. Note that this locatio
         server {
             location /api {
                 proxy_pass         https://example.com/api;
-                access_token_to_jwt on;
                 access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
                 access_token_to_jwt_introspection_endpoint curity;
             }
@@ -54,7 +48,6 @@ The name of the location that proxies requests to Curity. Note that this locatio
             server_name server1.example.com;n
             location /api {
                 proxy_pass         https://example.com/api;
-                access_token_to_jwt on;
                 access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
                 access_token_to_jwt_introspection_endpoint curity;
             }
@@ -88,7 +81,6 @@ This module takes advantage of NGINX built-in _proxy_cache_ directive. In order 
             server_name server1.example.com;
             location /api {
                 proxy_pass         https://example.com/api;
-                access_token_to_jwt on;
                 access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
                 access_token_to_jwt_introspection_endpoint curity;
             }
