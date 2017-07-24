@@ -18,6 +18,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
+#include <assert.h>
 
 #define ACCESS_TOKEN_BUF_LEN 45
 
@@ -25,6 +26,9 @@ typedef struct
 {
     ngx_str_t base64encoded_client_credentials;
     ngx_str_t introspection_endpoint;
+    ngx_str_t realm;
+    ngx_array_t *scopes;
+    ngx_str_t space_separated_scopes;
 } ngx_http_access_token_to_jwt_conf_t;
 
 typedef struct
@@ -45,9 +49,12 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
 
 static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc);
 
-static char BEARER[] = "Bearer ";
-const size_t BEARER_SIZE = sizeof(BEARER) - 1;
-static char JWT_KEY[] = "\"jwt\":\"";
+static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm, ngx_str_t space_separated_scopes);
+
+const static char JWT_KEY[] = "\"jwt\":\"";
+const static char BEARER[] = "Bearer ";
+const static size_t BEARER_SIZE = sizeof(BEARER) - 1;
+
 /**
  * This module provided directive: access_token_to_jwt.
  */
@@ -67,6 +74,30 @@ static ngx_command_t ngx_http_access_token_to_jwt_commands[] =
         ngx_conf_set_str_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
         offsetof(ngx_http_access_token_to_jwt_conf_t, introspection_endpoint),
+        NULL
+    },
+    {
+        ngx_string("access_token_to_jwt_realm"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+        ngx_conf_set_str_slot,
+        NGX_HTTP_LOC_CONF_OFFSET,
+        offsetof(ngx_http_access_token_to_jwt_conf_t, realm),
+        NULL
+    },
+    {
+        ngx_string("access_token_to_jwt_scopes"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+        ngx_conf_set_str_slot,
+        NGX_HTTP_LOC_CONF_OFFSET,
+        offsetof(ngx_http_access_token_to_jwt_conf_t, space_separated_scopes),
+        NULL
+    },
+    {
+        ngx_string("access_token_to_jwt_scope"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+        ngx_conf_set_str_array_slot,
+        NGX_HTTP_LOC_CONF_OFFSET,
+        offsetof(ngx_http_access_token_to_jwt_conf_t, scopes),
         NULL
     },
     ngx_null_command /* command termination */
@@ -109,7 +140,6 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 {
     ngx_http_access_token_to_jwt_conf_t *module_location_config = ngx_http_get_module_loc_conf(
             request, ngx_http_access_token_to_jwt_module);
-
 
     ngx_str_t encoded_client_credentials = module_location_config->base64encoded_client_credentials;
 
@@ -162,9 +192,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
 
-        // TODO: Add WWW-Authenticate response header
-
-        return NGX_HTTP_UNAUTHORIZED;
+        return ngx_http_auth_bearer_set_realm(request, module_location_config->realm,
+                                              module_location_config->space_separated_scopes);
     }
 
     u_char *bearer_token_pos;
@@ -300,6 +329,111 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     return NGX_AGAIN;
 }
 
+/**
+ * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>
+ *
+ * After calling this method, a WWW-Authenticate header will be added that uses the Bearer scheme. If the realm and or
+ * scopes were also configured, then these too will be included. For instance, if scopes are configured, then the
+ * following output header will be added: <code> WWW-Authenticate: Bearer scope="scope1 scope2 scope3"</code>. If only
+ * realm is configured, then a response header like this one would be added:
+ * <code>WWW-Authenticate: Bearer realm="myGoodRealm"</code>. If both are configured, the two will be included and
+ * separated by a comma, like this: <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>.
+ *
+ * @param request the current request
+ * @param realm the configured realm
+ * @param space_separated_scopes the space-separated list of configured scopes
+ * @return NGX_HTTP_UNAUTHORIZED
+ * @example WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"
+ * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
+ */
+static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm, ngx_str_t space_separated_scopes)
+{
+    request->headers_out.www_authenticate = ngx_list_push(&request->headers_out.headers);
+
+    if (request->headers_out.www_authenticate == NULL)
+    {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    const static char REALM_PREFIX[] = "realm=\"";
+    const static size_t REALM_PREFIX_SIZE = sizeof(REALM_PREFIX) - 1;
+
+    const static char TOKEN_SUFFIX[] = "\"";
+    const static size_t TOKEN_SUFFIX_SIZE = sizeof(TOKEN_SUFFIX) - 1;
+
+    const static char TOKEN_SEPARATER[] = ", ";
+    const static size_t TOKEN_SEPARATER_SIZE = sizeof(TOKEN_SEPARATER) - 1;
+
+    const static char SCOPE_PREFIX[] = "scope=\"";
+    const static size_t SCOPE_PREFIX_SIZE = sizeof(SCOPE_PREFIX) - 1;
+
+    size_t bearer_data_size = BEARER_SIZE + sizeof('\0'); // Add one for the nul byte
+    bool realm_provided = realm.len > 0;
+    bool scopes_provided = space_separated_scopes.len > 0;
+
+    if (realm_provided)
+    {
+        bearer_data_size += REALM_PREFIX_SIZE + realm.len + TOKEN_SUFFIX_SIZE;
+    }
+
+    if (scopes_provided)
+    {
+        bearer_data_size += SCOPE_PREFIX_SIZE + space_separated_scopes.len + TOKEN_SUFFIX_SIZE;
+    }
+
+    if (realm_provided && scopes_provided)
+    {
+        bearer_data_size += TOKEN_SEPARATER_SIZE;
+    }
+
+    u_char *bearer_data = ngx_pnalloc(request->pool, bearer_data_size);
+
+    if (bearer_data == NULL)
+    {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    u_char *p = ngx_cpymem(bearer_data, BEARER, BEARER_SIZE);
+
+    if (realm_provided)
+    {
+        p = ngx_cpymem(p, REALM_PREFIX, REALM_PREFIX_SIZE);
+        p = ngx_cpymem(p, realm.data, realm.len);
+        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
+    }
+
+    if (realm_provided && scopes_provided)
+    {
+        p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
+    }
+
+    if (scopes_provided)
+    {
+        p = ngx_cpymem(p, SCOPE_PREFIX, SCOPE_PREFIX_SIZE);
+        p = ngx_cpymem(p, space_separated_scopes.data, space_separated_scopes.len);
+        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
+    }
+
+    if (!scopes_provided && !realm_provided)
+    {
+        // Only 'Bearer' is being sent. Replace the space at the end of BEARER with a null byte.
+        *(p - 1) = '\0';
+    }
+    else
+    {
+        *p = '\0';
+    }
+
+    request->headers_out.www_authenticate->hash = 1;
+    ngx_str_set(&request->headers_out.www_authenticate->key, "WWW-Authenticate");
+    request->headers_out.www_authenticate->value.data = bearer_data;
+    request->headers_out.www_authenticate->value.len = ngx_strlen(bearer_data);
+
+    assert(request->headers_out.www_authenticate->value.len <= bearer_data_size);
+
+    return NGX_HTTP_UNAUTHORIZED;
+}
+
 static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc)
 {
     ngx_http_access_token_to_jwt_ctx_t *module_context = (ngx_http_access_token_to_jwt_ctx_t*)data;
@@ -388,15 +522,55 @@ static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config)
         return NGX_CONF_ERROR;
     }
 
+    conf->scopes = NGX_CONF_UNSET_PTR;
+
     return conf;
 }
 
 static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child)
 {
-    ngx_http_access_token_to_jwt_conf_t *prev = parent, *conf = child;
+    ngx_http_access_token_to_jwt_conf_t *parent_config = parent, *child_config = child;
 
-    ngx_conf_merge_str_value(conf->base64encoded_client_credentials, prev->base64encoded_client_credentials, "");
-    ngx_conf_merge_str_value(conf->introspection_endpoint, prev->introspection_endpoint, "");
+    ngx_conf_merge_str_value(child_config->base64encoded_client_credentials, parent_config->base64encoded_client_credentials, "");
+    ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "");
+    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "");
+    ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL);
+    ngx_conf_merge_str_value(child_config->space_separated_scopes, parent_config->space_separated_scopes, "");
+
+    if (child_config->scopes != NULL && child_config->space_separated_scopes.len == 0)
+    {
+        // Flatten scopes into a space-separated list
+        ngx_str_t *scope = child_config->scopes->elts;
+        size_t space_separated_scopes_data_size = child_config->scopes->nelts;
+
+        for (ngx_uint_t i = 0; i < child_config->scopes->nelts; i++)
+        {
+            space_separated_scopes_data_size += scope[i].len;
+        }
+
+        u_char *space_separated_scopes_data = ngx_pcalloc(config->pool, space_separated_scopes_data_size);
+
+        if (space_separated_scopes_data == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        u_char *p = space_separated_scopes_data;
+
+        for (ngx_uint_t i = 0; i < child_config->scopes->nelts; i++)
+        {
+            p = ngx_cpymem(p, scope[i].data, scope[i].len);
+            *p = ' ';
+            p++;
+        }
+
+        *(p - 1) = '\0';
+
+        child_config->space_separated_scopes.data = space_separated_scopes_data;
+        child_config->space_separated_scopes.len = ngx_strlen(space_separated_scopes_data);
+
+        assert(child_config->space_separated_scopes.len <= space_separated_scopes_data_size);
+    }
 
     return NGX_CONF_OK;
 }
