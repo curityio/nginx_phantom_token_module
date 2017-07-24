@@ -25,6 +25,8 @@ typedef struct
 {
     ngx_flag_t enable;
     ngx_str_t base64encoded_client_credentials;
+    ngx_str_t client_id;
+    ngx_str_t client_secret;
     ngx_str_t introspection_endpoint;
 } ngx_http_access_token_to_jwt_conf_t;
 
@@ -63,11 +65,19 @@ static ngx_command_t ngx_http_access_token_to_jwt_commands[] =
         NULL
     },
     {
-        ngx_string("access_token_to_jwt_base64encoded_client_credentials"),
+        ngx_string("access_token_to_jwt_client_id"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
         ngx_conf_set_str_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, base64encoded_client_credentials),
+        offsetof(ngx_http_access_token_to_jwt_conf_t, client_id),
+        NULL
+    },
+    {
+        ngx_string("access_token_to_jwt_client_secret"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+        ngx_conf_set_str_slot,
+        NGX_HTTP_LOC_CONF_OFFSET,
+        offsetof(ngx_http_access_token_to_jwt_conf_t, client_secret),
         NULL
     },
     {
@@ -124,6 +134,20 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Module disabled");
 
+        return NGX_DECLINED;
+    }
+
+    if (module_location_config->client_secret.len == 0)
+    {
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
+            "Module not configured properly: missing client secret");
+        return NGX_DECLINED;
+    }
+
+    if (module_location_config->client_id.len == 0)
+    {
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
+                           "Module not configured properly: missing client id");
         return NGX_DECLINED;
     }
 
@@ -247,8 +271,6 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 
     introspection_body->data = introspect_body_data;
     introspection_body->len = ngx_strlen(introspection_body->data);
-
-    // todo check cache, if access_token association is there just set
 
     introspection_request->request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
 
@@ -414,8 +436,41 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
     ngx_http_access_token_to_jwt_conf_t *prev = parent, *conf = child;
 
     ngx_conf_merge_value(conf->enable, prev->enable, 0);
-    ngx_conf_merge_str_value(conf->base64encoded_client_credentials, prev->base64encoded_client_credentials, "");
+
+    ngx_conf_merge_str_value(conf->client_id, prev->client_id, "");
+    ngx_conf_merge_str_value(conf->client_secret, prev->client_secret, "");
     ngx_conf_merge_str_value(conf->introspection_endpoint, prev->introspection_endpoint, "");
+
+
+    ngx_str_t  *concat_credentials =  ngx_pcalloc(config->pool, sizeof(ngx_str_t));
+
+    if (concat_credentials == NULL)
+    {
+        return NGX_CONF_ERROR;
+    }
+
+    int concat_credentials_size = conf->client_id.len + conf->client_secret.len + 1; // client_id:client_secret
+
+    u_char *concat_credentials_data = ngx_pcalloc(config->pool, concat_credentials_size);
+
+    if (concat_credentials_data == NULL)
+    {
+        return NGX_CONF_ERROR;
+    }
+
+    concat_credentials->data = concat_credentials_data;
+    concat_credentials->len = concat_credentials_size;
+
+    ngx_snprintf(concat_credentials_data, concat_credentials_size, "%s:%s", conf->client_id.data, conf->client_secret.data);
+
+    conf->base64encoded_client_credentials.data = ngx_pcalloc(config->pool, ngx_base64_encoded_length(concat_credentials_size));
+
+    if (conf->base64encoded_client_credentials.data == NULL)
+    {
+        return NGX_CONF_ERROR;
+    }
+
+    ngx_encode_base64(&conf->base64encoded_client_credentials, concat_credentials);
 
     return NGX_CONF_OK;
 }
