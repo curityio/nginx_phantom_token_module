@@ -153,15 +153,6 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 
     ngx_str_t encoded_client_credentials = module_location_config->base64encoded_client_credentials;
 
-    if (encoded_client_credentials.len == 0)
-    {
-        //ngx_conf_log_error(NGX_LOG_WARN, )
-        // TODO: use ngx_conf_log_error instead?
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-                      "Module not configured properly: missing client credential");
-
-        return NGX_DECLINED;
-    }
 
     if (module_location_config->introspection_endpoint.len == 0)
     {
@@ -471,6 +462,8 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
     }
 
     ngx_encode_base64(&conf->base64encoded_client_credentials, concat_credentials);
+
+    ngx_pfree(config->pool, concat_credentials);
 
     return NGX_CONF_OK;
 }
