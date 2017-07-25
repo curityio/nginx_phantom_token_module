@@ -105,7 +105,6 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
  */
 static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result);
 
-const static char JWT_KEY[] = "\"jwt\":\"";
 const static char BEARER[] = "Bearer ";
 const static size_t BEARER_SIZE = sizeof(BEARER) - 1;
 
@@ -520,7 +519,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     if (!request->cache || !request->cache->buf)
     {
-        jwt_start = request->header_end + 2; // +2 for padding \r\n
+        jwt_start = request->header_end + sizeof("\r\n") - 1;
     }
 
     if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
