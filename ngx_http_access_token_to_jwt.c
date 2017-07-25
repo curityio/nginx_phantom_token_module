@@ -21,6 +21,14 @@
 
 #define ACCESS_TOKEN_BUF_LEN 45
 
+/**
+ * Calculate the length needed to store a user ID and secret in a nul-terminated string
+ *
+ * @param id the user/client identifier
+ * @param secret the shared secret used to authenticate the user/client
+ */
+#define basic_credential_length(id, secret) ((id) + (sizeof(":") - 1) + (secret) + (sizeof("\0") - 1))
+
 typedef struct
 {
     ngx_flag_t enable;
@@ -432,38 +440,42 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
     ngx_conf_merge_str_value(conf->client_secret, prev->client_secret, "");
     ngx_conf_merge_str_value(conf->introspection_endpoint, prev->introspection_endpoint, "");
 
-
-    ngx_str_t  *concat_credentials =  ngx_pcalloc(config->pool, sizeof(ngx_str_t));
-
-    if (concat_credentials == NULL)
+    if (conf->base64encoded_client_credentials.len == 0 && conf->client_id.len > 0 && conf->client_secret.len > 0)
     {
-        return NGX_CONF_ERROR;
+        ngx_str_t *unencoded_client_credentials = ngx_pcalloc(config->pool, sizeof(ngx_str_t));
+
+        if (unencoded_client_credentials == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        size_t unencoded_client_credentials_data_size = basic_credential_length(conf->client_id.len, conf->client_secret.len);
+
+        u_char *unencoded_client_credentials_data = ngx_pcalloc(config->pool, unencoded_client_credentials_data_size);
+
+        if (unencoded_client_credentials_data == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        unencoded_client_credentials->data = unencoded_client_credentials_data;
+        unencoded_client_credentials->len = unencoded_client_credentials_data_size;
+
+        ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_data_size, "%V:%V",
+                     &conf->client_id, &conf->client_secret);
+
+        conf->base64encoded_client_credentials.data = ngx_pcalloc(
+                config->pool, ngx_base64_encoded_length(unencoded_client_credentials_data_size));
+
+        if (conf->base64encoded_client_credentials.data == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        ngx_encode_base64(&conf->base64encoded_client_credentials, unencoded_client_credentials);
+
+        ngx_pfree(config->pool, unencoded_client_credentials);
     }
-
-    int concat_credentials_size = conf->client_id.len + conf->client_secret.len + 1; // client_id:client_secret
-
-    u_char *concat_credentials_data = ngx_pcalloc(config->pool, concat_credentials_size);
-
-    if (concat_credentials_data == NULL)
-    {
-        return NGX_CONF_ERROR;
-    }
-
-    concat_credentials->data = concat_credentials_data;
-    concat_credentials->len = concat_credentials_size;
-
-    ngx_snprintf(concat_credentials_data, concat_credentials_size, "%s:%s", conf->client_id.data, conf->client_secret.data);
-
-    conf->base64encoded_client_credentials.data = ngx_pcalloc(config->pool, ngx_base64_encoded_length(concat_credentials_size));
-
-    if (conf->base64encoded_client_credentials.data == NULL)
-    {
-        return NGX_CONF_ERROR;
-    }
-
-    ngx_encode_base64(&conf->base64encoded_client_credentials, concat_credentials);
-
-    ngx_pfree(config->pool, concat_credentials);
 
     return NGX_CONF_OK;
 }
