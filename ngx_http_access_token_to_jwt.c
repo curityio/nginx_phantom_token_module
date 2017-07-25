@@ -452,7 +452,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
     unencoded_client_credentials->data = unencoded_client_credentials_data;
     unencoded_client_credentials->len = unencoded_client_credentials_size;
 
-    ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_size, "%s:%s", conf->client_id.data, conf->client_secret.data);
+    ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_size, "%V:%V", &conf->client_id, &conf->client_secret);
 
     conf->base64encoded_client_credentials.data = ngx_pcalloc(config->pool, ngx_base64_encoded_length(unencoded_client_credentials_size));
 
