@@ -433,37 +433,37 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
     ngx_conf_merge_str_value(conf->introspection_endpoint, prev->introspection_endpoint, "");
 
 
-    ngx_str_t  *concat_credentials =  ngx_pcalloc(config->pool, sizeof(ngx_str_t));
+    ngx_str_t  *unencoded_client_credentials =  ngx_pcalloc(config->pool, sizeof(ngx_str_t));
 
-    if (concat_credentials == NULL)
+    if (unencoded_client_credentials == NULL)
     {
         return NGX_CONF_ERROR;
     }
 
-    int concat_credentials_size = conf->client_id.len + conf->client_secret.len + 1; // client_id:client_secret
+    int unencoded_client_credentials_size = conf->client_id.len + conf->client_secret.len + 1; // client_id:client_secret
 
-    u_char *concat_credentials_data = ngx_pcalloc(config->pool, concat_credentials_size);
+    u_char *unencoded_client_credentials_data = ngx_pcalloc(config->pool, unencoded_client_credentials_size);
 
-    if (concat_credentials_data == NULL)
+    if (unencoded_client_credentials_data == NULL)
     {
         return NGX_CONF_ERROR;
     }
 
-    concat_credentials->data = concat_credentials_data;
-    concat_credentials->len = concat_credentials_size;
+    unencoded_client_credentials->data = unencoded_client_credentials_data;
+    unencoded_client_credentials->len = unencoded_client_credentials_size;
 
-    ngx_snprintf(concat_credentials_data, concat_credentials_size, "%s:%s", conf->client_id.data, conf->client_secret.data);
+    ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_size, "%s:%s", conf->client_id.data, conf->client_secret.data);
 
-    conf->base64encoded_client_credentials.data = ngx_pcalloc(config->pool, ngx_base64_encoded_length(concat_credentials_size));
+    conf->base64encoded_client_credentials.data = ngx_pcalloc(config->pool, ngx_base64_encoded_length(unencoded_client_credentials_size));
 
     if (conf->base64encoded_client_credentials.data == NULL)
     {
         return NGX_CONF_ERROR;
     }
 
-    ngx_encode_base64(&conf->base64encoded_client_credentials, concat_credentials);
+    ngx_encode_base64(&conf->base64encoded_client_credentials, unencoded_client_credentials);
 
-    ngx_pfree(config->pool, concat_credentials);
+    ngx_pfree(config->pool, unencoded_client_credentials);
 
     return NGX_CONF_OK;
 }
