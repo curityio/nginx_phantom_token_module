@@ -516,12 +516,18 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     }
 
     // body parsing
-    char *jwt_start = ngx_strstr(request->header_start, JWT_KEY);
+    u_char *jwt_start = NULL;
+
+    if (!request->cache || !request->cache->buf)
+    {
+        jwt_start = request->header_end + 2; // +2 for padding \r\n
+    }
 
     if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
     {
         ngx_read_file(&request->cache->file, request->cache->buf->pos, request->cache->length, 0);
-        jwt_start = ngx_strstr(request->cache->buf->start + request->cache->body_start, JWT_KEY);
+
+        jwt_start = request->cache->buf->start + request->cache->body_start;
     }
 
     if (jwt_start == NULL)
@@ -533,9 +539,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 
-    jwt_start += sizeof(JWT_KEY) - 1;
-
-    char *jwt_end = ngx_strchr(jwt_start, '"');
+    u_char *jwt_end = jwt_start + request->headers_out.content_length_n;
 
     if (jwt_end == NULL)
     {
