@@ -22,6 +22,10 @@
 
 #define ACCESS_TOKEN_BUF_LEN 45
 
+#define ERROR_CODE_INVALID_REQUEST "invalid_request"
+#define ERROR_CODE_INVALID_TOKEN "invalid_token"
+#define ERROR_CODE_INSUFFICIENT_SCOPE "insufficient_scope"
+
 typedef struct
 {
     ngx_str_t base64encoded_client_credentials;
@@ -49,7 +53,8 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
 
 static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc);
 
-static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm, ngx_str_t space_separated_scopes);
+static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm,
+                                                ngx_str_t space_separated_scopes, char *error_code);
 
 const static char JWT_KEY[] = "\"jwt\":\"";
 const static char BEARER[] = "Bearer ";
@@ -193,12 +198,11 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
 
         return ngx_http_auth_bearer_set_realm(request, module_location_config->realm,
-                                              module_location_config->space_separated_scopes);
+                                              module_location_config->space_separated_scopes, NULL);
     }
 
     u_char *bearer_token_pos;
 
-    //if ((bearer_token_pos = ngx_strstrn(request->headers_in.authorization->value.data, BEARER, BEARER_SIZE)) == NULL)
     if ((bearer_token_pos = (u_char *)strcasestr((char*)request->headers_in.authorization->value.data, BEARER)) == NULL)
     {
         // return unauthorized when Authorization header is not Bearer
@@ -206,7 +210,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
                        "Authorization header does not contain a bearer token");
 
-        return NGX_HTTP_UNAUTHORIZED;
+        return ngx_http_auth_bearer_set_realm(request, module_location_config->realm,
+                                              module_location_config->space_separated_scopes, NULL);
     }
 
     bearer_token_pos += BEARER_SIZE;
@@ -342,11 +347,17 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
  * @param request the current request
  * @param realm the configured realm
  * @param space_separated_scopes the space-separated list of configured scopes
+ * @param error an error code or NULL if none. Refer to
+ * <a href="https://tools.ietf.org/html/rfc6750#section-3.1">RFC 6750 § 3.1</a> for standard values.
+ *
  * @return NGX_HTTP_UNAUTHORIZED
+ *
  * @example WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"
+ *
  * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
  */
-static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm, ngx_str_t space_separated_scopes)
+static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm,
+                                                ngx_str_t space_separated_scopes, char *error_code)
 {
     request->headers_out.www_authenticate = ngx_list_push(&request->headers_out.headers);
 
@@ -367,9 +378,15 @@ static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx
     const static char SCOPE_PREFIX[] = "scope=\"";
     const static size_t SCOPE_PREFIX_SIZE = sizeof(SCOPE_PREFIX) - 1;
 
+    const static u_char ERROR_CODE_PREFIX[] = "error=\"";
+    const static size_t ERROR_CODE_PREFIX_SIZE = sizeof(ERROR_CODE_PREFIX) - 1;
+
     size_t bearer_data_size = BEARER_SIZE + sizeof('\0'); // Add one for the nul byte
     bool realm_provided = realm.len > 0;
     bool scopes_provided = space_separated_scopes.len > 0;
+    bool error_code_provided = error_code != NULL;
+    bool append_one_comma = false, append_two_commas = false;
+    size_t error_code_len = 0;
 
     if (realm_provided)
     {
@@ -381,9 +398,22 @@ static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx
         bearer_data_size += SCOPE_PREFIX_SIZE + space_separated_scopes.len + TOKEN_SUFFIX_SIZE;
     }
 
-    if (realm_provided && scopes_provided)
+    if (error_code_provided)
+    {
+        error_code_len = ngx_strlen(error_code);
+        bearer_data_size += ERROR_CODE_PREFIX_SIZE + error_code_len + TOKEN_SUFFIX_SIZE;
+    }
+
+    if ((realm_provided && scopes_provided) || (realm_provided && error_code_provided) || (scopes_provided && error_code_provided))
     {
         bearer_data_size += TOKEN_SEPARATER_SIZE;
+        append_one_comma = true;
+
+        if (realm_provided && scopes_provided && error_code_provided)
+        {
+            bearer_data_size += TOKEN_SEPARATER_SIZE;
+            append_two_commas = true;
+        }
     }
 
     u_char *bearer_data = ngx_pnalloc(request->pool, bearer_data_size);
@@ -400,11 +430,11 @@ static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx
         p = ngx_cpymem(p, REALM_PREFIX, REALM_PREFIX_SIZE);
         p = ngx_cpymem(p, realm.data, realm.len);
         p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
-    }
 
-    if (realm_provided && scopes_provided)
-    {
-        p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
+        if (append_one_comma)
+        {
+            p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
+        }
     }
 
     if (scopes_provided)
@@ -412,9 +442,21 @@ static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx
         p = ngx_cpymem(p, SCOPE_PREFIX, SCOPE_PREFIX_SIZE);
         p = ngx_cpymem(p, space_separated_scopes.data, space_separated_scopes.len);
         p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
+
+        if (append_one_comma || append_two_commas)
+        {
+            p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
+        }
+    }
+    
+    if (error_code_provided)
+    {
+        p = ngx_cpymem(p, ERROR_CODE_PREFIX, ERROR_CODE_PREFIX_SIZE);
+        p = ngx_cpymem(p, error_code, error_code_len);
+        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
     }
 
-    if (!scopes_provided && !realm_provided)
+    if (!scopes_provided && !realm_provided && !error_code_provided)
     {
         // Only 'Bearer' is being sent. Replace the space at the end of BEARER with a null byte.
         *(p - 1) = '\0';
