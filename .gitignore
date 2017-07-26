@@ -52,3 +52,7 @@ Mkfile.old
 dkms.conf
 .idea
 cmake-build-debug
+
+.build.info
+nginx-*.tar.gz*
+nginx-*/
