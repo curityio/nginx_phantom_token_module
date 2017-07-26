@@ -9,15 +9,25 @@ This module, when enabled, filters incoming requests, denying access to those wh
 
 All the directives in this subsection are required; if any of these are omitted, the module will be disabled.
 
-#### access_token_to_jwt_base64encoded_client_credentials
+#### access_token_to_jwt_client_id
 
-> **Syntax**: **`access_token_to_jwt_base64encoded_client_credentials`** _`string`_ 
+> **Syntax**: **`access_token_to_jwt_client_id`** _`string`_ 
 > 
 > **Default**: *`—`*                                                                
 > 
 > **Context**: `location`                                                           
  
-The base-64 encoded string `client_id:client_secret` of the OAuth client which will be used for introspection.
+The `client_id` of the OAuth client which will be used for introspection.
+
+#### access_token_to_jwt_client_secret
+
+> **Syntax**: **`access_token_to_jwt_client_secret`** _`string`_
+>
+> **Default**: *`-`*
+>
+> **Context**: `location`
+
+The `client_secret` of the OAuth client which will be used for introspection.
 
 #### access_token_to_jwt_introspection_endpoint
 
@@ -116,7 +126,8 @@ The following is a simple configuration that might be used in demo or developmen
 server {
     location /api {
         proxy_pass         https://example.com/api;
-        access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
+        access_token_to_jwt_client_id "client_id";
+        access_token_to_jwt_client_secret "client_secret";
         access_token_to_jwt_introspection_endpoint curity;
     }
     
@@ -135,7 +146,8 @@ server {
     server_name server1.example.com;n
     location /api {
         proxy_pass         https://example.com/api;
-        access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
+        access_token_to_jwt_client_id "client_id";
+        access_token_to_jwt_client_secret "client_secret";
         access_token_to_jwt_introspection_endpoint curity;
         
         access_token_to_jwt_realm "myGoodAPI";
@@ -172,7 +184,8 @@ http {
         server_name server1.example.com;
         location /api {
             proxy_pass         https://example.com/api;
-            access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
+            access_token_to_jwt_client_id "client_id";
+            access_token_to_jwt_client_secret "client_secret";
             access_token_to_jwt_introspection_endpoint curity;
             access_token_to_jwt_scopes "scope_a scope_b scope_c";
             access_token_to_jwt_realm "myGoodAPI";
