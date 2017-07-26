@@ -8,13 +8,21 @@ This module, when enabled, filters incoming requests, denying access to those wh
 
 All the directives below are required in order for the module to take effect.
 
-access_token_to_jwt_base64encoded_client_credentials
+access_token_to_jwt_client_id
 -------------------
-* **syntax**: `access_token_to_jwt_base64encoded_client_credentials <string>`
+* **syntax**: `access_token_to_jwt_client_id <string>`
 * **default**: 	`—`
 * **context**: `location`
 
-The base64 encoded string `client_id:client_secret` of the OAuth client which will be used for introspection.
+The `client_id` of the OAuth client which will be used for introspection.
+
+access_token_to_jwt_client_secret
+-------------------
+* **syntax**: `access_token_to_jwt_client_secret <string>`
+* **default**: 	`—`
+* **context**: `location`
+
+The `client_secret` of the OAuth client which will be used for introspection.
 
 access_token_to_jwt_introspection_endpoint
 -------------------
@@ -34,7 +42,8 @@ The name of the location that proxies requests to Curity. Note that this locatio
         server {
             location /api {
                 proxy_pass         https://example.com/api;
-                access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
+                access_token_to_jwt_client_id "client_id";
+                access_token_to_jwt_client_secret "client_secret";
                 access_token_to_jwt_introspection_endpoint curity;
             }
             
@@ -48,7 +57,8 @@ The name of the location that proxies requests to Curity. Note that this locatio
             server_name server1.example.com;n
             location /api {
                 proxy_pass         https://example.com/api;
-                access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
+                access_token_to_jwt_client_id "client_id";
+                access_token_to_jwt_client_secret "client_secret";
                 access_token_to_jwt_introspection_endpoint curity;
             }
             
@@ -81,7 +91,8 @@ This module takes advantage of NGINX built-in _proxy_cache_ directive. In order 
             server_name server1.example.com;
             location /api {
                 proxy_pass         https://example.com/api;
-                access_token_to_jwt_base64encoded_client_credentials "Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=";
+                access_token_to_jwt_client_id "client_id";
+                access_token_to_jwt_client_secret "client_secret";
                 access_token_to_jwt_introspection_endpoint curity;
             }
             

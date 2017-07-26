@@ -21,9 +21,19 @@
 
 #define ACCESS_TOKEN_BUF_LEN 45
 
+/**
+ * Calculate the length needed to store a user ID and secret in a nul-terminated string
+ *
+ * @param id the user/client identifier
+ * @param secret the shared secret used to authenticate the user/client
+ */
+#define basic_credential_length(id, secret) ((id) + (sizeof(":") - 1) + (secret) + (sizeof("\0") - 1))
+
 typedef struct
 {
     ngx_str_t base64encoded_client_credentials;
+    ngx_str_t client_id;
+    ngx_str_t client_secret;
     ngx_str_t introspection_endpoint;
 } ngx_http_access_token_to_jwt_conf_t;
 
@@ -54,11 +64,19 @@ static char JWT_KEY[] = "\"jwt\":\"";
 static ngx_command_t ngx_http_access_token_to_jwt_commands[] =
 {
     {
-        ngx_string("access_token_to_jwt_base64encoded_client_credentials"),
+        ngx_string("access_token_to_jwt_client_id"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
         ngx_conf_set_str_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, base64encoded_client_credentials),
+        offsetof(ngx_http_access_token_to_jwt_conf_t, client_id),
+        NULL
+    },
+    {
+        ngx_string("access_token_to_jwt_client_secret"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+        ngx_conf_set_str_slot,
+        NGX_HTTP_LOC_CONF_OFFSET,
+        offsetof(ngx_http_access_token_to_jwt_conf_t, client_secret),
         NULL
     },
     {
@@ -111,17 +129,22 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
             request, ngx_http_access_token_to_jwt_module);
 
 
-    ngx_str_t encoded_client_credentials = module_location_config->base64encoded_client_credentials;
-
-    if (encoded_client_credentials.len == 0)
+    if (module_location_config->client_secret.len == 0)
     {
-        //ngx_conf_log_error(NGX_LOG_WARN, )
-        // TODO: use ngx_conf_log_error instead?
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-                      "Module not configured properly: missing client credential");
-
+            "Module not configured properly: missing client secret");
         return NGX_DECLINED;
     }
+
+    if (module_location_config->client_id.len == 0)
+    {
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
+                           "Module not configured properly: missing client id");
+        return NGX_DECLINED;
+    }
+
+    ngx_str_t encoded_client_credentials = module_location_config->base64encoded_client_credentials;
+
 
     if (module_location_config->introspection_endpoint.len == 0)
     {
@@ -231,8 +254,6 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 
     introspection_body->data = introspect_body_data;
     introspection_body->len = ngx_strlen(introspection_body->data);
-
-    // todo check cache, if access_token association is there just set
 
     introspection_request->request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
 
@@ -395,8 +416,47 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
 {
     ngx_http_access_token_to_jwt_conf_t *prev = parent, *conf = child;
 
-    ngx_conf_merge_str_value(conf->base64encoded_client_credentials, prev->base64encoded_client_credentials, "");
+    ngx_conf_merge_str_value(conf->client_id, prev->client_id, "");
+    ngx_conf_merge_str_value(conf->client_secret, prev->client_secret, "");
     ngx_conf_merge_str_value(conf->introspection_endpoint, prev->introspection_endpoint, "");
+
+    //TODO consider moving this logic
+    if (conf->base64encoded_client_credentials.len == 0 && conf->client_id.len > 0 && conf->client_secret.len > 0)
+    {
+        ngx_str_t *unencoded_client_credentials = ngx_pcalloc(config->pool, sizeof(ngx_str_t));
+
+        if (unencoded_client_credentials == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        size_t unencoded_client_credentials_data_size = basic_credential_length(conf->client_id.len, conf->client_secret.len);
+
+        u_char *unencoded_client_credentials_data = ngx_pcalloc(config->pool, unencoded_client_credentials_data_size);
+
+        if (unencoded_client_credentials_data == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        unencoded_client_credentials->data = unencoded_client_credentials_data;
+        unencoded_client_credentials->len = unencoded_client_credentials_data_size - 1;
+
+        ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_data_size, "%V:%V",
+                     &conf->client_id, &conf->client_secret);
+
+        conf->base64encoded_client_credentials.data = ngx_pcalloc(
+                config->pool, ngx_base64_encoded_length(unencoded_client_credentials_data_size - 1));
+
+        if (conf->base64encoded_client_credentials.data == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        ngx_encode_base64(&conf->base64encoded_client_credentials, unencoded_client_credentials);
+
+        ngx_pfree(config->pool, unencoded_client_credentials);
+    }
 
     return NGX_CONF_OK;
 }
