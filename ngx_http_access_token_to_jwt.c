@@ -64,8 +64,57 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
 
 static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc);
 
-static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm,
-                                                ngx_str_t space_separated_scopes, char *error_code);
+/**
+ * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>
+ *
+ * After calling this method, a WWW-Authenticate header will be added that uses the Bearer scheme. If the realm and or
+ * scopes were also configured, then these too will be included. For instance, if scopes are configured, then the
+ * following output header will be added: <code> WWW-Authenticate: Bearer scope="scope1 scope2 scope3"</code>. If only
+ * realm is configured, then a response header like this one would be added:
+ * <code>WWW-Authenticate: Bearer realm="myGoodRealm"</code>. If both are configured, the two will be included and
+ * separated by a comma, like this: <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>.
+ *
+ * @param request the current request
+ * @param realm the configured realm
+ * @param space_separated_scopes the space-separated list of configured scopes
+ * @param error an error code or NULL if none. Refer to
+ * <a href="https://tools.ietf.org/html/rfc6750#section-3.1">RFC 6750 § 3.1</a> for standard values.
+ *
+ * @return NGX_HTTP_UNAUTHORIZED
+ *
+ * @example WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
+ */
+static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_str_t realm,
+                                             ngx_str_t space_separated_scopes, char *error_code);
+
+/**
+ * Sets the content length in the request
+ *
+ * This method sets the content length in all three ways required by the NGINX run-time:
+ * <ol>
+ * <li>As a pre-parsed value accessible by a known pointer in the request's <code>headers_in</code> structure
+ * <li>As a string value (i.e., "Content-Length") that can be found by iterating the request's
+ * <code>headers_in.headers</code> list
+ * <li>As a hash of the header
+ * </ol>
+ *
+ * @param request the request that the content-length header will be set on
+ * @param length the length of the content
+ *
+ * @return NGX_OK (i.e., 0) upon success; some other value on failure
+ *
+ * @see <a href="https://www.nginx.com/resources/wiki/start/topics/examples/headers_management/">Managing request
+ * headers</a> knowledge base article on the NGINX web site
+ *
+ * @copyright The implementation of this function is based on the the <code>ngx_http_lua_set_content_length_header</code>
+ * function found in the <a href="https://github.com/npk/lua-nginx-module">NGINX Lua module</a> which is copyright
+ * 2009-2012 by Xiaozhe Wang (chaoslawful) and Zhang "agentzh" Yichun (章亦春). The original version is licensed under
+ * that module's license (BSD 2-clause), but the modifications made here are copyright by Curity AB and licensed under
+ * the GPL v. 3.
+ */
+static ngx_int_t set_content_length_header(ngx_http_request_t *request, off_t length);
 
 const static char JWT_KEY[] = "\"jwt\":\"";
 const static char BEARER[] = "Bearer ";
@@ -165,9 +214,6 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     ngx_http_access_token_to_jwt_conf_t *module_location_config = ngx_http_get_module_loc_conf(
             request, ngx_http_access_token_to_jwt_module);
 
-
-
-
     if (module_location_config->client_secret.len == 0)
     {
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
@@ -223,8 +269,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
 
-        return ngx_http_auth_bearer_set_realm(request, module_location_config->realm,
-                                              module_location_config->space_separated_scopes, NULL);
+        return set_www_authenticate_header(request, module_location_config->realm,
+                                           module_location_config->space_separated_scopes, NULL);
     }
 
     u_char *bearer_token_pos;
@@ -236,8 +282,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
                        "Authorization header does not contain a bearer token");
 
-        return ngx_http_auth_bearer_set_realm(request, module_location_config->realm,
-                                              module_location_config->space_separated_scopes, NULL);
+        return set_www_authenticate_header(request, module_location_config->realm,
+                                           module_location_config->space_separated_scopes, NULL);
     }
 
     bearer_token_pos += BEARER_SIZE;
@@ -330,7 +376,11 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     introspection_request_body->bufs->next = NULL;
     introspection_request_body->buf = introspection_request_body_buffer;
     introspection_request->request_body = introspection_request_body;
-    introspection_request->headers_in.content_length_n = introspection_body->len;
+
+    if (set_content_length_header(introspection_request, ngx_buf_size(introspection_request_body_buffer)) != NGX_OK)
+    {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
 
     introspection_request->header_only = true;
     module_context->subrequest = introspection_request;
@@ -358,30 +408,54 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     return NGX_AGAIN;
 }
 
-/**
- * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>
- *
- * After calling this method, a WWW-Authenticate header will be added that uses the Bearer scheme. If the realm and or
- * scopes were also configured, then these too will be included. For instance, if scopes are configured, then the
- * following output header will be added: <code> WWW-Authenticate: Bearer scope="scope1 scope2 scope3"</code>. If only
- * realm is configured, then a response header like this one would be added:
- * <code>WWW-Authenticate: Bearer realm="myGoodRealm"</code>. If both are configured, the two will be included and
- * separated by a comma, like this: <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>.
- *
- * @param request the current request
- * @param realm the configured realm
- * @param space_separated_scopes the space-separated list of configured scopes
- * @param error an error code or NULL if none. Refer to
- * <a href="https://tools.ietf.org/html/rfc6750#section-3.1">RFC 6750 § 3.1</a> for standard values.
- *
- * @return NGX_HTTP_UNAUTHORIZED
- *
- * @example WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"
- *
- * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
- */
-static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm,
-                                                ngx_str_t space_separated_scopes, char *error_code)
+static ngx_int_t set_content_length_header(ngx_http_request_t *request, off_t length)
+{
+    request->headers_in.content_length_n = length;
+
+    if (ngx_list_init(&request->headers_in.headers, request->pool, 20, sizeof(ngx_table_elt_t)) != NGX_OK)
+    {
+        return NGX_ERROR;
+    }
+
+    ngx_table_elt_t *h = ngx_list_push(&request->headers_in.headers);
+
+    if (h == NULL)
+    {
+        return NGX_ERROR;
+    }
+
+    static ngx_str_t content_length_header_key = ngx_string("Content-Length");
+
+    h->key = content_length_header_key;
+    h->lowcase_key = ngx_pnalloc(request->pool, h->key.len);
+
+    if (h->lowcase_key == NULL)
+    {
+        return NGX_ERROR;
+    }
+
+    ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
+
+    request->headers_in.content_length = h;
+
+    u_char *p = ngx_palloc(request->pool, NGX_OFF_T_LEN);
+
+    if (p == NULL)
+    {
+        return NGX_ERROR;
+    }
+
+    h->value.data = p;
+    h->value.len =
+            ngx_sprintf(h->value.data, "%O", request->headers_in.content_length_n) - h->value.data;
+    h->hash = ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(
+            ngx_hash(ngx_hash('c', 'o'), 'n'), 't'), 'e'), 'n'), 't'), '-'), 'l'), 'e'), 'n'), 'g'), 't'), 'h');
+
+    return NGX_OK;
+}
+
+static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_str_t realm,
+                                             ngx_str_t space_separated_scopes, char *error_code)
 {
     request->headers_out.www_authenticate = ngx_list_push(&request->headers_out.headers);
 
