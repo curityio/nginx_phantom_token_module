@@ -29,6 +29,8 @@ fi
 
 if [[ "$NGINX_DEBUG" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
     CONFIG_OPTS=(${CONFIG_OPTS[@]} --with-debug --with-cc-opt="-O0 -g")
+else
+    CONFIG_OPTS=(${CONFIG_OPTS[@]} --with-cc-opt="-NDEBUG")
 fi
 
 BUILD_INFO=("NGINX_SRC_DIR=$NGINX_SRC_DIR" "NGINX_VERSION=$NGINX_VERSION" "NGINX_DEBUG=$NGINX_DEBUG")
