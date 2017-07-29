@@ -10,6 +10,8 @@ CONFIG_OPTS=($CONFIG_OPTS --with-compat --add-module=$SRC_DIR)
 if [[ -z "$NGINX_SRC_DIR" ]]; then
     read -t 60 -e -p "Path to NGINX (leave blank to download version $NGINX_VERSION): " NGINX_SRC_DIR ||:
 
+    NGINX_SRC_DIR=${NGINX_SRC_DIR/\~/$HOME}
+
     if [[ -z "$NGINX_SRC_DIR" ]]; then
         NGINX_SRC_DIR="$SRC_DIR/nginx-$NGINX_VERSION"
 
