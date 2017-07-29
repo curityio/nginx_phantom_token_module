@@ -19,6 +19,7 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #define ACCESS_TOKEN_BUF_LEN 45
 
@@ -316,7 +317,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     introspection_request_body_buffer->end = introspection_request_body_buffer->last = introspection_body->data +
             introspection_body->len;
 
-    introspection_request_body_buffer->temporary = TRUE;
+    introspection_request_body_buffer->temporary = true;
 
     introspection_request_body->bufs = ngx_alloc_chain_link(request->pool);
 
@@ -331,7 +332,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     introspection_request->request_body = introspection_request_body;
     introspection_request->headers_in.content_length_n = introspection_body->len;
 
-    introspection_request->header_only = TRUE;
+    introspection_request->header_only = true;
     module_context->subrequest = introspection_request;
 
     // Change subrequest method to POST
