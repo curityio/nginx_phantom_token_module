@@ -662,13 +662,13 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
         }
 
         unencoded_client_credentials->data = unencoded_client_credentials_data;
-        unencoded_client_credentials->len = unencoded_client_credentials_data_size - 1;
+        unencoded_client_credentials->len = unencoded_client_credentials_data_size - sizeof(char);
 
         ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_data_size, "%V:%V",
                      &child_config->client_id, &child_config->client_secret);
 
         child_config->base64encoded_client_credentials.data = ngx_pcalloc(
-                config->pool, ngx_base64_encoded_length(unencoded_client_credentials_data_size - 1));
+                config->pool, ngx_base64_encoded_length(unencoded_client_credentials->len));
 
         if (child_config->base64encoded_client_credentials.data == NULL)
         {
