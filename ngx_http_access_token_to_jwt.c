@@ -62,10 +62,33 @@ static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config);
 
 static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child);
 
-static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc);
+static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data,
+                                                           ngx_int_t introspection_subrequest_status_code);
 
-static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm,
-                                                ngx_str_t space_separated_scopes, char *error_code);
+/**
+ * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>
+ *
+ * After calling this method, a WWW-Authenticate header will be added that uses the Bearer scheme. If the realm and or
+ * scopes were also configured, then these too will be included. For instance, if scopes are configured, then the
+ * following output header will be added: <code> WWW-Authenticate: Bearer scope="scope1 scope2 scope3"</code>. If only
+ * realm is configured, then a response header like this one would be added:
+ * <code>WWW-Authenticate: Bearer realm="myGoodRealm"</code>. If both are configured, the two will be included and
+ * separated by a comma, like this: <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>.
+ *
+ * @param request the current request
+ * @param realm the configured realm
+ * @param space_separated_scopes the space-separated list of configured scopes
+ * @param error an error code or NULL if none. Refer to
+ * <a href="https://tools.ietf.org/html/rfc6750#section-3.1">RFC 6750 § 3.1</a> for standard values.
+ *
+ * @return NGX_HTTP_UNAUTHORIZED
+ *
+ * @example WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
+ */
+static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_str_t realm,
+                                             ngx_str_t space_separated_scopes, char *error_code);
 
 const static char JWT_KEY[] = "\"jwt\":\"";
 const static char BEARER[] = "Bearer ";
@@ -165,13 +188,11 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     ngx_http_access_token_to_jwt_conf_t *module_location_config = ngx_http_get_module_loc_conf(
             request, ngx_http_access_token_to_jwt_module);
 
-
-
-
     if (module_location_config->client_secret.len == 0)
     {
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
             "Module not configured properly: missing client secret");
+
         return NGX_DECLINED;
     }
 
@@ -179,6 +200,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     {
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
                            "Module not configured properly: missing client id");
+
         return NGX_DECLINED;
     }
 
@@ -223,8 +245,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
 
-        return ngx_http_auth_bearer_set_realm(request, module_location_config->realm,
-                                              module_location_config->space_separated_scopes, NULL);
+        return set_www_authenticate_header(request, module_location_config->realm,
+                                           module_location_config->space_separated_scopes, NULL);
     }
 
     u_char *bearer_token_pos;
@@ -236,8 +258,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
                        "Authorization header does not contain a bearer token");
 
-        return ngx_http_auth_bearer_set_realm(request, module_location_config->realm,
-                                              module_location_config->space_separated_scopes, NULL);
+        return set_www_authenticate_header(request, module_location_config->realm,
+                                           module_location_config->space_separated_scopes, NULL);
     }
 
     bearer_token_pos += BEARER_SIZE;
@@ -330,7 +352,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     introspection_request_body->bufs->next = NULL;
     introspection_request_body->buf = introspection_request_body_buffer;
     introspection_request->request_body = introspection_request_body;
-    introspection_request->headers_in.content_length_n = introspection_body->len;
+    introspection_request->headers_in.content_length_n = ngx_buf_size(introspection_request_body_buffer);
 
     introspection_request->header_only = true;
     module_context->subrequest = introspection_request;
@@ -358,30 +380,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     return NGX_AGAIN;
 }
 
-/**
- * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>
- *
- * After calling this method, a WWW-Authenticate header will be added that uses the Bearer scheme. If the realm and or
- * scopes were also configured, then these too will be included. For instance, if scopes are configured, then the
- * following output header will be added: <code> WWW-Authenticate: Bearer scope="scope1 scope2 scope3"</code>. If only
- * realm is configured, then a response header like this one would be added:
- * <code>WWW-Authenticate: Bearer realm="myGoodRealm"</code>. If both are configured, the two will be included and
- * separated by a comma, like this: <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>.
- *
- * @param request the current request
- * @param realm the configured realm
- * @param space_separated_scopes the space-separated list of configured scopes
- * @param error an error code or NULL if none. Refer to
- * <a href="https://tools.ietf.org/html/rfc6750#section-3.1">RFC 6750 § 3.1</a> for standard values.
- *
- * @return NGX_HTTP_UNAUTHORIZED
- *
- * @example WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"
- *
- * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
- */
-static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx_str_t realm,
-                                                ngx_str_t space_separated_scopes, char *error_code)
+static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_str_t realm,
+                                             ngx_str_t space_separated_scopes, char *error_code)
 {
     request->headers_out.www_authenticate = ngx_list_push(&request->headers_out.headers);
 
@@ -500,7 +500,8 @@ static ngx_int_t ngx_http_auth_bearer_set_realm(ngx_http_request_t *request, ngx
     return NGX_HTTP_UNAUTHORIZED;
 }
 
-static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc)
+static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data,
+                                                           ngx_int_t introspection_subrequest_status_code)
 {
     ngx_http_access_token_to_jwt_ctx_t *module_context = (ngx_http_access_token_to_jwt_ctx_t*)data;
 
@@ -513,7 +514,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
     {
         module_context->done = 1;
 
-        return rc;
+        return introspection_subrequest_status_code;
     }
 
     // body parsing
@@ -531,7 +532,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
-        return rc;
+        return introspection_subrequest_status_code;
     }
 
     jwt_start += sizeof(JWT_KEY) - 1;
@@ -544,7 +545,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
-        return rc;
+        return introspection_subrequest_status_code;
     }
 
     module_context->jwt.len = jwt_end - jwt_start + BEARER_SIZE;
@@ -553,7 +554,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
     if (module_context->jwt.data == NULL)
     {
-        return rc;
+        return introspection_subrequest_status_code;
     }
 
     void * jwt_pointer = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
@@ -561,7 +562,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
     module_context->done = 1;
 
-    return rc;
+    return introspection_subrequest_status_code;
 }
 
 static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config)
@@ -640,7 +641,8 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
     }
 
     //TODO consider moving this logic
-    if (child_config->base64encoded_client_credentials.len == 0 && child_config->client_id.len > 0 && child_config->client_secret.len > 0)
+    if (child_config->base64encoded_client_credentials.len == 0 && child_config->client_id.len > 0 &&
+            child_config->client_secret.len > 0)
     {
         ngx_str_t *unencoded_client_credentials = ngx_pcalloc(config->pool, sizeof(ngx_str_t));
 
@@ -649,7 +651,8 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
             return NGX_CONF_ERROR;
         }
 
-        size_t unencoded_client_credentials_data_size = basic_credential_length(child_config->client_id.len, child_config->client_secret.len);
+        size_t unencoded_client_credentials_data_size = basic_credential_length(child_config->client_id.len,
+                                                                                child_config->client_secret.len);
 
         u_char *unencoded_client_credentials_data = ngx_pcalloc(config->pool, unencoded_client_credentials_data_size);
 
@@ -659,13 +662,13 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
         }
 
         unencoded_client_credentials->data = unencoded_client_credentials_data;
-        unencoded_client_credentials->len = unencoded_client_credentials_data_size - 1;
+        unencoded_client_credentials->len = unencoded_client_credentials_data_size - sizeof(char);
 
         ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_data_size, "%V:%V",
                      &child_config->client_id, &child_config->client_secret);
 
         child_config->base64encoded_client_credentials.data = ngx_pcalloc(
-                config->pool, ngx_base64_encoded_length(unencoded_client_credentials_data_size - 1));
+                config->pool, ngx_base64_encoded_length(unencoded_client_credentials->len));
 
         if (child_config->base64encoded_client_credentials.data == NULL)
         {
