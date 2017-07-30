@@ -62,7 +62,8 @@ static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config);
 
 static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child);
 
-static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc);
+static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data,
+                                                           ngx_int_t introspection_subrequest_status_code);
 
 /**
  * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>
@@ -191,6 +192,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     {
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
             "Module not configured properly: missing client secret");
+
         return NGX_DECLINED;
     }
 
@@ -198,6 +200,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     {
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
                            "Module not configured properly: missing client id");
+
         return NGX_DECLINED;
     }
 
@@ -497,7 +500,8 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
     return NGX_HTTP_UNAUTHORIZED;
 }
 
-static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data, ngx_int_t rc)
+static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data,
+                                                           ngx_int_t introspection_subrequest_status_code)
 {
     ngx_http_access_token_to_jwt_ctx_t *module_context = (ngx_http_access_token_to_jwt_ctx_t*)data;
 
@@ -510,7 +514,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
     {
         module_context->done = 1;
 
-        return rc;
+        return introspection_subrequest_status_code;
     }
 
     // body parsing
@@ -528,7 +532,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
-        return rc;
+        return introspection_subrequest_status_code;
     }
 
     jwt_start += sizeof(JWT_KEY) - 1;
@@ -541,7 +545,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
-        return rc;
+        return introspection_subrequest_status_code;
     }
 
     module_context->jwt.len = jwt_end - jwt_start + BEARER_SIZE;
@@ -550,7 +554,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
     if (module_context->jwt.data == NULL)
     {
-        return rc;
+        return introspection_subrequest_status_code;
     }
 
     void * jwt_pointer = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
@@ -558,7 +562,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
     module_context->done = 1;
 
-    return rc;
+    return introspection_subrequest_status_code;
 }
 
 static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config)
@@ -637,7 +641,8 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
     }
 
     //TODO consider moving this logic
-    if (child_config->base64encoded_client_credentials.len == 0 && child_config->client_id.len > 0 && child_config->client_secret.len > 0)
+    if (child_config->base64encoded_client_credentials.len == 0 && child_config->client_id.len > 0 &&
+            child_config->client_secret.len > 0)
     {
         ngx_str_t *unencoded_client_credentials = ngx_pcalloc(config->pool, sizeof(ngx_str_t));
 
@@ -646,7 +651,8 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
             return NGX_CONF_ERROR;
         }
 
-        size_t unencoded_client_credentials_data_size = basic_credential_length(child_config->client_id.len, child_config->client_secret.len);
+        size_t unencoded_client_credentials_data_size = basic_credential_length(child_config->client_id.len,
+                                                                                child_config->client_secret.len);
 
         u_char *unencoded_client_credentials_data = ngx_pcalloc(config->pool, unencoded_client_credentials_data_size);
 
