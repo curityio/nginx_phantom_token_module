@@ -185,22 +185,20 @@ ngx_module_t ngx_http_access_token_to_jwt_module =
 
 static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *request)
 {
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Handling request to convert token to JWT");
+
     ngx_http_access_token_to_jwt_conf_t *module_location_config = ngx_http_get_module_loc_conf(
             request, ngx_http_access_token_to_jwt_module);
 
     if (module_location_config->client_secret.len == 0)
     {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-            "Module not configured properly: missing client secret");
-
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Module not configured properly: missing client secret");
         return NGX_DECLINED;
     }
 
     if (module_location_config->client_id.len == 0)
     {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-                           "Module not configured properly: missing client id");
-
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Module not configured properly: missing client id");
         return NGX_DECLINED;
     }
 
@@ -208,8 +206,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 
     if (module_location_config->introspection_endpoint.len == 0)
     {
-        ngx_log_debug0(NGX_LOG_WARN, request->connection->log, 0,
-                       "Module not configured properly: missing introspection endpoint");
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
+                      "Module not configured properly: missing introspection endpoint");
 
         return NGX_DECLINED;
     }
@@ -505,7 +503,8 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 {
     ngx_http_access_token_to_jwt_ctx_t *module_context = (ngx_http_access_token_to_jwt_ctx_t*)data;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "auth request done s:%d", request->headers_out.status);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "auth request done status = %d",
+                   request->headers_out.status);
 
     module_context->status = request->headers_out.status;
 
@@ -528,7 +527,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
     if (jwt_start == NULL)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response\n");
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response");
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
@@ -541,7 +540,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
     if (jwt_end == NULL)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response\n");
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response");
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
