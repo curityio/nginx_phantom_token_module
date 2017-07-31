@@ -607,7 +607,25 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config
         assert(child_config->space_separated_scopes.len <= space_separated_scopes_data_size);
     }
 
-    //TODO consider moving this logic
+    if (child_config->client_secret.len > 0 || child_config->client_id.len > 0)
+    {
+        // One of the required settings was given but not the other
+
+        if (child_config->client_secret.len == 0)
+        {
+            ngx_conf_log_error(NGX_LOG_EMERG, main_config, 0, "Module not configured properly: missing client secret");
+
+            return NGX_CONF_ERROR;
+        }
+
+        if (child_config->client_id.len == 0)
+        {
+            ngx_conf_log_error(NGX_LOG_EMERG, main_config, 0, "Module not configured properly: missing client id");
+
+            return NGX_CONF_ERROR;
+        }
+    }
+
     if (child_config->base64encoded_client_credentials.len == 0 && child_config->client_id.len > 0 &&
             child_config->client_secret.len > 0)
     {
