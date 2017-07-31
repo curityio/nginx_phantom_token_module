@@ -535,14 +535,14 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config)
 {
     ngx_http_core_main_conf_t *cmcf = ngx_http_conf_get_module_main_conf(config, ngx_http_core_module);
-    ngx_http_handler_pt *h = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
+    ngx_http_handler_pt *handler = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
 
-    if (h == NULL)
+    if (handler == NULL)
     {
         return NGX_ERROR;
     }
 
-    *h = ngx_http_access_token_to_jwt_handler;
+    *handler = ngx_http_access_token_to_jwt_handler;
 
     return NGX_OK;
 }
