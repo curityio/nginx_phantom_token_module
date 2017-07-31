@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
