@@ -28,7 +28,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 
 static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config);
 
-static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child);
+static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config, void *parent, void *child);
 
 static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data,
                                                            ngx_int_t introspection_subrequest_status_code);
@@ -561,7 +561,7 @@ static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config)
     return conf;
 }
 
-static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child)
+static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config, void *parent, void *child)
 {
     ngx_http_access_token_to_jwt_conf_t *parent_config = parent, *child_config = child;
 
@@ -583,7 +583,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
             space_separated_scopes_data_size += scope[i].len;
         }
 
-        u_char *space_separated_scopes_data = ngx_pcalloc(config->pool, space_separated_scopes_data_size);
+        u_char *space_separated_scopes_data = ngx_pcalloc(main_config->pool, space_separated_scopes_data_size);
 
         if (space_separated_scopes_data == NULL)
         {
@@ -611,7 +611,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
     if (child_config->base64encoded_client_credentials.len == 0 && child_config->client_id.len > 0 &&
             child_config->client_secret.len > 0)
     {
-        ngx_str_t *unencoded_client_credentials = ngx_pcalloc(config->pool, sizeof(ngx_str_t));
+        ngx_str_t *unencoded_client_credentials = ngx_pcalloc(main_config->pool, sizeof(ngx_str_t));
 
         if (unencoded_client_credentials == NULL)
         {
@@ -621,7 +621,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
         size_t unencoded_client_credentials_data_size = basic_credential_length(child_config->client_id.len,
                                                                                 child_config->client_secret.len);
 
-        u_char *unencoded_client_credentials_data = ngx_pcalloc(config->pool, unencoded_client_credentials_data_size);
+        u_char *unencoded_client_credentials_data = ngx_pcalloc(main_config->pool, unencoded_client_credentials_data_size);
 
         if (unencoded_client_credentials_data == NULL)
         {
@@ -635,7 +635,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
                      &child_config->client_id, &child_config->client_secret);
 
         child_config->base64encoded_client_credentials.data = ngx_pcalloc(
-                config->pool, ngx_base64_encoded_length(unencoded_client_credentials->len));
+                main_config->pool, ngx_base64_encoded_length(unencoded_client_credentials->len));
 
         if (child_config->base64encoded_client_credentials.data == NULL)
         {
@@ -644,7 +644,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
 
         ngx_encode_base64(&child_config->base64encoded_client_credentials, unencoded_client_credentials);
 
-        ngx_pfree(config->pool, unencoded_client_credentials);
+        ngx_pfree(main_config->pool, unencoded_client_credentials);
     }
 
     return NGX_CONF_OK;
