@@ -19,40 +19,7 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <assert.h>
-#include <stdbool.h>
-
-#define ACCESS_TOKEN_BUF_LEN 45
-
-#define ERROR_CODE_INVALID_REQUEST "invalid_request"
-#define ERROR_CODE_INVALID_TOKEN "invalid_token"
-#define ERROR_CODE_INSUFFICIENT_SCOPE "insufficient_scope"
-
-/**
- * Calculate the length needed to store a user ID and secret in a nul-terminated string
- *
- * @param id the user/client identifier
- * @param secret the shared secret used to authenticate the user/client
- */
-#define basic_credential_length(id, secret) ((id) + (sizeof(":") - 1) + (secret) + (sizeof("\0") - 1))
-
-typedef struct
-{
-    ngx_str_t base64encoded_client_credentials;
-    ngx_str_t client_id;
-    ngx_str_t client_secret;
-    ngx_str_t introspection_endpoint;
-    ngx_str_t realm;
-    ngx_array_t *scopes;
-    ngx_str_t space_separated_scopes;
-} ngx_http_access_token_to_jwt_conf_t;
-
-typedef struct
-{
-    ngx_uint_t done;
-    ngx_uint_t status;
-    ngx_str_t jwt;
-    ngx_http_request_t *subrequest;
-} ngx_http_access_token_to_jwt_ctx_t;
+#include "ngx_http_access_token_to_jwt.h"
 
 static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config);
 
