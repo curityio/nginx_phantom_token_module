@@ -572,7 +572,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config
     ngx_http_access_token_to_jwt_conf_t *parent_config = parent, *child_config = child;
 
     ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "");
-    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "");
+    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api");
     ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL);
     ngx_conf_merge_str_value(child_config->space_separated_scopes, parent_config->space_separated_scopes, "");
     ngx_conf_merge_str_value(child_config->base64encoded_client_credential,

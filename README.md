@@ -52,7 +52,7 @@ The following directives are optional and do not need to be configured.
 
 > **Syntax**: **`access_token_to_jwt_realm`** _`string`_
 > 
-> **Default**: *`—`*
+> **Default**: *`api`*
 > 
 > **Context**: `location`
 
