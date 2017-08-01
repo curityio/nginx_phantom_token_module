@@ -49,9 +49,9 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
  * @param error an error code or NULL if none. Refer to
  * <a href="https://tools.ietf.org/html/rfc6750#section-3.1">RFC 6750 § 3.1</a> for standard values.
  *
- * @return NGX_HTTP_UNAUTHORIZED
+ * @return <code>NGX_HTTP_UNAUTHORIZED</code>
  *
- * @example WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"
+ * @example <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>
  *
  * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
  */
