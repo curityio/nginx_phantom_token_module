@@ -34,9 +34,7 @@
 
 typedef struct ngx_http_access_token_to_jwt_conf_s
 {
-    ngx_str_t base64encoded_client_credentials;
-    ngx_str_t client_id;
-    ngx_str_t client_secret;
+    ngx_str_t base64encoded_client_credential;
     ngx_str_t introspection_endpoint;
     ngx_str_t realm;
     ngx_array_t *scopes;
@@ -53,4 +51,4 @@ typedef struct ngx_http_access_token_to_jwt_ctx_s
 
 extern ngx_module_t ngx_http_access_token_to_jwt_module;
 
-#endif //NGX_HTTP_ACCESS_TOKEN_TO_JWT_H
+#endif // NGX_HTTP_ACCESS_TOKEN_TO_JWT_H
