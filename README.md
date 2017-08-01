@@ -1,4 +1,5 @@
-# nginx_introspect
+# Phantom Token NGINX Module
+
 NGINX module that introspects access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662).
 
 This module, when enabled, filters incoming requests, denying access to those which do *not* have a valid `Authorization: Bearer` header. From this header, the access_token is extracted and introspected using the configured endpoint. Curity replies to this request according to the standard. For an active access token, the body of Curity's response contains the JWT that replaces the access token in the header of the request that is forwarded to the back-end. If the token is not valid or absent, no request to the back-end is made and the caller is given a 401, unauthorized, error.
@@ -9,9 +10,9 @@ This module, when enabled, filters incoming requests, denying access to those wh
 
 All the directives in this subsection are required; if any of these are omitted, the module will be disabled.
 
-#### access_token_to_jwt_client_credential
+#### phantom_token_client_credential
 
-> **Syntax**: **`access_token_to_jwt_client_credential`** _`string`_ _`string`_ 
+> **Syntax**: **`phantom_token_client_credential`** _`string`_ _`string`_ 
 > 
 > **Default**: *`—`*                                                                
 > 
@@ -19,9 +20,9 @@ All the directives in this subsection are required; if any of these are omitted,
  
 The client ID and secret of the OAuth client which will be used for introspection. The first argument to this directive is the client ID and the second is the secret. If this directive is not configured, then the module will be disabled.
 
-#### access_token_to_jwt_introspection_endpoint
+#### phantom_token_introspection_endpoint
 
-> **Syntax**: **`access_token_to_jwt_introspection_endpoint`** _`string`_
+> **Syntax**: **`phantom_token_introspection_endpoint`** _`string`_
 >
 > **Default**: *`—`*
 >
@@ -35,7 +36,7 @@ Example configuration:
 server {
     location /api {
         ...
-        access_token_to_jwt_introspection_endpoint my_good_location_name_for_curity;
+        phantom_token_introspection_endpoint my_good_location_name_for_curity;
     }
     
     location my_good_location_name_for_curity {
@@ -48,9 +49,9 @@ server {
 
 The following directives are optional and do not need to be configured.
 
-#### access_token_to_jwt_realm
+#### phantom_token_realm
 
-> **Syntax**: **`access_token_to_jwt_realm`** _`string`_
+> **Syntax**: **`phantom_token_realm`** _`string`_
 > 
 > **Default**: *`api`*
 > 
@@ -63,13 +64,13 @@ Example configuration:
 ```nginx
 location / {
    ...
-   access_token_to_jwt_realm "myGoodRealm";
+   phantom_token_realm "myGoodRealm";
 }   
 ```
 
-#### access_token_to_jwt_scopes
+#### phantom_token_scopes
 
-> **Syntax**: **`access_token_to_jwt_scopes`** _`string`_
+> **Syntax**: **`phantom_token_scopes`** _`string`_
 >
 > **Default**: *`—`*
 >
@@ -82,28 +83,28 @@ Example configuration:
 ```nginx
 location / {
    ...
-   access_token_to_jwt_scopes "scope_a scope_b scope_c";
+   phantom_token_scopes "scope_a scope_b scope_c";
 }
 ```
 
-#### access_token_to_jwt_scope
+#### phantom_token_scope
 
-> **Syntax**: **`access_token_to_jwt_scope`** _`string`_
+> **Syntax**: **`phantom_token_scope`** _`string`_
 >
 > **Default**: *`—`*
 >
 > **Context**: `location`
 
-An array of scopes that the server should inform the client are required when it does not provide an access token. If `access_token_to_jwt_scopes` is also configured, that value will supersede these.
+An array of scopes that the server should inform the client are required when it does not provide an access token. If `phantom_token_scopes` is also configured, that value will supersede these.
  
 Example configuration:
  
 ```nginx
 location / {
    ...
-   access_token_to_jwt_scope "scope_a";
-   access_token_to_jwt_scope "scope_b";
-   access_token_to_jwt_scope "scope_c";
+   phantom_token_scope "scope_a";
+   phantom_token_scope "scope_b";
+   phantom_token_scope "scope_c";
 }
 ```
 
@@ -116,8 +117,8 @@ The following is a simple configuration that might be used in demo or developmen
 server {
     location /api {
         proxy_pass         https://example.com/api;
-        access_token_to_jwt_client_credential "client_id" "client_secret";
-        access_token_to_jwt_introspection_endpoint curity;
+        phantom_token_client_credential "client_id" "client_secret";
+        phantom_token_introspection_endpoint curity;
     }
     
     location curity {
@@ -135,11 +136,11 @@ server {
     server_name server1.example.com;n
     location /api {
         proxy_pass         https://example.com/api;
-        access_token_to_jwt_client_credential "client_id" "client_secret";
-        access_token_to_jwt_introspection_endpoint curity;
+        phantom_token_client_credential "client_id" "client_secret";
+        phantom_token_introspection_endpoint curity;
         
-        access_token_to_jwt_realm "myGoodAPI";
-        access_token_to_jwt_scopes "scope_a scope_b scope_c";
+        phantom_token_realm "myGoodAPI";
+        phantom_token_scopes "scope_a scope_b scope_c";
     }
     
     location curity {
@@ -172,10 +173,10 @@ http {
         server_name server1.example.com;
         location /api {
             proxy_pass         https://example.com/api;
-            access_token_to_jwt_client_credential "client_id" "client_secret";
-            access_token_to_jwt_introspection_endpoint curity;
-            access_token_to_jwt_scopes "scope_a scope_b scope_c";
-            access_token_to_jwt_realm "myGoodAPI";
+            phantom_token_client_credential "client_id" "client_secret";
+            phantom_token_introspection_endpoint curity;
+            phantom_token_scopes "scope_a scope_b scope_c";
+            phantom_token_realm "myGoodAPI";
         }
         
         location curity {
