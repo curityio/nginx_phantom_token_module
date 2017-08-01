@@ -49,7 +49,6 @@ typedef struct
     ngx_uint_t done;
     ngx_uint_t status;
     ngx_str_t jwt;
-    ngx_http_request_t *subrequest;
 } phantom_token_module_context_t;
 
 static ngx_int_t post_configuration(ngx_conf_t *config);
@@ -354,7 +353,6 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->headers_in.content_length_n = ngx_buf_size(introspection_request_body_buffer);
 
     introspection_request->header_only = true;
-    module_context->subrequest = introspection_request;
 
     // Change subrequest method to POST
     introspection_request->method = NGX_HTTP_POST;
@@ -528,7 +526,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     if (jwt_start == NULL)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response");
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse response");
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
@@ -541,7 +539,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     if (jwt_end == NULL)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse JSON response");
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse response");
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
@@ -557,8 +555,9 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 
-    void * jwt_pointer = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
-    ngx_copy(jwt_pointer, jwt_start, module_context->jwt.len);
+    u_char *p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
+
+    ngx_copy(p, jwt_start, module_context->jwt.len);
 
     module_context->done = 1;
 
