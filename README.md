@@ -29,7 +29,7 @@ The client ID and secret of the OAuth client which will be used for introspectio
 
 The name of the location that proxies requests to Curity. Note that this location needs to be in the same server as the one referring to it using this directive.
 
-Example configuraiton:
+Example configuration:
 
 ```nginx
 server {
