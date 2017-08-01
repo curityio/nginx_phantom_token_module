@@ -16,22 +16,52 @@
  */
 
 #include <stdbool.h>
+#include <assert.h>
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-#include <assert.h>
-#include "ngx_http_access_token_to_jwt.h"
 
-static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config);
+#define ACCESS_TOKEN_BUF_LEN 45
 
-static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *request);
+#define ERROR_CODE_INVALID_REQUEST "invalid_request"
+#define ERROR_CODE_INVALID_TOKEN "invalid_token"
+#define ERROR_CODE_INSUFFICIENT_SCOPE "insufficient_scope"
 
-static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config);
+/**
+ * Calculate the length needed to store a user ID and secret in a nul-terminated string
+ *
+ * @param id the user/client identifier
+ * @param secret the shared secret used to authenticate the user/client
+ */
+#define basic_credential_length(id, secret) ((id) + (sizeof(":") - 1) + (secret) + (sizeof("\0") - 1))
 
-static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config, void *parent, void *child);
+typedef struct
+{
+    ngx_str_t base64encoded_client_credential;
+    ngx_str_t introspection_endpoint;
+    ngx_str_t realm;
+    ngx_array_t *scopes;
+    ngx_str_t space_separated_scopes;
+} phantom_token_configuration_t;
 
-static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data,
-                                                           ngx_int_t introspection_subrequest_status_code);
+typedef struct
+{
+    ngx_uint_t done;
+    ngx_uint_t status;
+    ngx_str_t jwt;
+    ngx_http_request_t *subrequest;
+} phantom_token_module_context_t;
+
+static ngx_int_t post_configuration(ngx_conf_t *config);
+
+static ngx_int_t handler(ngx_http_request_t *request);
+
+static void *create_location_configuration(ngx_conf_t *config);
+
+static char *merge_location_configuration(ngx_conf_t *main_config, void *parent, void *child);
+
+static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
+                                                ngx_int_t introspection_subrequest_status_code);
 
 /**
  * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>
@@ -74,65 +104,62 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
  *
  * @return <code>NGX_CONF_OK</code> upon success; some other character string on failure.
  */
-static char* conf_set_client_credential_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result);
+static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result);
 
 const static char JWT_KEY[] = "\"jwt\":\"";
 const static char BEARER[] = "Bearer ";
 const static size_t BEARER_SIZE = sizeof(BEARER) - 1;
 
-/**
- * This module provided directive: access_token_to_jwt.
- */
-static ngx_command_t ngx_http_access_token_to_jwt_commands[] =
+static ngx_command_t phantom_token_module_directives[] =
 {
     {
-        ngx_string("access_token_to_jwt_client_credential"),
+        ngx_string("phantom_token_client_credential"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE2,
-        conf_set_client_credential_slot,
+        set_client_credential_configuration_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, base64encoded_client_credential),
+        offsetof(phantom_token_configuration_t, base64encoded_client_credential),
         NULL
     },
     {
-        ngx_string("access_token_to_jwt_introspection_endpoint"),
+        ngx_string("phantom_token_introspection_endpoint"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
         ngx_conf_set_str_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, introspection_endpoint),
+        offsetof(phantom_token_configuration_t, introspection_endpoint),
         NULL
     },
     {
-        ngx_string("access_token_to_jwt_realm"),
+        ngx_string("phantom_token_realm"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
         ngx_conf_set_str_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, realm),
+        offsetof(phantom_token_configuration_t, realm),
         NULL
     },
     {
-        ngx_string("access_token_to_jwt_scopes"),
+        ngx_string("phantom_token_scopes"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
         ngx_conf_set_str_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, space_separated_scopes),
+        offsetof(phantom_token_configuration_t, space_separated_scopes),
         NULL
     },
     {
-        ngx_string("access_token_to_jwt_scope"),
+        ngx_string("phantom_token_scope"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
         ngx_conf_set_str_array_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, scopes),
+        offsetof(phantom_token_configuration_t, scopes),
         NULL
     },
     ngx_null_command /* command termination */
 };
 
 /* The module context. */
-static ngx_http_module_t ngx_http_access_token_to_jwt_module_ctx =
+static ngx_http_module_t phantom_token_module_context =
 {
-    NULL, /* preconfiguration */
-    ngx_http_access_token_to_jwt_postconfig, /* postconfiguration */
+    NULL, /* pre-configuration */
+    post_configuration,
 
     NULL, /* create main configuration */
     NULL, /* init main configuration */
@@ -140,16 +167,16 @@ static ngx_http_module_t ngx_http_access_token_to_jwt_module_ctx =
     NULL, /* create server configuration */
     NULL, /* merge server configuration */
 
-    ngx_http_access_token_to_jwt_create_loc_conf, /* create location configuration */
-    ngx_http_access_token_to_jwt_merge_loc_conf /* merge location configuration */
+    create_location_configuration,
+    merge_location_configuration
 };
 
 /* Module definition. */
-ngx_module_t ngx_http_access_token_to_jwt_module =
+ngx_module_t phantom_token_module =
 {
     NGX_MODULE_V1,
-    &ngx_http_access_token_to_jwt_module_ctx, /* module context */
-    ngx_http_access_token_to_jwt_commands, /* module directives */
+    &phantom_token_module_context,
+    phantom_token_module_directives,
     NGX_HTTP_MODULE, /* module type */
     NULL, /* init master */
     NULL, /* init module */
@@ -161,12 +188,12 @@ ngx_module_t ngx_http_access_token_to_jwt_module =
     NGX_MODULE_V1_PADDING
 };
 
-static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *request)
+static ngx_int_t handler(ngx_http_request_t *request)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Handling request to convert token to JWT");
 
-    ngx_http_access_token_to_jwt_conf_t *module_location_config = ngx_http_get_module_loc_conf(
-            request, ngx_http_access_token_to_jwt_module);
+    phantom_token_configuration_t *module_location_config = ngx_http_get_module_loc_conf(
+            request, phantom_token_module);
 
     if (module_location_config->base64encoded_client_credential.len == 0)
     {
@@ -186,7 +213,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         return NGX_DECLINED;
     }
 
-    ngx_http_access_token_to_jwt_ctx_t *module_context = ngx_http_get_module_ctx(request, ngx_http_access_token_to_jwt_module);
+    phantom_token_module_context_t *module_context = ngx_http_get_module_ctx(request, phantom_token_module);
 
     if (module_context != NULL)
     {
@@ -242,7 +269,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         bearer_token_pos++;
     }
 
-    module_context = ngx_pcalloc(request->pool, sizeof(ngx_http_access_token_to_jwt_ctx_t));
+    module_context = ngx_pcalloc(request->pool, sizeof(phantom_token_module_context_t));
 
     if (module_context == NULL)
     {
@@ -256,7 +283,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    introspection_request_callback->handler = ngx_http_access_token_to_jwt_request_done;
+    introspection_request_callback->handler = introspection_response_handler;
     introspection_request_callback->data = module_context;
     ngx_http_request_t *introspection_request;
 
@@ -347,7 +374,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     introspection_request->headers_in.authorization->value.data = authorization_header_data;
     introspection_request->headers_in.authorization->value.len = authorization_header_data_len;
 
-    ngx_http_set_ctx(request, module_context, ngx_http_access_token_to_jwt_module);
+    ngx_http_set_ctx(request, module_context, phantom_token_module);
 
     return NGX_AGAIN;
 }
@@ -472,10 +499,10 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
     return NGX_HTTP_UNAUTHORIZED;
 }
 
-static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data,
-                                                           ngx_int_t introspection_subrequest_status_code)
+static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
+                                                ngx_int_t introspection_subrequest_status_code)
 {
-    ngx_http_access_token_to_jwt_ctx_t *module_context = (ngx_http_access_token_to_jwt_ctx_t*)data;
+    phantom_token_module_context_t *module_context = (phantom_token_module_context_t*)data;
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "auth request done status = %d",
                    request->headers_out.status);
@@ -538,38 +565,38 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
     return introspection_subrequest_status_code;
 }
 
-static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config)
+static ngx_int_t post_configuration(ngx_conf_t *config)
 {
     ngx_http_core_main_conf_t *main_config = ngx_http_conf_get_module_main_conf(config, ngx_http_core_module);
-    ngx_http_handler_pt *handler = ngx_array_push(&main_config->phases[NGX_HTTP_ACCESS_PHASE].handlers);
+    ngx_http_handler_pt *h = ngx_array_push(&main_config->phases[NGX_HTTP_ACCESS_PHASE].handlers);
 
-    if (handler == NULL)
+    if (h == NULL)
     {
         return NGX_ERROR;
     }
 
-    *handler = ngx_http_access_token_to_jwt_handler;
+    *h = handler;
 
     return NGX_OK;
 }
 
-static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config)
+static void *create_location_configuration(ngx_conf_t *config)
 {
-    ngx_http_access_token_to_jwt_conf_t *conf = ngx_pcalloc(config->pool, sizeof(ngx_http_access_token_to_jwt_conf_t));
+    phantom_token_configuration_t *location_config = ngx_pcalloc(config->pool, sizeof(phantom_token_configuration_t));
 
-    if (conf == NULL)
+    if (location_config == NULL)
     {
         return NGX_CONF_ERROR;
     }
 
-    conf->scopes = NGX_CONF_UNSET_PTR;
+    location_config->scopes = NGX_CONF_UNSET_PTR;
 
-    return conf;
+    return location_config;
 }
 
-static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config, void *parent, void *child)
+static char *merge_location_configuration(ngx_conf_t *main_config, void *parent, void *child)
 {
-    ngx_http_access_token_to_jwt_conf_t *parent_config = parent, *child_config = child;
+    phantom_token_configuration_t *parent_config = parent, *child_config = child;
 
     ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "");
     ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api");
@@ -616,7 +643,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config
     return NGX_CONF_OK;
 }
 
-static char* conf_set_client_credential_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result)
+static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result)
 {
     ngx_str_t *base64encoded_client_credential = result;
     ngx_str_t *args = config_setting->args->elts;
