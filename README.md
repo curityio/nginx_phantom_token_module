@@ -9,25 +9,15 @@ This module, when enabled, filters incoming requests, denying access to those wh
 
 All the directives in this subsection are required; if any of these are omitted, the module will be disabled.
 
-#### access_token_to_jwt_client_id
+#### access_token_to_jwt_client_credential
 
-> **Syntax**: **`access_token_to_jwt_client_id`** _`string`_ 
+> **Syntax**: **`access_token_to_jwt_client_credential`** _`string`_ _`string`_ 
 > 
 > **Default**: *`—`*                                                                
 > 
 > **Context**: `location`                                                           
  
-The `client_id` of the OAuth client which will be used for introspection.
-
-#### access_token_to_jwt_client_secret
-
-> **Syntax**: **`access_token_to_jwt_client_secret`** _`string`_
->
-> **Default**: *`-`*
->
-> **Context**: `location`
-
-The `client_secret` of the OAuth client which will be used for introspection.
+The client ID and secret of the OAuth client which will be used for introspection. The first argument to this directive is the client ID and the second is the secret. If this directive is not configured, then the module will be disabled.
 
 #### access_token_to_jwt_introspection_endpoint
 
@@ -39,7 +29,7 @@ The `client_secret` of the OAuth client which will be used for introspection.
 
 The name of the location that proxies requests to Curity. Note that this location needs to be in the same server as the one referring to it using this directive.
 
-Example configuraiton:
+Example configuration:
 
 ```nginx
 server {
@@ -62,7 +52,7 @@ The following directives are optional and do not need to be configured.
 
 > **Syntax**: **`access_token_to_jwt_realm`** _`string`_
 > 
-> **Default**: *`—`*
+> **Default**: *`api`*
 > 
 > **Context**: `location`
 
@@ -126,8 +116,7 @@ The following is a simple configuration that might be used in demo or developmen
 server {
     location /api {
         proxy_pass         https://example.com/api;
-        access_token_to_jwt_client_id "client_id";
-        access_token_to_jwt_client_secret "client_secret";
+        access_token_to_jwt_client_credential "client_id" "client_secret";
         access_token_to_jwt_introspection_endpoint curity;
     }
     
@@ -146,8 +135,7 @@ server {
     server_name server1.example.com;n
     location /api {
         proxy_pass         https://example.com/api;
-        access_token_to_jwt_client_id "client_id";
-        access_token_to_jwt_client_secret "client_secret";
+        access_token_to_jwt_client_credential "client_id" "client_secret";
         access_token_to_jwt_introspection_endpoint curity;
         
         access_token_to_jwt_realm "myGoodAPI";
@@ -184,8 +172,7 @@ http {
         server_name server1.example.com;
         location /api {
             proxy_pass         https://example.com/api;
-            access_token_to_jwt_client_id "client_id";
-            access_token_to_jwt_client_secret "client_secret";
+            access_token_to_jwt_client_credential "client_id" "client_secret";
             access_token_to_jwt_introspection_endpoint curity;
             access_token_to_jwt_scopes "scope_a scope_b scope_c";
             access_token_to_jwt_realm "myGoodAPI";

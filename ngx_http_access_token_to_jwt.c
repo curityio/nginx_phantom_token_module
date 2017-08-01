@@ -15,44 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <assert.h>
-#include <stdbool.h>
-
-#define ACCESS_TOKEN_BUF_LEN 45
-
-#define ERROR_CODE_INVALID_REQUEST "invalid_request"
-#define ERROR_CODE_INVALID_TOKEN "invalid_token"
-#define ERROR_CODE_INSUFFICIENT_SCOPE "insufficient_scope"
-
-/**
- * Calculate the length needed to store a user ID and secret in a nul-terminated string
- *
- * @param id the user/client identifier
- * @param secret the shared secret used to authenticate the user/client
- */
-#define basic_credential_length(id, secret) ((id) + (sizeof(":") - 1) + (secret) + (sizeof("\0") - 1))
-
-typedef struct
-{
-    ngx_str_t base64encoded_client_credentials;
-    ngx_str_t client_id;
-    ngx_str_t client_secret;
-    ngx_str_t introspection_endpoint;
-    ngx_str_t realm;
-    ngx_array_t *scopes;
-    ngx_str_t space_separated_scopes;
-} ngx_http_access_token_to_jwt_conf_t;
-
-typedef struct
-{
-    ngx_uint_t done;
-    ngx_uint_t status;
-    ngx_str_t jwt;
-    ngx_http_request_t *subrequest;
-} ngx_http_access_token_to_jwt_ctx_t;
+#include "ngx_http_access_token_to_jwt.h"
 
 static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config);
 
@@ -60,7 +28,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
 
 static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config);
 
-static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child);
+static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config, void *parent, void *child);
 
 static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *request, void *data,
                                                            ngx_int_t introspection_subrequest_status_code);
@@ -81,14 +49,32 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
  * @param error an error code or NULL if none. Refer to
  * <a href="https://tools.ietf.org/html/rfc6750#section-3.1">RFC 6750 § 3.1</a> for standard values.
  *
- * @return NGX_HTTP_UNAUTHORIZED
+ * @return <code>NGX_HTTP_UNAUTHORIZED</code>
  *
- * @example WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"
+ * @example <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>
  *
  * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
  */
 static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_str_t realm,
                                              ngx_str_t space_separated_scopes, char *error_code);
+
+/**
+ * Sets the base-64-encoded client ID and secret in the module's configuration setting structure
+ *
+ * This method assumes the module's command where this setter function (<code>set</code>) is used has a
+ * configuration (<code>conf</code>) of <code>NGX_HTTP_LOC_CONF_OFFSET<code> and an <code>offset</code> of
+ * <code>base64encoded_client_credential</code>. If this is not the case, the result pointer <em>may</em> point to an
+ * unexpected location and the handler may not be able to use the configured values. Also, the command should have a
+ * type that includes <code>NGX_CONF_TAKE2</code>.
+ *
+ * @param config_setting the configuration setting that is being set
+ * @param command the module's command where this slot setter function is being used
+ * @param result a pointer to the location where the result will be stored; it should be a pointer to a
+ * <code>ngx_str_t</code>.
+ *
+ * @return <code>NGX_CONF_OK</code> upon success; some other character string on failure.
+ */
+static char* conf_set_client_credential_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result);
 
 const static char JWT_KEY[] = "\"jwt\":\"";
 const static char BEARER[] = "Bearer ";
@@ -100,19 +86,11 @@ const static size_t BEARER_SIZE = sizeof(BEARER) - 1;
 static ngx_command_t ngx_http_access_token_to_jwt_commands[] =
 {
     {
-        ngx_string("access_token_to_jwt_client_id"),
-        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
-        ngx_conf_set_str_slot,
+        ngx_string("access_token_to_jwt_client_credential"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE2,
+        conf_set_client_credential_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, client_id),
-        NULL
-    },
-    {
-        ngx_string("access_token_to_jwt_client_secret"),
-        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
-        ngx_conf_set_str_slot,
-        NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_http_access_token_to_jwt_conf_t, client_secret),
+        offsetof(ngx_http_access_token_to_jwt_conf_t, base64encoded_client_credential),
         NULL
     },
     {
@@ -190,19 +168,15 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     ngx_http_access_token_to_jwt_conf_t *module_location_config = ngx_http_get_module_loc_conf(
             request, ngx_http_access_token_to_jwt_module);
 
-    if (module_location_config->client_secret.len == 0)
+    if (module_location_config->base64encoded_client_credential.len == 0)
     {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Module not configured properly: missing client secret");
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
+                      "Module not configured properly: missing client ID and secret");
+
         return NGX_DECLINED;
     }
 
-    if (module_location_config->client_id.len == 0)
-    {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Module not configured properly: missing client id");
-        return NGX_DECLINED;
-    }
-
-    ngx_str_t encoded_client_credentials = module_location_config->base64encoded_client_credentials;
+    ngx_str_t encoded_client_credentials = module_location_config->base64encoded_client_credential;
 
     if (module_location_config->introspection_endpoint.len == 0)
     {
@@ -359,7 +333,7 @@ static ngx_int_t ngx_http_access_token_to_jwt_handler(ngx_http_request_t *reques
     introspection_request->method = NGX_HTTP_POST;
     ngx_str_set(&introspection_request->method_name, "POST");
 
-    // set authorization credentials header to Basic base64encoded_client_credentials
+    // set authorization credentials header to Basic base64encoded_client_credential
     size_t authorization_header_data_len = encoded_client_credentials.len + sizeof("Basic ") - 1;
     u_char *authorization_header_data = ngx_pcalloc(request->pool, authorization_header_data_len);
 
@@ -566,15 +540,15 @@ static ngx_int_t ngx_http_access_token_to_jwt_request_done(ngx_http_request_t *r
 
 static ngx_int_t ngx_http_access_token_to_jwt_postconfig(ngx_conf_t *config)
 {
-    ngx_http_core_main_conf_t *cmcf = ngx_http_conf_get_module_main_conf(config, ngx_http_core_module);
-    ngx_http_handler_pt *h = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
+    ngx_http_core_main_conf_t *main_config = ngx_http_conf_get_module_main_conf(config, ngx_http_core_module);
+    ngx_http_handler_pt *handler = ngx_array_push(&main_config->phases[NGX_HTTP_ACCESS_PHASE].handlers);
 
-    if (h == NULL)
+    if (handler == NULL)
     {
         return NGX_ERROR;
     }
 
-    *h = ngx_http_access_token_to_jwt_handler;
+    *handler = ngx_http_access_token_to_jwt_handler;
 
     return NGX_OK;
 }
@@ -593,16 +567,16 @@ static void *ngx_http_access_token_to_jwt_create_loc_conf(ngx_conf_t *config)
     return conf;
 }
 
-static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, void *parent, void *child)
+static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *main_config, void *parent, void *child)
 {
     ngx_http_access_token_to_jwt_conf_t *parent_config = parent, *child_config = child;
 
-    ngx_conf_merge_str_value(child_config->client_id, parent_config->client_id, "");
-    ngx_conf_merge_str_value(child_config->client_secret, parent_config->client_secret, "");
     ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "");
-    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "");
+    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api");
     ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL);
     ngx_conf_merge_str_value(child_config->space_separated_scopes, parent_config->space_separated_scopes, "");
+    ngx_conf_merge_str_value(child_config->base64encoded_client_credential,
+                             parent_config->base64encoded_client_credential, "");
 
     if (child_config->scopes != NULL && child_config->space_separated_scopes.len == 0)
     {
@@ -615,7 +589,7 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
             space_separated_scopes_data_size += scope[i].len;
         }
 
-        u_char *space_separated_scopes_data = ngx_pcalloc(config->pool, space_separated_scopes_data_size);
+        u_char *space_separated_scopes_data = ngx_pcalloc(main_config->pool, space_separated_scopes_data_size);
 
         if (space_separated_scopes_data == NULL)
         {
@@ -639,21 +613,27 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
         assert(child_config->space_separated_scopes.len <= space_separated_scopes_data_size);
     }
 
-    //TODO consider moving this logic
-    if (child_config->base64encoded_client_credentials.len == 0 && child_config->client_id.len > 0 &&
-            child_config->client_secret.len > 0)
+    return NGX_CONF_OK;
+}
+
+static char* conf_set_client_credential_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result)
+{
+    ngx_str_t *base64encoded_client_credential = result;
+    ngx_str_t *args = config_setting->args->elts;
+    ngx_str_t client_id = args[1], client_secret = args[2]; // sub 0 is the directive itself
+
+    if (client_id.len > 0 && client_secret.len > 0)
     {
-        ngx_str_t *unencoded_client_credentials = ngx_pcalloc(config->pool, sizeof(ngx_str_t));
+        ngx_str_t *unencoded_client_credentials = ngx_pcalloc(config_setting->pool, sizeof(ngx_str_t));
 
         if (unencoded_client_credentials == NULL)
         {
             return NGX_CONF_ERROR;
         }
 
-        size_t unencoded_client_credentials_data_size = basic_credential_length(child_config->client_id.len,
-                                                                                child_config->client_secret.len);
-
-        u_char *unencoded_client_credentials_data = ngx_pcalloc(config->pool, unencoded_client_credentials_data_size);
+        size_t unencoded_client_credentials_data_size = basic_credential_length(client_id.len, client_secret.len);
+        u_char *unencoded_client_credentials_data = ngx_pcalloc(config_setting->pool,
+                                                                unencoded_client_credentials_data_size);
 
         if (unencoded_client_credentials_data == NULL)
         {
@@ -664,20 +644,24 @@ static char *ngx_http_access_token_to_jwt_merge_loc_conf(ngx_conf_t *config, voi
         unencoded_client_credentials->len = unencoded_client_credentials_data_size - sizeof(char);
 
         ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_data_size, "%V:%V",
-                     &child_config->client_id, &child_config->client_secret);
+                     &client_id, &client_secret);
 
-        child_config->base64encoded_client_credentials.data = ngx_pcalloc(
-                config->pool, ngx_base64_encoded_length(unencoded_client_credentials->len));
+        base64encoded_client_credential->data = ngx_pcalloc(
+                config_setting->pool, ngx_base64_encoded_length(unencoded_client_credentials->len));
 
-        if (child_config->base64encoded_client_credentials.data == NULL)
+        if (base64encoded_client_credential->data == NULL)
         {
             return NGX_CONF_ERROR;
         }
 
-        ngx_encode_base64(&child_config->base64encoded_client_credentials, unencoded_client_credentials);
+        ngx_encode_base64(result, unencoded_client_credentials);
 
-        ngx_pfree(config->pool, unencoded_client_credentials);
+        ngx_pfree(config_setting->pool, unencoded_client_credentials);
+
+        return NGX_CONF_OK;
     }
 
-    return NGX_CONF_OK;
+    ngx_conf_log_error(NGX_LOG_EMERG, config_setting, 0, "invalid client ID and/or secret");
+
+    return "invalid_client_credential";
 }
