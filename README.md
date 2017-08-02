@@ -1,8 +1,10 @@
 # Phantom Token NGINX Module
 
-NGINX module that introspects access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662).
+NGINX module that introspects phantom access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662).
 
-This module, when enabled, filters incoming requests, denying access to those which do *not* have a valid `Authorization: Bearer` header. From this header, the access_token is extracted and introspected using the configured endpoint. Curity replies to this request according to the standard. For an active access token, the body of Curity's response contains the JWT that replaces the access token in the header of the request that is forwarded to the back-end. If the token is not valid or absent, no request to the back-end is made and the caller is given a 401, unauthorized, error.
+This module, when enabled, filters incoming requests, denying access to those which do *not* have a valid OAuth access token presented in an `Authorization` header. From this header, the access_token is extracted and introspected using the configured endpoint. Curity replies to this request according to the standard. For an active access token, the body of Curity's response contains the JWT that replaces the access token in the header of the request that is forwarded by NGINX to the back-end. If the token is not valid or absent, no request to the back-end is made and the caller is given a 401, unauthorized, error. This flow is shown in the following diagram:
+
+![NGINX / Curity integration](nginx_curity_integration.png "Overview of how NGINX and Curity are integrated")
 
 ## Configuration Directives
 
@@ -214,8 +216,11 @@ This will download the NGINX source code if it is not already local. If it is, t
 TBD
 
 ## Status
- This module is still in development. Use it at your own risk!
+This module is still in active development, and has reached an alpha stage. Before reaching a stable 1.0 release, the configuration model may change and there may be a few bugs left. It is functional, however, and can be used for testing and experimenting with the aim of providing early feedback. Production usage is discouraged at this point, however. 
 
 ## More Information
-For more information, please contact [Curity](http://curity.io).
-Copyright (C) 2017 Curity AB. All rights reserved
+For more information about Curity, its capabilities, and how to use it to issue phantom tokens, visit [curity.io](https://curity.io/product/token-service/#phantom_tokens). For background information on using Curity for API access, consult the [API integration section of the Curity developer manual](https://support.curity.io/docs/2.0.2/developer-guide/api-integration/overview.html). For additional insights in how to apply this pattern to microservices and APIs, read _[How to Control User Identity within Microservices](http://nordicapis.com/how-to-control-user-identity-within-microservices/)_ on the Nordic APIs blog.
+
+## Licensing
+
+This software is copyright (C) 2017 Curity AB. It is open source software that is licensed under the [GNU Public License v. 3](README.md).
