@@ -23,10 +23,6 @@
 
 #define ACCESS_TOKEN_BUF_LEN 45
 
-#define ERROR_CODE_INVALID_REQUEST "invalid_request"
-#define ERROR_CODE_INVALID_TOKEN "invalid_token"
-#define ERROR_CODE_INSUFFICIENT_SCOPE "insufficient_scope"
-
 /**
  * Calculate the length needed to store a user ID and secret in a nul-terminated string
  *
