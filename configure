@@ -37,4 +37,4 @@ BUILD_INFO=("NGINX_SRC_DIR=$NGINX_SRC_DIR" "NGINX_VERSION=$NGINX_VERSION" "NGINX
 
 printf '%s\n' "${BUILD_INFO[@]}" > $BUILD_INFO_FILE
 
-cd $NGINX_SRC_DIR && exec configure "${CONFIG_OPTS[@]}" $*
+cd $NGINX_SRC_DIR && ./configure "${CONFIG_OPTS[@]}" $*
