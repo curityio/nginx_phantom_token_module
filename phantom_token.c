@@ -242,7 +242,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
             else if (module_context->status == NGX_HTTP_NO_CONTENT)
             {
                 return set_www_authenticate_header(request, module_location_config->realm,
-                                                          module_location_config->space_separated_scopes, NULL);;
+                                                          module_location_config->space_separated_scopes, NULL);
             }
             else if (module_context->status == NGX_HTTP_SERVICE_UNAVAILABLE)
             {
