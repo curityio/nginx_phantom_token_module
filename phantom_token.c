@@ -47,6 +47,8 @@ typedef struct
     ngx_uint_t done;
     ngx_uint_t status;
     ngx_str_t jwt;
+    ngx_str_t original_accept_header;
+    ngx_str_t original_content_type_header;
 } phantom_token_module_context_t;
 
 static ngx_int_t post_configuration(ngx_conf_t *config);
@@ -103,7 +105,6 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
  */
 static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result);
 
-static const char JWT_KEY[] = "\"jwt\":\"";
 static const char BEARER[] = "Bearer ";
 static const size_t BEARER_SIZE = sizeof(BEARER) - 1;
 
@@ -217,17 +218,41 @@ static ngx_int_t handler(ngx_http_request_t *request)
         if (module_context->done)
         {
             // return appropriate status
-            if (module_context->status >= NGX_HTTP_OK && module_context->status < NGX_HTTP_SPECIAL_RESPONSE)
+            if (module_context->status == NGX_HTTP_OK)
             {
                 // Introspection was successful. Replace the incoming Authorization header with one that has the JWT.
                 request->headers_in.authorization->value.len = module_context->jwt.len;
                 request->headers_in.authorization->value.data = module_context->jwt.data;
 
+                request->headers_in.accept->value = module_context->original_accept_header;
+
+                if (module_context->original_content_type_header.data == NULL)
+                {
+                    request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts = request->headers_in.headers.last->nelts - 1;
+                }
+                else
+                {
+                    request->headers_in.content_type->value = module_context->original_content_type_header;
+                }
+
                 return NGX_OK;
             }
+            else if (module_context->status == NGX_HTTP_NO_CONTENT)
+            {
+                return set_www_authenticate_header(request, module_location_config->realm,
+                                                          module_location_config->space_separated_scopes, NULL);
+            }
+            else if (module_context->status == NGX_HTTP_SERVICE_UNAVAILABLE)
+            {
+                return NGX_HTTP_SERVICE_UNAVAILABLE;
+            }
+            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR || module_context->status == NGX_HTTP_NOT_FOUND
+                || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
+            {
+                return NGX_HTTP_BAD_GATEWAY;
+            }
 
-            // should handle other HTTP codes accordingly. Till then return 401 for any request that was not legal
-            return NGX_HTTP_UNAUTHORIZED;
+            return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
@@ -349,6 +374,31 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request_body->buf = introspection_request_body_buffer;
     introspection_request->request_body = introspection_request_body;
     introspection_request->headers_in.content_length_n = ngx_buf_size(introspection_request_body_buffer);
+
+#if(NGX_HTTP_HEADERS)
+    module_context->original_accept_header = request->headers_in.accept->value;
+    ngx_str_set(&introspection_request->headers_in.accept->value, "application/jwt");
+#endif
+
+    if (request->headers_in.content_type == NULL)
+    {
+        ngx_table_elt_t  *content_type_header;
+        content_type_header = ngx_list_push(&introspection_request->headers_in.headers);
+        if (content_type_header == NULL) {
+            return NGX_ERROR;
+        }
+        content_type_header->hash = 1;
+        ngx_str_set(&content_type_header->key, "Content-type");
+        ngx_str_set(&content_type_header->value, "application/x-www-form-urlencoded");
+        content_type_header->lowcase_key = (u_char *)"content-type";
+        introspection_request->headers_in.content_type = content_type_header;
+        introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
+    }
+    else
+    {
+        module_context->original_content_type_header = request->headers_in.content_type->value;
+        ngx_str_set(&request->headers_in.content_type->value, "application/x-www-form-urlencoded");
+    }
 
     introspection_request->header_only = true;
 
@@ -514,12 +564,18 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     }
 
     // body parsing
-    char *jwt_start = ngx_strstr(request->header_start, JWT_KEY);
+    u_char *jwt_start = NULL;
+
+    if (!request->cache || !request->cache->buf)
+    {
+        jwt_start = request->header_end + sizeof("\r\n") - 1;
+    }
 
     if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
     {
         ngx_read_file(&request->cache->file, request->cache->buf->pos, request->cache->length, 0);
-        jwt_start = ngx_strstr(request->cache->buf->start + request->cache->body_start, JWT_KEY);
+
+        jwt_start = request->cache->buf->start + request->cache->body_start;
     }
 
     if (jwt_start == NULL)
@@ -531,9 +587,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 
-    jwt_start += sizeof(JWT_KEY) - 1;
-
-    char *jwt_end = ngx_strchr(jwt_start, '"');
+    u_char *jwt_end = jwt_start + request->headers_out.content_length_n;
 
     if (jwt_end == NULL)
     {
