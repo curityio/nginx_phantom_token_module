@@ -270,7 +270,8 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
     u_char *bearer_token_pos;
 
-    if ((bearer_token_pos = ngx_strcasestrn((u_char*)request->headers_in.authorization->value.data,(char*) BEARER,BEARER_SIZE-1)) == NULL)
+    if ((bearer_token_pos = ngx_strcasestrn((u_char*)request->headers_in.authorization->value.data, 
+        (char*)BEARER, BEARER_SIZE - 1)) == NULL)
     {
         // return unauthorized when Authorization header is not Bearer
 
