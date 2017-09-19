@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _GNU_SOURCE
 
 #include <stdbool.h>
 #include <assert.h>
@@ -246,7 +247,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
     u_char *bearer_token_pos;
 
-    if ((bearer_token_pos = ngx_strcasestrn((u_char*)request->headers_in.authorization->value.data,(char*) BEARER,BEARER_SIZE)) == NULL)
+    if ((bearer_token_pos = (u_char *)strcasestr((char*)request->headers_in.authorization->value.data, BEARER)) == NULL)
     {
         // return unauthorized when Authorization header is not Bearer
 
