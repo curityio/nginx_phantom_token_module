@@ -50,6 +50,7 @@ typedef struct
     ngx_uint_t status;
     ngx_str_t jwt;
     ngx_str_t original_accept_header;
+    ngx_str_t original_content_type_header;
 } phantom_token_module_context_t;
 
 static ngx_int_t post_configuration(ngx_conf_t *config);
@@ -227,6 +228,15 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                 request->headers_in.accept->value = module_context->original_accept_header;
 
+                if (module_context->original_content_type_header.data == NULL)
+                {
+                    request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts = request->headers_in.headers.last->nelts - 1;
+                }
+                else
+                {
+                    request->headers_in.content_type->value = module_context->original_content_type_header;
+                }
+
                 return NGX_OK;
             }
             else if (module_context->status == NGX_HTTP_NO_CONTENT)
@@ -371,6 +381,26 @@ static ngx_int_t handler(ngx_http_request_t *request)
     module_context->original_accept_header = request->headers_in.accept->value;
     ngx_str_set(&introspection_request->headers_in.accept->value, "application/jwt");
 #endif
+
+    if (request->headers_in.content_type == NULL)
+    {
+        ngx_table_elt_t  *content_type_header;
+        content_type_header = ngx_list_push(&introspection_request->headers_in.headers);
+        if (content_type_header == NULL) {
+            return NGX_ERROR;
+        }
+        content_type_header->hash = 1;
+        ngx_str_set(&content_type_header->key, "Content-type");
+        ngx_str_set(&content_type_header->value, "application/x-www-form-urlencoded");
+        content_type_header->lowcase_key = (u_char *)"content-type";
+        introspection_request->headers_in.content_type = content_type_header;
+        introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
+    }
+    else
+    {
+        module_context->original_content_type_header = request->headers_in.content_type->value;
+        ngx_str_set(&request->headers_in.content_type->value, "application/x-www-form-urlencoded");
+    }
 
     introspection_request->header_only = true;
 
