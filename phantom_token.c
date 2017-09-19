@@ -235,14 +235,10 @@ static ngx_int_t handler(ngx_http_request_t *request)
             {
                 return NGX_HTTP_SERVICE_UNAVAILABLE;
             }
-            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR)
+            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR || module_context->status == NGX_HTTP_NOT_FOUND
+                || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
             {
                 return NGX_HTTP_BAD_GATEWAY;
-            }
-            else if (module_context->status == NGX_HTTP_UNAUTHORIZED ||
-                     module_context->status == NGX_HTTP_FORBIDDEN || module_context->status == NGX_HTTP_NOT_FOUND)
-            {
-                return NGX_HTTP_BAD_REQUEST;
             }
 
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
