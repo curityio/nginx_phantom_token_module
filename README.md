@@ -123,7 +123,6 @@ server {
     
     location curity {
         proxy_pass "https://curity.example.com/oauth/v2/introspection";
-        proxy_set_header content-type "application/x-www-form-urlencoded";
     }
 }
 ```
@@ -145,7 +144,6 @@ server {
     
     location curity {
         proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
-        proxy_set_header content-type "application/x-www-form-urlencoded";
     }
 }
 
@@ -181,7 +179,6 @@ http {
         
         location curity {
             proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
-            proxy_set_header content-type "application/x-www-form-urlencoded";
             
             proxy_cache_methods POST;
             proxy_cache my_cache;
