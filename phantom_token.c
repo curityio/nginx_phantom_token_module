@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _GNU_SOURCE
+
 #include <stdbool.h>
 #include <assert.h>
 #include <ngx_config.h>
@@ -22,10 +24,6 @@
 #include <ngx_http.h>
 
 #define ACCESS_TOKEN_BUF_LEN 45
-
-#define ERROR_CODE_INVALID_REQUEST "invalid_request"
-#define ERROR_CODE_INVALID_TOKEN "invalid_token"
-#define ERROR_CODE_INSUFFICIENT_SCOPE "insufficient_scope"
 
 /**
  * Calculate the length needed to store a user ID and secret in a nul-terminated string
@@ -107,8 +105,8 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
  */
 static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result);
 
-const static char BEARER[] = "Bearer ";
-const static size_t BEARER_SIZE = sizeof(BEARER) - 1;
+static const char BEARER[] = "Bearer ";
+static const size_t BEARER_SIZE = sizeof(BEARER) - 1;
 
 static ngx_command_t phantom_token_module_directives[] =
 {
@@ -274,7 +272,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
     u_char *bearer_token_pos;
 
-    if ((bearer_token_pos = (u_char *)strcasestr((char*)request->headers_in.authorization->value.data, BEARER)) == NULL)
+    if ((bearer_token_pos = ngx_strcasestrn((u_char*)request->headers_in.authorization->value.data,(char*) BEARER,BEARER_SIZE-1)) == NULL)
     {
         // return unauthorized when Authorization header is not Bearer
 
@@ -437,20 +435,20 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    const static char REALM_PREFIX[] = "realm=\"";
-    const static size_t REALM_PREFIX_SIZE = sizeof(REALM_PREFIX) - 1;
+    static const char REALM_PREFIX[] = "realm=\"";
+    static const size_t REALM_PREFIX_SIZE = sizeof(REALM_PREFIX) - 1;
 
-    const static char TOKEN_SUFFIX[] = "\"";
-    const static size_t TOKEN_SUFFIX_SIZE = sizeof(TOKEN_SUFFIX) - 1;
+    static const char TOKEN_SUFFIX[] = "\"";
+    static const size_t TOKEN_SUFFIX_SIZE = sizeof(TOKEN_SUFFIX) - 1;
 
-    const static char TOKEN_SEPARATER[] = ", ";
-    const static size_t TOKEN_SEPARATER_SIZE = sizeof(TOKEN_SEPARATER) - 1;
+    static const char TOKEN_SEPARATER[] = ", ";
+    static const size_t TOKEN_SEPARATER_SIZE = sizeof(TOKEN_SEPARATER) - 1;
 
-    const static char SCOPE_PREFIX[] = "scope=\"";
-    const static size_t SCOPE_PREFIX_SIZE = sizeof(SCOPE_PREFIX) - 1;
+    static const char SCOPE_PREFIX[] = "scope=\"";
+    static const size_t SCOPE_PREFIX_SIZE = sizeof(SCOPE_PREFIX) - 1;
 
-    const static u_char ERROR_CODE_PREFIX[] = "error=\"";
-    const static size_t ERROR_CODE_PREFIX_SIZE = sizeof(ERROR_CODE_PREFIX) - 1;
+    static const u_char ERROR_CODE_PREFIX[] = "error=\"";
+    static const size_t ERROR_CODE_PREFIX_SIZE = sizeof(ERROR_CODE_PREFIX) - 1;
 
     size_t bearer_data_size = BEARER_SIZE + sizeof('\0'); // Add one for the nul byte
     bool realm_provided = realm.len > 0;
