@@ -214,7 +214,7 @@ This will download the NGINX source code if it is not already local. If it is, t
 TBD
 ## Compatibility
 
-This module is compatible with Curity version > 2.2
+This module is compatible with Curity version >= 2.2
 
 ## Status
  This module is still in development. Use it at your own risk!
