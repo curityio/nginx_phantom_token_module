@@ -49,6 +49,7 @@ typedef struct
     ngx_uint_t done;
     ngx_uint_t status;
     ngx_str_t jwt;
+    ngx_str_t original_accept_header;
 } phantom_token_module_context_t;
 
 static ngx_int_t post_configuration(ngx_conf_t *config);
@@ -224,6 +225,8 @@ static ngx_int_t handler(ngx_http_request_t *request)
                 request->headers_in.authorization->value.len = module_context->jwt.len;
                 request->headers_in.authorization->value.data = module_context->jwt.data;
 
+                request->headers_in.accept->value = module_context->original_accept_header;
+
                 return NGX_OK;
             }
             else if (module_context->status == NGX_HTTP_NO_CONTENT)
@@ -365,6 +368,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->headers_in.content_length_n = ngx_buf_size(introspection_request_body_buffer);
 
 #if(NGX_HTTP_HEADERS)
+    module_context->original_accept_header = request->headers_in.accept->value;
     ngx_str_set(&introspection_request->headers_in.accept->value, "application/jwt");
 #endif
 
