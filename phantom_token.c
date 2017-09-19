@@ -218,7 +218,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
         if (module_context->done)
         {
             // return appropriate status
-            if (module_context->status >= NGX_HTTP_OK && module_context->status < NGX_HTTP_SPECIAL_RESPONSE)
+            if (module_context->status == NGX_HTTP_OK)
             {
                 // Introspection was successful. Replace the incoming Authorization header with one that has the JWT.
                 request->headers_in.authorization->value.len = module_context->jwt.len;
@@ -226,9 +226,25 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                 return NGX_OK;
             }
+            else if (module_context->status == NGX_HTTP_NO_CONTENT)
+            {
+                return NGX_HTTP_UNAUTHORIZED;
+            }
+            else if (module_context->status == NGX_HTTP_SERVICE_UNAVAILABLE)
+            {
+                return NGX_HTTP_SERVICE_UNAVAILABLE;
+            }
+            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR)
+            {
+                return NGX_HTTP_BAD_GATEWAY;
+            }
+            else if (module_context->status == NGX_HTTP_UNAUTHORIZED ||
+                     module_context->status == NGX_HTTP_FORBIDDEN || module_context->status == NGX_HTTP_NOT_FOUND)
+            {
+                return NGX_HTTP_BAD_REQUEST;
+            }
 
-            // should handle other HTTP codes accordingly. Till then return 401 for any request that was not legal
-            return NGX_HTTP_UNAUTHORIZED;
+            return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
