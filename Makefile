@@ -9,7 +9,7 @@ build install modules upgrade: .build.info
 	cd $(NGINX_SRC_DIR) && $(MAKE) -e $@
 
 clean:
-	cd $(NGINX_SRC_DIR) && $(MAKE) $@
+	test -d "$(NGINX_SRC_DIR)" && $(MAKE) -C $(NGINX_SRC_DIR) $@ || true
 	rm -rf .build.info nginx-$(NGINX_VERSION) nginx-$(NGINX_VERSION).tar.gz*
 
 .build.info:
