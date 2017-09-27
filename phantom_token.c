@@ -222,8 +222,6 @@ static ngx_int_t handler(ngx_http_request_t *request)
                 request->headers_in.authorization->value.len = module_context->jwt.len;
                 request->headers_in.authorization->value.data = module_context->jwt.data;
 
-                request->headers_in.accept->value = module_context->original_accept_header;
-
                 if (module_context->original_content_type_header.data == NULL)
                 {
                     request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts = request->headers_in.headers.last->nelts - 1;
@@ -231,6 +229,29 @@ static ngx_int_t handler(ngx_http_request_t *request)
                 else
                 {
                     request->headers_in.content_type->value = module_context->original_content_type_header;
+                }
+
+                if (request->headers_in.accept == NULL)
+                {
+
+                    ngx_table_elt_t  *accept_header;
+                    accept_header = ngx_list_push(&request->headers_in.headers);
+                    if (accept_header == NULL)
+                    {
+                        return NGX_ERROR;
+                    }
+                    accept_header->hash = 1;
+                    ngx_str_set(&accept_header->key, "Accept");
+                    ngx_str_set(&accept_header->value, "*/*");
+                    accept_header->lowcase_key = (u_char *)"accept";
+
+                    request->headers_in.accept = accept_header;
+                    request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts;
+
+                }
+                else
+                {
+                    request->headers_in.accept->value = module_context->original_accept_header;
                 }
 
                 return NGX_OK;
@@ -375,7 +396,27 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->headers_in.content_length_n = ngx_buf_size(introspection_request_body_buffer);
 
 #if(NGX_HTTP_HEADERS)
-    module_context->original_accept_header = request->headers_in.accept->value;
+    if (request->headers_in.accept == NULL)
+    {
+        ngx_table_elt_t  *accept_header;
+        accept_header = ngx_list_push(&introspection_request->headers_in.headers);
+        if (accept_header == NULL)
+        {
+            return NGX_ERROR;
+        }
+        accept_header->hash = 1;
+        ngx_str_set(&accept_header->key, "Accept");
+        ngx_str_set(&accept_header->value, "application/jwt");
+
+        introspection_request->headers_in.accept = accept_header;
+        introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
+
+    }
+    else
+    {
+        module_context->original_accept_header = request->headers_in.accept->value;
+    }
+
     ngx_str_set(&introspection_request->headers_in.accept->value, "application/jwt");
 #endif
 
@@ -383,7 +424,8 @@ static ngx_int_t handler(ngx_http_request_t *request)
     {
         ngx_table_elt_t  *content_type_header;
         content_type_header = ngx_list_push(&introspection_request->headers_in.headers);
-        if (content_type_header == NULL) {
+        if (content_type_header == NULL)
+        {
             return NGX_ERROR;
         }
         content_type_header->hash = 1;
