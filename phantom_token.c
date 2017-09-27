@@ -233,13 +233,13 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                 if (request->headers_in.accept == NULL)
                 {
-
                     ngx_table_elt_t  *accept_header;
                     accept_header = ngx_list_push(&request->headers_in.headers);
                     if (accept_header == NULL)
                     {
                         return NGX_ERROR;
                     }
+
                     accept_header->hash = 1;
                     ngx_str_set(&accept_header->key, "Accept");
                     ngx_str_set(&accept_header->value, "*/*");
@@ -247,7 +247,6 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                     request->headers_in.accept = accept_header;
                     request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts;
-
                 }
                 else
                 {
@@ -404,13 +403,14 @@ static ngx_int_t handler(ngx_http_request_t *request)
         {
             return NGX_ERROR;
         }
+
         accept_header->hash = 1;
         ngx_str_set(&accept_header->key, "Accept");
         ngx_str_set(&accept_header->value, "application/jwt");
+        accept_header->lowcase_key = (u_char *)"accept";
 
         introspection_request->headers_in.accept = accept_header;
         introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
-
     }
     else
     {
@@ -428,10 +428,12 @@ static ngx_int_t handler(ngx_http_request_t *request)
         {
             return NGX_ERROR;
         }
+
         content_type_header->hash = 1;
         ngx_str_set(&content_type_header->key, "Content-type");
         ngx_str_set(&content_type_header->value, "application/x-www-form-urlencoded");
         content_type_header->lowcase_key = (u_char *)"content-type";
+
         introspection_request->headers_in.content_type = content_type_header;
         introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
     }
