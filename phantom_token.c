@@ -24,7 +24,7 @@
 #define ACCESS_TOKEN_BUF_LEN 45
 
 /**
- * Calculate the length needed to store a user ID and secret in a nul-terminated string
+ * Calculate the length needed to store a user ID and secret in a nul-terminated string.
  *
  * @param id the user/client identifier
  * @param secret the shared secret used to authenticate the user/client
@@ -61,7 +61,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
                                                 ngx_int_t introspection_subrequest_status_code);
 
 /**
- * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>
+ * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>.
  *
  * After calling this method, a WWW-Authenticate header will be added that uses the Bearer scheme. If the realm and or
  * scopes were also configured, then these too will be included. For instance, if scopes are configured, then the
@@ -86,7 +86,7 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
                                              ngx_str_t space_separated_scopes, char *error_code);
 
 /**
- * Sets the base-64-encoded client ID and secret in the module's configuration setting structure
+ * Sets the base-64-encoded client ID and secret in the module's configuration setting structure.
  *
  * This method assumes the module's command where this setter function (<code>set</code>) is used has a
  * configuration (<code>conf</code>) of <code>NGX_HTTP_LOC_CONF_OFFSET<code> and an <code>offset</code> of
@@ -184,6 +184,34 @@ ngx_module_t phantom_token_module =
     NGX_MODULE_V1_PADDING
 };
 
+/**
+ * Sets the request's Accept header to the given value.
+ *
+ * @param request the request to which the header value will be set
+ * @param value the value to set
+ * @return NGX_OK if no error has occurred; NGX_ERROR if an error occurs.
+ */
+static ngx_int_t set_accept_header_value(ngx_http_request_t *request, const char* value)
+{
+    ngx_table_elt_t  *accept_header;
+    accept_header = ngx_list_push(&request->headers_in.headers);
+
+    if (accept_header == NULL)
+    {
+        return NGX_ERROR;
+    }
+
+    accept_header->hash = 1;
+    ngx_str_set(&accept_header->key, "Accept");
+    ngx_str_set(&accept_header->value, value);
+    accept_header->lowcase_key = (u_char *)"accept";
+
+    request->headers_in.accept = accept_header;
+    request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts;
+
+    return NGX_OK;
+}
+
 static ngx_int_t handler(ngx_http_request_t *request)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Handling request to convert token to JWT");
@@ -222,8 +250,6 @@ static ngx_int_t handler(ngx_http_request_t *request)
                 request->headers_in.authorization->value.len = module_context->jwt.len;
                 request->headers_in.authorization->value.data = module_context->jwt.data;
 
-                request->headers_in.accept->value = module_context->original_accept_header;
-
                 if (module_context->original_content_type_header.data == NULL)
                 {
                     request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts = request->headers_in.headers.last->nelts - 1;
@@ -231,6 +257,20 @@ static ngx_int_t handler(ngx_http_request_t *request)
                 else
                 {
                     request->headers_in.content_type->value = module_context->original_content_type_header;
+                }
+
+                if (request->headers_in.accept == NULL)
+                {
+                    ngx_int_t result;
+
+                    if ((result = set_accept_header_value(request, "*/*") != NGX_OK))
+                    {
+                        return result;
+                    }
+                }
+                else
+                {
+                    request->headers_in.accept->value = module_context->original_accept_header;
                 }
 
                 return NGX_OK;
@@ -375,7 +415,20 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->headers_in.content_length_n = ngx_buf_size(introspection_request_body_buffer);
 
 #if(NGX_HTTP_HEADERS)
-    module_context->original_accept_header = request->headers_in.accept->value;
+    if (request->headers_in.accept == NULL)
+    {
+        ngx_int_t result;
+
+        if ((result = set_accept_header_value(introspection_request, "application/jwt") != NGX_OK))
+        {
+            return result;
+        }
+    }
+    else
+    {
+        module_context->original_accept_header = request->headers_in.accept->value;
+    }
+
     ngx_str_set(&introspection_request->headers_in.accept->value, "application/jwt");
 #endif
 
@@ -383,13 +436,16 @@ static ngx_int_t handler(ngx_http_request_t *request)
     {
         ngx_table_elt_t  *content_type_header;
         content_type_header = ngx_list_push(&introspection_request->headers_in.headers);
-        if (content_type_header == NULL) {
+        if (content_type_header == NULL)
+        {
             return NGX_ERROR;
         }
+
         content_type_header->hash = 1;
         ngx_str_set(&content_type_header->key, "Content-type");
         ngx_str_set(&content_type_header->value, "application/x-www-form-urlencoded");
         content_type_header->lowcase_key = (u_char *)"content-type";
+
         introspection_request->headers_in.content_type = content_type_header;
         introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
     }
