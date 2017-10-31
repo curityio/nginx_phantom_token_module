@@ -224,7 +224,7 @@ TBD
 This module is compatible with Curity version >= 2.2
 
 ## Status
-This module is still in active development, and has reached an alpha stage. Before reaching a stable 1.0 release, the configuration model may change and there may be a few bugs left. It is functional, however, and can be used for testing and experimenting with the aim of providing early feedback. Production usage is discouraged at this point, however. 
+This module is still in active development, and has reached a beta stage. Before reaching a stable 1.0 release, the configuration model may change and there may be a few bugs left. It is functional, however, and can be used for testing and experimenting with the aim of providing early feedback. Production usage is discouraged at this point, however. 
 
 ## More Information
 For more information about Curity, its capabilities, and how to use it to issue phantom tokens, visit [curity.io](https://curity.io/product/token-service/#phantom_tokens). For background information on using Curity for API access, consult the [API integration section of the Curity developer manual](https://support.curity.io/docs/2.0.2/developer-guide/api-integration/overview.html). For additional insights in how to apply this pattern to microservices and APIs, read _[How to Control User Identity within Microservices](http://nordicapis.com/how-to-control-user-identity-within-microservices/)_ on the Nordic APIs blog.
