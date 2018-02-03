@@ -716,8 +716,9 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
         // Flatten scopes into a space-separated list
         ngx_str_t *scope = child_config->scopes->elts;
         size_t space_separated_scopes_data_size = child_config->scopes->nelts;
+        ngx_uint_t i;
 
-        for (ngx_uint_t i = 0; i < child_config->scopes->nelts; i++)
+        for (i = 0; i < child_config->scopes->nelts; i++)
         {
             space_separated_scopes_data_size += scope[i].len;
         }
@@ -731,7 +732,7 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
 
         u_char *p = space_separated_scopes_data;
 
-        for (ngx_uint_t i = 0; i < child_config->scopes->nelts; i++)
+        for (i = 0; i < child_config->scopes->nelts; i++)
         {
             p = ngx_cpymem(p, scope[i].data, scope[i].len);
             *p = ' ';
