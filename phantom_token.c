@@ -712,6 +712,7 @@ static void *create_location_configuration(ngx_conf_t *config)
         return NGX_CONF_ERROR;
     }
 
+    location_config->enable = NGX_CONF_UNSET_UINT;
     location_config->scopes = NGX_CONF_UNSET_PTR;
 
     return location_config;
@@ -721,7 +722,7 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
 {
     phantom_token_configuration_t *parent_config = parent, *child_config = child;
 
-    ngx_conf_merge_value(child_config->enable, parent_config->enable, 0);
+    child_config->enable = parent_config->enable == 1;
     ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "");
     ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api");
     ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL);
