@@ -664,7 +664,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     u_char *p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
 
-    ngx_copy(p, jwt_start, module_context->jwt.len);
+    ngx_memcpy(p, jwt_start, module_context->jwt.len);
 
     module_context->done = 1;
 
