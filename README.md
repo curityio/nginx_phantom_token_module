@@ -20,6 +20,14 @@ The tl;dr is a very simple API gateway that is blazing fast, highly scalable, an
 
 All the directives in this subsection are required; if any of these are omitted, the module will be disabled.
 
+#### phantom_token
+
+> **Syntax**: **`phantom_token`** `on` | `off`
+>
+> **Default**: *`off`*
+>
+> **Context**: `location`
+
 #### phantom_token_client_credential
 
 > **Syntax**: **`phantom_token_client_credential`** _`string`_ _`string`_ 
@@ -127,6 +135,8 @@ The following is a simple configuration that might be used in demo or developmen
 server {
     location /api {
         proxy_pass         https://example.com/api;
+
+        phantom_token on;
         phantom_token_client_credential "client_id" "client_secret";
         phantom_token_introspection_endpoint curity;
     }
@@ -145,6 +155,8 @@ server {
     server_name server1.example.com;n
     location /api {
         proxy_pass         https://example.com/api;
+
+        phantom_token on;
         phantom_token_client_credential "client_id" "client_secret";
         phantom_token_introspection_endpoint curity;
         
@@ -181,6 +193,8 @@ http {
         server_name server1.example.com;
         location /api {
             proxy_pass         https://example.com/api;
+
+            phantom_token on;
             phantom_token_client_credential "client_id" "client_secret";
             phantom_token_introspection_endpoint curity;
             phantom_token_scopes "scope_a scope_b scope_c";
