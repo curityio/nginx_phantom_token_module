@@ -3,7 +3,7 @@
 set -e
 
 SRC_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-NGINX_VERSION=${NGINX_VERSION:-1.13.3}
+NGINX_VERSION=${NGINX_VERSION:-1.13.7}
 BUILD_INFO_FILE="$SRC_DIR/.build.info"; test -f "$BUILD_INFO_FILE" && . "$BUILD_INFO_FILE"
 CONFIG_OPTS=($CONFIG_OPTS --with-compat --add-module=$SRC_DIR)
 
