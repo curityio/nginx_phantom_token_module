@@ -33,12 +33,12 @@
 
 typedef struct
 {
-    ngx_flag_t enable;
     ngx_str_t base64encoded_client_credential;
     ngx_str_t introspection_endpoint;
     ngx_str_t realm;
     ngx_array_t *scopes;
     ngx_str_t space_separated_scopes;
+    ngx_flag_t enable;
 } phantom_token_configuration_t;
 
 typedef struct
@@ -722,7 +722,7 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
 {
     phantom_token_configuration_t *parent_config = parent, *child_config = child;
 
-    child_config->enable = parent_config->enable == 1;
+    ngx_conf_merge_off_value(child_config->enable, parent_config->enable, 0);
     ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "");
     ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api");
     ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL);
