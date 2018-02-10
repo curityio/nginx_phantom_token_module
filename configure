@@ -5,7 +5,7 @@ set -e
 SRC_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 NGINX_VERSION=${NGINX_VERSION:-1.13.7}
 BUILD_INFO_FILE="$SRC_DIR/.build.info"; test -f "$BUILD_INFO_FILE" && . "$BUILD_INFO_FILE"
-CONFIG_OPTS=($CONFIG_OPTS --with-compat --add-module=$SRC_DIR)
+CONFIG_OPTS=($CONFIG_OPTS --with-compat)
 
 if [[ -z "$NGINX_SRC_DIR" ]]; then
     read -t 60 -e -p "Path to NGINX (leave blank to download version $NGINX_VERSION): " NGINX_SRC_DIR ||:
@@ -17,7 +17,10 @@ if [[ -z "$NGINX_SRC_DIR" ]]; then
 
         # Double check that the directory doesn't already exist before downloading NGINX anew 
         if [[ ! -d "$NGINX_SRC_DIR" ]]; then
-            wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
+            if [[ ! -r nginx-${NGINX_VERSION}.tar.gz ]]; then
+                wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
+            fi
+    
             tar -xzf nginx-${NGINX_VERSION}.tar.gz
         fi
     fi
@@ -25,7 +28,7 @@ fi
 
 if [[ -z "${NGINX_DEBUG+xxx}" ]]; then
     read -t 10 -p "Do you want to enable debug features (not recommended for production usage) [y/N]: " NGINX_DEBUG ||:
-fi    
+fi      
 
 if [[ "$NGINX_DEBUG" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
     CONFIG_OPTS=(${CONFIG_OPTS[@]} --with-debug --with-cc-opt="-O0 -g")
@@ -33,7 +36,18 @@ else
     CONFIG_OPTS=(${CONFIG_OPTS[@]} --with-cc-opt="-DNDEBUG")
 fi
 
-BUILD_INFO=("NGINX_SRC_DIR=$NGINX_SRC_DIR" "NGINX_VERSION=$NGINX_VERSION" "NGINX_DEBUG=$NGINX_DEBUG")
+if [[ -z "$DYNAMIC_MODULE" ]]; then
+    read -t 10 -p "Do you want to create a dynamic module (required for use with NGINX+) [Y/n]: " DYNAMIC_MODULE ||:
+fi
+
+if [[ "$DYNAMIC_MODULE" =~ ^([yY][eE][sS]|[yY])+$ ]] || [[ -z "$DYNAMIC_MODULE" ]]; then
+    CONFIG_OPTS=(${CONFIG_OPTS[@]} --add-dynamic-module=$SRC_DIR)
+    DYNAMIC_MODULE=Y
+else
+    CONFIG_OPTS=(${CONFIG_OPTS[@]} --add-module=$SRC_DIR)
+fi  
+
+BUILD_INFO=("NGINX_SRC_DIR=$NGINX_SRC_DIR" "NGINX_VERSION=$NGINX_VERSION" "NGINX_DEBUG=$NGINX_DEBUG" "DYNAMIC_MODULE=$DYNAMIC_MODULE")
 
 printf '%s\n' "${BUILD_INFO[@]}" > $BUILD_INFO_FILE
 

@@ -5,7 +5,14 @@
 default all: .build.info
 	cd $(NGINX_SRC_DIR) && $(MAKE) -e default
 
-build install modules upgrade: .build.info
+module modules: .build.info
+ifneq (, $(filter y yes Y YES Yes, $(DYNAMIC_MODULE)))
+	cd $(NGINX_SRC_DIR) && make -f objs/Makefile modules
+else
+	$(error Rerun the configure script and indicate that a dynamic module should be built)	
+endif	
+
+build install upgrade: .build.info
 	cd $(NGINX_SRC_DIR) && $(MAKE) -e $@
 
 clean:
