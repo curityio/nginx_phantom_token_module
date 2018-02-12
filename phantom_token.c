@@ -177,7 +177,7 @@ static ngx_http_module_t phantom_token_module_context =
 };
 
 /* Module definition. */
-ngx_module_t phantom_token_module =
+ngx_module_t ngx_curity_http_phantom_token_module =
 {
     NGX_MODULE_V1,
     &phantom_token_module_context,
@@ -224,7 +224,7 @@ static ngx_int_t set_accept_header_value(ngx_http_request_t *request, const char
 static ngx_int_t handler(ngx_http_request_t *request)
 {
     phantom_token_configuration_t *module_location_config = ngx_http_get_module_loc_conf(
-            request, phantom_token_module);
+            request, ngx_curity_http_phantom_token_module);
 
     // Return OK if the module is not active
     if (!module_location_config->enable)
@@ -254,7 +254,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
         return NGX_DECLINED;
     }
 
-    phantom_token_module_context_t *module_context = ngx_http_get_module_ctx(request, phantom_token_module);
+    phantom_token_module_context_t *module_context = ngx_http_get_module_ctx(request, ngx_curity_http_phantom_token_module);
 
     if (module_context != NULL)
     {
@@ -492,7 +492,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->headers_in.authorization->value.data = authorization_header_data;
     introspection_request->headers_in.authorization->value.len = authorization_header_data_len;
 
-    ngx_http_set_ctx(request, module_context, phantom_token_module);
+    ngx_http_set_ctx(request, module_context, ngx_curity_http_phantom_token_module);
 
     return NGX_AGAIN;
 }
