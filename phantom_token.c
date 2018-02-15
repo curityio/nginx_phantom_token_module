@@ -38,6 +38,7 @@ typedef struct
     ngx_str_t realm;
     ngx_array_t *scopes;
     ngx_str_t space_separated_scopes;
+    ngx_flag_t enable;
 } phantom_token_configuration_t;
 
 typedef struct
@@ -108,6 +109,14 @@ static const size_t BEARER_SIZE = sizeof(BEARER) - 1;
 
 static ngx_command_t phantom_token_module_directives[] =
 {
+    {
+          ngx_string("phantom_token"),
+          NGX_HTTP_LOC_CONF | NGX_CONF_FLAG,
+          ngx_conf_set_flag_slot,
+          NGX_HTTP_LOC_CONF_OFFSET,
+          offsetof(phantom_token_configuration_t, enable),
+          NULL
+    },
     {
         ngx_string("phantom_token_client_credential"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE2,
@@ -214,10 +223,18 @@ static ngx_int_t set_accept_header_value(ngx_http_request_t *request, const char
 
 static ngx_int_t handler(ngx_http_request_t *request)
 {
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Handling request to convert token to JWT");
-
     phantom_token_configuration_t *module_location_config = ngx_http_get_module_loc_conf(
             request, phantom_token_module);
+
+    // Return OK if the module is not active
+    if (!module_location_config->enable)
+    {
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Module disabled");
+
+        return NGX_DECLINED;
+    }
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Handling request to convert token to JWT");
 
     if (module_location_config->base64encoded_client_credential.len == 0)
     {
@@ -695,6 +712,7 @@ static void *create_location_configuration(ngx_conf_t *config)
         return NGX_CONF_ERROR;
     }
 
+    location_config->enable = NGX_CONF_UNSET_UINT;
     location_config->scopes = NGX_CONF_UNSET_PTR;
 
     return location_config;
@@ -704,6 +722,7 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
 {
     phantom_token_configuration_t *parent_config = parent, *child_config = child;
 
+    ngx_conf_merge_off_value(child_config->enable, parent_config->enable, 0);
     ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "");
     ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api");
     ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL);
