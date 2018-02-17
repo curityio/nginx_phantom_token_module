@@ -20,16 +20,9 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
+#include <ngx_string.h>
 
 #define ACCESS_TOKEN_BUF_LEN 45
-
-/**
- * Calculate the length needed to store a user ID and secret in a nul-terminated string.
- *
- * @param id the user/client identifier
- * @param secret the shared secret used to authenticate the user/client
- */
-#define basic_credential_length(id, secret) ((id) + (sizeof(":") - 1) + (secret) + (sizeof("\0") - 1))
 
 typedef struct
 {
@@ -777,39 +770,21 @@ static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting
 
     if (client_id.len > 0 && client_secret.len > 0)
     {
-        ngx_str_t *unencoded_client_credentials = ngx_pcalloc(config_setting->pool, sizeof(ngx_str_t));
+        u_char unencoded_client_credentials_data[255];
+        u_char *p = ngx_snprintf(unencoded_client_credentials_data, sizeof(unencoded_client_credentials_data), "%V:%V",
+                                 &client_id, &client_secret);
+        ngx_str_t unencoded_client_credentials = { p - unencoded_client_credentials_data,
+                                                   unencoded_client_credentials_data };
 
-        if (unencoded_client_credentials == NULL)
-        {
-            return NGX_CONF_ERROR;
-        }
-
-        size_t unencoded_client_credentials_data_size = basic_credential_length(client_id.len, client_secret.len);
-        u_char *unencoded_client_credentials_data = ngx_pcalloc(config_setting->pool,
-                                                                unencoded_client_credentials_data_size);
-
-        if (unencoded_client_credentials_data == NULL)
-        {
-            return NGX_CONF_ERROR;
-        }
-
-        unencoded_client_credentials->data = unencoded_client_credentials_data;
-        unencoded_client_credentials->len = unencoded_client_credentials_data_size - sizeof(char);
-
-        ngx_snprintf(unencoded_client_credentials_data, unencoded_client_credentials_data_size, "%V:%V",
-                     &client_id, &client_secret);
-
-        base64encoded_client_credential->data = ngx_pcalloc(
-                config_setting->pool, ngx_base64_encoded_length(unencoded_client_credentials->len));
+        base64encoded_client_credential->data = ngx_palloc(
+                config_setting->pool, ngx_base64_encoded_length(unencoded_client_credentials.len));
 
         if (base64encoded_client_credential->data == NULL)
         {
             return NGX_CONF_ERROR;
         }
 
-        ngx_encode_base64(result, unencoded_client_credentials);
-
-        ngx_pfree(config_setting->pool, unencoded_client_credentials);
+        ngx_encode_base64(base64encoded_client_credential, &unencoded_client_credentials);
 
         return NGX_CONF_OK;
     }
