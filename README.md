@@ -36,7 +36,7 @@ All the directives in this subsection are required; if any of these are omitted,
 > 
 > **Context**: `location`                                                           
  
-The client ID and secret of the OAuth client which will be used for introspection. The first argument to this directive is the client ID and the second is the secret. If this directive is not configured, then the module will be disabled.
+The client ID and secret of the OAuth client which will be used for introspection. The first argument to this directive is the client ID and the second is the secret. The maximum total length of the two arguments must be less than 255 characters. Both should be printable ASCII values; non-ASCII values _may_ work but are untested. If this directive is not configured, then the module will be disabled.
 
 #### phantom_token_introspection_endpoint
 
@@ -178,7 +178,7 @@ server {
 }
 ```
         
-### More Advanced Configuration (separate servers + cache)
+### More Advanced Configuration with Separate Servers and Caching
 This module takes advantage of NGINX built-in _proxy_cache_ directive. In order to be able to cache the requests made to the introspection endpoint, except of the `proxy_cache_path` in http context and `proxy_cache` in location context, you have to add the following 3 directives in the location context of the introspection endpoint.
 
 - `proxy_cache_methods POST;` POST requests are not cached by default.
@@ -229,16 +229,14 @@ To build this module, simply do the following:
 make && make install
 ```
 
-This will download the NGINX source code if it is not already local. If it is, the location may be provided when prompted. By default, version 1.13.3 will be downloaded; a different version can be fetched by setting `NGINX_VERSION` before running the `configure` script. Any [additional parameters](http://nginx.org/en/docs/configure.html) (e.g., `--prefix`) that NGINX's `configure` script supports can also be provided. When this module's `configure` script is run, it will pass along `--add-module` and `--with-compat` to NGINX's script. It will also ask if debug flags should be enabled; if so, `--with-debug` and certain GCC flags will be passed on to NGINX's `configure` script to make debugging easier. After the script is run, just execute `make && make install`. These too will delegate to NGINX's `Makefile`. After this, the module will be usable and can be configured as described above.
+This will download the NGINX source code if it is not already local. If it is, the location may be provided when prompted. By default, version 1.13.7 will be downloaded; a different version can be fetched by setting `NGINX_VERSION` before running the `configure` script. Any [additional parameters](http://nginx.org/en/docs/configure.html) (e.g., `--prefix`) that NGINX's `configure` script supports can also be provided. When this module's `configure` script is run, it will pass along `--with-compat` to NGINX's script. It ask if a dynamic module should be created (thus passing along `--add-dynamic-module) or if the module should be compiled into the NGINX binary (thus passing `--add-module`); by default, it created a dynamically-linked module. It will also ask if debug flags should be enabled; if so, `--with-debug` and certain GCC flags will be passed on to NGINX's `configure` script to make debugging easier. After the script is run, just execute `make && make install`. These too will delegate to NGINX's `Makefile`. After this, the module will be usable and can be configured as described above.
 
-## Testing 
-TBD
 ## Compatibility
 
-This module is compatible with Curity version >= 2.2
+This module is compatible with Curity version >= 2.2. It has been tested with NGINX 1.13.7 and NGINX Plus Release 14.
 
 ## Status
-This module is still in development, and has reached a beta stage. Before reaching a stable 1.0 release, the configuration model may change and there may be a few bugs left. It is functional, however, and can be used for testing and experimenting with the aim of providing early feedback.
+This module is fit for production usage. 
 
 ## More Information
 For more information about Curity, its capabilities, and how to use it to issue phantom tokens, visit [curity.io](https://curity.io/product/token-service/#phantom_tokens). For background information on using Curity for API access, consult the [API integration section of the Curity developer manual](https://support.curity.io/docs/2.0.2/developer-guide/api-integration/overview.html). For additional insights in how to apply this pattern to microservices and APIs, read _[How to Control User Identity within Microservices](http://nordicapis.com/how-to-control-user-identity-within-microservices/)_ on the Nordic APIs blog.
