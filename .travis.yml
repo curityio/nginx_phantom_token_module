@@ -9,7 +9,7 @@ sudo: true
 install:
   - sudo apt-get install libpcre3 libpcre3-dev zlib1g-dev libssl-dev
   - cd && wget https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz && tar -xzf nginx-$NGINX_VERSION.tar.gz
-  - NGINX_SRC_DIR=$HOME/nginx-$NGINX_VERSION NGINX_DEBUG=no DYNAMIC_MODULE=yes ./configure --with-http_ssl_module
+  - cd $TRAVIS_BUILD_DIR && NGINX_SRC_DIR=$HOME/nginx-$NGINX_VERSION NGINX_DEBUG=no DYNAMIC_MODULE=yes ./configure --with-http_ssl_module
 
 script:
-  - cd $TRAVIS_BUILD_DIR && make
+  - make
