@@ -1,1 +1,11 @@
 language: c
+
+env:
+  matrix:
+    NGINX_VERSION=1.13.7
+
+install:
+  cd && wget https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz && tar -xzf nginx-$NGINX_VERSION.tar.gz
+
+script:
+  cd && NGINX_SRC_DIR=nginx-$NGINX_VERSION NGINX_DEBUG=no DYNAMIC_MODULE=yes make
