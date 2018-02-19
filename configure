@@ -5,7 +5,7 @@ set -e
 SRC_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 NGINX_VERSION=${NGINX_VERSION:-1.13.7}
 BUILD_INFO_FILE="$SRC_DIR/.build.info"; test -f "$BUILD_INFO_FILE" && . "$BUILD_INFO_FILE"
-declare -a CONFIG_OPTS=($CONFIG_OPTS --with-compat -Wformat -Werror=format-security)
+declare -a CONFIG_OPTS=($CONFIG_OPTS --with-compat --with-cc-opt="-Wformat -Werror=format-security")
 
 if [[ -z "$NGINX_SRC_DIR" ]]; then
     read -t 60 -e -p "Path to NGINX (leave blank to download version $NGINX_VERSION): " NGINX_SRC_DIR ||:
@@ -18,7 +18,7 @@ if [[ -z "$NGINX_SRC_DIR" ]]; then
         # Double check that the directory doesn't already exist before downloading NGINX anew 
         if [[ ! -d "$NGINX_SRC_DIR" ]]; then
             if [[ ! -r nginx-${NGINX_VERSION}.tar.gz ]]; then
-                wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
+                wget https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
             fi
     
             tar -xzf nginx-${NGINX_VERSION}.tar.gz
