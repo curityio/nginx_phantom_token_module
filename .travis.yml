@@ -8,4 +8,4 @@ install:
   cd && wget https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz && tar -xzf nginx-$NGINX_VERSION.tar.gz
 
 script:
-  cd && NGINX_SRC_DIR=nginx-$NGINX_VERSION NGINX_DEBUG=no DYNAMIC_MODULE=yes make
+  NGINX_SRC_DIR=$HOME/nginx-$NGINX_VERSION NGINX_DEBUG=no DYNAMIC_MODULE=yes make
