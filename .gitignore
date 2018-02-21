@@ -56,3 +56,4 @@ cmake-build-debug
 .build.info
 nginx-*.tar.gz*
 nginx-*/
+t/servroot
