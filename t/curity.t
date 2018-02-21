@@ -5,7 +5,6 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::Nginx::Socket 'no_plan';
-use Idsh;
 
 SKIP: {
     my $exit_code = 0;
