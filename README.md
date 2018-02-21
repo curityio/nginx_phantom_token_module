@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/curityio/nginx_phantom_token_module.svg?branch=master)](https://travis-ci.org/curityio/nginx_phantom_token_module)
 
-NGINX module that introspects phantom access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662).
+NGINX module that introspects access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662), producing a "phantom token" that can be forwarded to back-end APIs and Web services.
 
 This module, when enabled, filters incoming requests, denying access to those which do *not* have a valid OAuth access token presented in an `Authorization` header. From this header, the access_token is extracted and introspected using the configured endpoint. Curity replies to this request according to the standard. For an active access token, the body of Curity's response contains the JWT that replaces the access token in the header of the request that is forwarded by NGINX to the back-end. If the token is not valid or absent, no request to the back-end is made and the caller is given a 401, unauthorized, error. This flow is shown in the following diagram:
 
@@ -237,6 +237,20 @@ This will download the NGINX source code if it is not already local. If it is, t
 
 This module is compatible with Curity version >= 2.2. It has been tested with NGINX 1.13.7 and NGINX Plus Release 14.
 
+## Testing
+
+To test this module, you'll need the [Test::Nginx Perl module](https://github.com/openresty/test-nginx) installed. Then, run `prove` passing in the test or test directory (`t`). This can be done automatically by running `make test`. If Curity isn't running or the `idsh` command can't be found in the system path, then the functional tests that require such a connection will be skipped. Curity should be configured with an OAuth profile that has:
+
+* A run-time node listening on `localhost` port `8443` for HTTP (not HTTPS) traffic;
+* A token endpoint with a URI of `/dev/oauth/token`;
+* An introspection endpoint with a URI of `/introspection`;
+* An OAuth client named `client-one` with a secret of `0ne!Secret` and the client credential capability; and
+* An OAuth client named `test_gateway_client` and a secret of `Password1` with the introspection capability.
+
+Internet access to `httpbin.org` is required for the `curity.t` test suite to pass.
+
+NGINX must be in the system path; the tests will run the first `nginx` command that's found or bail if none is located. Also, the tests assume that the module is statically linked with NGINX. Before running them, be sure that the module is linked into the NGINX binary. Also, debug logging must be compiled into NGINX for some tests in `config.t` to pass. (This is the case if `nginx -V` includes `--with-debug` in the output.)
+
 ## Status
 This module is fit for production usage. 
 
@@ -245,4 +259,4 @@ For more information about Curity, its capabilities, and how to use it to issue 
 
 ## Licensing
 
-This software is copyright (C) 2017 Curity AB. It is open source software that is licensed under the [GNU Public License v. 3](README.md).
+This software is copyright (C) 2017 Curity AB. It is open source software that is licensed under the [GNU Public License v. 3](README.md). For commercial support of this module, please contact [Curity sales](mailto:sales@curity.io).
