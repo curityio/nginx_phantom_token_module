@@ -259,4 +259,4 @@ For more information about Curity, its capabilities, and how to use it to issue 
 
 ## Licensing
 
-This software is copyright (C) 2017 Curity AB. It is open source software that is licensed under the [GNU Public License v. 3](README.md). For commercial support of this module, please contact [Curity sales](mailto:sales@curity.io).
+This software is copyright (C) 2017 Curity AB. It is open source software that is licensed under the [Apache v. 2](LICENSE). For commercial support of this module, please contact [Curity sales](mailto:sales@curity.io).
