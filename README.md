@@ -130,6 +130,15 @@ location / {
 
 ## Sample Configuration
 
+### Loading the Module
+If the module is downloaded from GitHub or compiled as a shared library (the default) and not explicitly compiled into NGINX, it will need to be loaded using the [load_module](http://nginx.org/en/docs/ngx_core_module.html#load_module) directive. This needs to be done in the _main_ part of the NGINX configuration:
+
+```nginx
+load_module modules/ngx_curity_http_phantom_token_module.so;
+```
+
+The file can be an absolute or relative path. If it is not absolute, it should be relative to the NGINX root directory.
+
 ### Simple Configuration
 The following is a simple configuration that might be used in demo or development environments where the NGINX reverse proxy is on the same host as the Curity Identity Server:
 
