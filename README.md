@@ -246,7 +246,24 @@ This will download the NGINX source code if it is not already local. If it is, t
 
 ## Compatibility
 
-This module is compatible with Curity version >= 2.2. It has been tested with NGINX 1.13.7 and NGINX Plus Release 14.
+This module is compatible with Curity version >= 2.2. It has been tested with NGINX 1.13.7 (NGINX Plus Release 14) and NGINX 1.13.10 (NGINX Plus Release 15). It is likely to work with other, newish versions of NGINX, but only these have been tested, pre-built and verified.
+
+### Releases
+
+Pre-built binaries of this module are provided for the following versions of NGINX on the corresponding operating system distributions:
+
+|                                   | NGINX 1.13.7 / NGINX Plus R14 | NGINX 1.13.10 / NGINX Plus R15    |
+| ----------------------------------|-------------------------------|-----------------------------------|
+| Amazon Linux (2016.09)            | [amzn.2016.09.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/amzn.2016.09.ngx_curity_http_phantom_token_module_1.13.7.so) | [amzn.2016.09.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/amzn.2016.09.ngx_curity_http_phantom_token_module_1.13.10.so) | 
+| Amazon Linux 2 (2017.12)          | [amzn.2017.12.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/amzn.2017.12.ngx_curity_http_phantom_token_module_1.13.7.so) | [amzn.2017.12.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/amzn.2017.12.ngx_curity_http_phantom_token_module_1.13.10.so)|
+| CentOS 6.5+                       | [centos.6.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/centos.6.ngx_curity_http_phantom_token_module_1.13.7.so) | [centos.6.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/centos.6.ngx_curity_http_phantom_token_module_1.13.10.so) |
+| CentOS 7.0+                       | [centos.7.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/centos.7.ngx_curity_http_phantom_token_module_1.13.7.so) | [centos.7.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/centos.7.ngx_curity_http_phantom_token_module_1.13.10.so) |
+| Debian 8.0 (Jessie)               | [debian.jessie.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/debian.jessie.ngx_curity_http_phantom_token_module_1.13.7.so) | [debian.jessie.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/debian.jessie.ngx_curity_http_phantom_token_module_1.13.10.so) |
+| Debian 9.0 (Stretch)              | [debian.stretch.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/debian.stretch.ngx_curity_http_phantom_token_module_1.13.7.so) | [debian.stretch.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/debian.stretch.ngx_curity_http_phantom_token_module_1.13.10.so) |
+| Ubuntu 14.04 LTS (Trusty Tahr)    | [ubuntu.14.04.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/ubuntu.14.04.ngx_curity_http_phantom_token_module_1.13.7.so) | [ubuntu.14.04.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/ubuntu.14.04.ngx_curity_http_phantom_token_module_1.13.10.so) |
+| Ubuntu 16.04 LTS (Xenial Xerus)   | [ubuntu.16.04.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/ubuntu.16.04.ngx_curity_http_phantom_token_module_1.13.7.so) | [ubuntu.16.04.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/ubuntu.16.04.ngx_curity_http_phantom_token_module_1.13.10.so) |
+| Ubuntu 17.04 (Zesty Zapus)        | [ubuntu.17.04.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/ubuntu.17.04.ngx_curity_http_phantom_token_module_1.13.7.so) | |
+| Ubuntu 17.10 (Artful Aardvark)    | [ubuntu.17.10.ngx_curity_http_phantom_token_module_1.13.7.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/ubuntu.17.10.ngx_curity_http_phantom_token_module_1.13.7.so) | [ubuntu.17.10.ngx_curity_http_phantom_token_module_1.13.10.so](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.0.2/ubuntu.17.10.ngx_curity_http_phantom_token_module_1.13.10.so) |
 
 ## Testing
 
