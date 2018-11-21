@@ -663,9 +663,12 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 
-    module_context->jwt.len = jwt_end - jwt_start + BEARER_SIZE;
+    size_t jwt_len = jwt_end - jwt_start;
+    size_t bearer_jwt_len = BEARER_SIZE + jwt_len;
 
-    module_context->jwt.data = ngx_pcalloc(request->pool, module_context->jwt.len);
+    module_context->jwt.len = bearer_jwt_len;
+
+    module_context->jwt.data = ngx_pcalloc(request->pool, bearer_jwt_len);
 
     if (module_context->jwt.data == NULL)
     {
@@ -674,7 +677,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     u_char *p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
 
-    ngx_memcpy(p, jwt_start, module_context->jwt.len);
+    ngx_memcpy(p, jwt_start, jwt_len);
 
     module_context->done = 1;
 
