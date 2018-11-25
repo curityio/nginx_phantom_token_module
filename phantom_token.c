@@ -633,6 +633,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     if (!request->cache || !request->cache->buf)
     {
+        // No cache; read from request
         jwt_start = request->header_end + sizeof("\r\n") - 1;
     }
 
@@ -652,18 +653,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 
-    u_char *jwt_end = jwt_start + request->headers_out.content_length_n;
-
-    if (jwt_end == NULL)
-    {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse response");
-        module_context->done = 1;
-        module_context->status = NGX_HTTP_UNAUTHORIZED;
-
-        return introspection_subrequest_status_code;
-    }
-
-    size_t jwt_len = jwt_end - jwt_start;
+    size_t jwt_len = request->headers_out.content_length_n;
     size_t bearer_jwt_len = BEARER_SIZE + jwt_len;
 
     module_context->jwt.len = bearer_jwt_len;
