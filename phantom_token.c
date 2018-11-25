@@ -628,46 +628,67 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 
-    // body parsing
     u_char *jwt_start = NULL;
+    ngx_str_t cache_data;
 
+#if (NGX_HTTP_CACHE)
     if (!request->cache || !request->cache->buf)
     {
-        // No cache; read from request
+        // No cache; read JWT from response to sub-request
         jwt_start = request->header_end + sizeof("\r\n") - 1;
     }
 
     if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
     {
-        ngx_read_file(&request->cache->file, request->cache->buf->pos, request->cache->length, 0);
+        // Try to read JWT from cache
 
-        jwt_start = request->cache->buf->start + request->cache->body_start;
+        cache_data.len = request->cache->length;
+        cache_data.data = ngx_pnalloc(request->pool, cache_data.len);
+
+        if (cache_data.data != NULL)
+        {
+            ngx_read_file(&request->cache->file, cache_data.data, cache_data.len, request->cache->body_start);
+
+            jwt_start = cache_data.data;
+        }
     }
 
     if (jwt_start == NULL)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Failed to parse response");
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
+                       "Failed to obtain JWT from introspection response or, if applicable, cache");
+
+        module_context->done = 1;
+        module_context->status = NGX_HTTP_UNAUTHORIZED;
+
+        return introspection_subrequest_status_code;
+    }
+#else
+    jwt_start = request->header_end + sizeof("\r\n") - 1;
+#endif
+
+    size_t jwt_len = request->headers_out.content_length_n;
+    size_t bearer_jwt_len = BEARER_SIZE + jwt_len;
+
+    module_context->jwt.len = bearer_jwt_len;
+    module_context->jwt.data = ngx_pnalloc(request->pool, bearer_jwt_len);
+
+    if (module_context->jwt.data == NULL)
+    {
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
         return introspection_subrequest_status_code;
     }
 
-    size_t jwt_len = request->headers_out.content_length_n;
-    size_t bearer_jwt_len = BEARER_SIZE + jwt_len;
-
-    module_context->jwt.len = bearer_jwt_len;
-
-    module_context->jwt.data = ngx_pcalloc(request->pool, bearer_jwt_len);
-
-    if (module_context->jwt.data == NULL)
-    {
-        return introspection_subrequest_status_code;
-    }
-
     u_char *p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
 
     ngx_memcpy(p, jwt_start, jwt_len);
+
+    if (cache_data.len > 0)
+    {
+        ngx_pfree(request->pool, cache_data.data);
+    }
 
     module_context->done = 1;
 
