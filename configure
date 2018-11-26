@@ -31,7 +31,7 @@ if [[ -z "${NGINX_DEBUG+xxx}" ]]; then
 fi      
 
 if [[ "$NGINX_DEBUG" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-    CONFIG_OPTS+=(--with-debug --with-cc-opt="-O0 -g3 -fno-omit-frame-pointer -fsanitize=address" --with-ld-opt="-fsanitize=address")
+    CONFIG_OPTS+=(--with-debug --with-cc-opt="-O0 -g3")
 else
     CONFIG_OPTS+=(--with-cc-opt="-DNDEBUG")
 fi
