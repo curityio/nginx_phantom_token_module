@@ -629,7 +629,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     }
 
     u_char *jwt_start = NULL;
-    ngx_str_t cache_data;
+    ngx_str_t cache_data = ngx_null_string;
 
 #if (NGX_HTTP_CACHE)
     if (!request->cache || !request->cache->buf)
