@@ -424,7 +424,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->request_body = introspection_request_body;
     introspection_request->headers_in.content_length_n = ngx_buf_size(introspection_request_body_buffer);
 
-#if(NGX_HTTP_HEADERS)
+#if (NGX_HTTP_HEADERS)
     if (request->headers_in.accept == NULL)
     {
         ngx_int_t result;
