@@ -244,7 +244,7 @@ This will download the NGINX source code if it is not already local. If it is, t
 
 > *WARNING* If `--without-pcre`, `--without-http_gzip_module` and potentially other flags are provided to the `configure` script and a module is created, it will _not_ be compatible with NGINX Plus or the pre-compiled open source NGINX binaries; if you include such flags (when building the module), you will only be able to load it into a custom build of NGINX that also excludes the same functionality. If the `configure` script exits with an error about a missing dependency, like [PCRE](https://www.pcre.org/) and [zlib](http://zlib.net/), install those instead of excluding them if compatibility with pre-build NGINX binaries is desired.</p>
 
-## Certifing a Release
+## Certifying a Release
 
 To certify that a build is compatible with NGINX+, a shared library needs to be built and it must be tested with NGINX's certification test suite. For some background on this, refer to the [NGINX Plus Certified Modules Program documentation](https://www.nginx.com/partners/certified-module-program-documentation/#tech-doc-instructions-building). As described there:
 
