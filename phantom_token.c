@@ -21,7 +21,6 @@
 #include <ngx_http.h>
 #include <ngx_string.h>
 
-#define ACCESS_TOKEN_BUF_LEN 45
 #define UNENCODED_CLIENT_CREDENTIALS_BUF_LEN 255
 
 typedef struct
@@ -365,7 +364,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     }
 
     // extract access token from header
-    u_char *introspect_body_data = ngx_pcalloc(request->pool, ACCESS_TOKEN_BUF_LEN);
+    u_char *introspect_body_data = ngx_pcalloc(request->pool, request->headers_in.authorization->value.len);
 
     if (introspect_body_data == NULL)
     {
@@ -379,7 +378,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    ngx_snprintf(introspect_body_data, ACCESS_TOKEN_BUF_LEN, "token=%s", bearer_token_pos);
+    ngx_snprintf(introspect_body_data, request->headers_in.authorization->value.len, "token=%s", bearer_token_pos);
 
     introspection_body->data = introspect_body_data;
     introspection_body->len = ngx_strlen(introspection_body->data);
