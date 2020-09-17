@@ -291,7 +291,7 @@ To test this module, you'll need the [Test::Nginx Perl module](https://github.co
 
 To run the tests do the following:
 
-* run `./configure`, make sure you select to build without a dynamic module 
+* run `./configure`, make sure you select _Yes_ for Debug features and _No_ for Dynamic module 
 * run `make`
 * edit the `docker-compose.yaml` file and configure the variables `ADMIN_PASSWORD` and `LICENSE_KEY`
 * run `make test`
