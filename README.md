@@ -287,15 +287,18 @@ Pre-built binaries of this module are provided for the following versions of NGI
 
 ## Testing
 
-To test this module, you'll need the [Test::Nginx Perl module](https://github.com/openresty/test-nginx) installed. Then, run `prove` passing in the test or test directory (`t`). This can be done automatically by running `make test`. If Curity isn't running or the `idsh` command can't be found in the system path, then the functional tests that require such a connection will be skipped. Curity should be configured with an OAuth profile that has:
+To test this module, you'll need the [Test::Nginx Perl module](https://github.com/openresty/test-nginx) and [docker-compose](https://docs.docker.com/compose/install/) installed. 
 
-* A run-time node listening on `localhost` port `8443` for HTTP (not HTTPS) traffic;
-* A token endpoint with a URI of `/dev/oauth/token`;
-* An introspection endpoint with a URI of `/introspection`;
-* An OAuth client named `client-one` with a secret of `0ne!Secret` and the client credential capability; and
-* An OAuth client named `test_gateway_client` and a secret of `Password1` with the introspection capability.
+To run the tests do the following:
 
-Internet access to `httpbin.org` is required for the `curity.t` test suite to pass.
+* run `./configure`, make sure you select to build without a dynamic module 
+* run `make`
+* edit the `docker-compose.yaml` file and configure the variables `ADMIN_PASSWORD` and `LICENSE_KEY`
+* run `make test`
+
+This, will run `prove` passing in the test or test directory (`t`). 
+
+Internet access to `hub.docker.com` is required for the `curity.t` test suite to pass, if the images required are not present locally.
 
 NGINX must be in the system path; the tests will run the first `nginx` command that's found or bail if none is located. Also, the tests assume that the module is statically linked with NGINX. Before running them, be sure that the module is linked into the NGINX binary. Also, debug logging must be compiled into NGINX for some tests in `config.t` to pass. (This is the case if `nginx -V` includes `--with-debug` in the output.)
 

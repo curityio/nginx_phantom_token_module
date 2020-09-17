@@ -7,37 +7,14 @@ use lib "$FindBin::Bin/lib";
 use Test::Nginx::Socket 'no_plan';
 
 SKIP: {
-    my $exit_code = 0;
+      our $token = &get_token_from_idsvr();
 
-    eval { 
-        my $message = <<'EOF';
-configure
-commit
-
-# Switch test server to HTTP
-set environments environment services service TestServer1 protocol http
-
-EOF
-
-        $exit_code = system("echo '$message' | idsh -s");
-    };
-
-    if ($@ or $exit_code != 0) {
-        skip("could not configure idsvr; server probably isn't running or idsh isn't in path");
-    }
-    else {
-        our $token = &get_token_from_idsvr();
-
-        if ($token) {
-            run_tests();
-        }
-        else {
-            fail("Could not get token from idsvr");
-        }
-
-        # Revert the config changes
-        system("echo 'configure\nrollback 0\ncommit\n' | idsh -s");
-    }
+      if ($token) {
+          run_tests();
+      }
+      else {
+          fail("Could not get token from idsvr");
+      }
 }
 
 sub get_token_from_idsvr {
@@ -45,9 +22,9 @@ sub get_token_from_idsvr {
  
     my $ua = LWP::UserAgent->new();
 
-    my $response = $ua->post("http://localhost:8443/dev/oauth/token", { 
-        "client_id" => "client-one",
-        "client_secret" => "0ne!Secret",
+    my $response = $ua->post("http://localhost:8443/oauth/v2/oauth-token", {
+        "client_id" => "test-client",
+        "client_secret" => "secret1",
         "grant_type" => "client_credentials"
     });
     my $content = $response->decoded_content();
@@ -76,14 +53,14 @@ __DATA__
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/introspection";   
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://httpbin.org/get";
+    proxy_pass         "http://localhost:8080/anything";
 
     phantom_token on;
-    phantom_token_client_credential "test_gateway_client" "Password1";
+    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -104,14 +81,14 @@ main::process_json_from_backend()
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/introspection";   
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://httpbin.org/get";
+    proxy_pass         "http://localhost:8080/anything";
 
     phantom_token on;
-    phantom_token_client_credential "test_gateway_client" "Password1";
+    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -127,14 +104,14 @@ GET /t
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/introspection";   
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://httpbin.org/get";
+    proxy_pass         "http://localhost:8080/anything";
 
     phantom_token on;
-    phantom_token_client_credential "test_gateway_client" "Password1";
+    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -150,14 +127,14 @@ GET /t
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/introspection";   
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://httpbin.org/get";
+    proxy_pass         "http://localhost:8080/anything";
 
     phantom_token on;
-    phantom_token_client_credential "test_gateway_client" "Password1";
+    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -170,14 +147,14 @@ GET /t
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/introspection";   
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://httpbin.org/get";
+    proxy_pass         "http://localhost:8080/anything";
 
     phantom_token on;
-    phantom_token_client_credential "test_gateway_client" "Password1";
+    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -193,14 +170,14 @@ GET /t
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/introspection";   
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://httpbin.org/get";
+    proxy_pass         "http://localhost:8080/anything";
 
     phantom_token on;
-    phantom_token_client_credential "test_gateway_client" "Password1";
+    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -221,14 +198,14 @@ main::process_json_from_backend()
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/introspection";   
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://httpbin.org/get";
+    proxy_pass         "http://localhost:8080/anything";
 
     phantom_token on;
-    phantom_token_client_credential "test_gateway_client" "Password1";
+    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -249,14 +226,14 @@ main::process_json_from_backend()
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/introspection";   
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://httpbin.org/get";
+    proxy_pass         "http://localhost:8080/anything";
 
     phantom_token on;
-    phantom_token_client_credential "test_gateway_client" "Password1";
+    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
