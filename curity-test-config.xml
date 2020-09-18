@@ -240,7 +240,7 @@
                     <name>admin</name>
                     <uid>0</uid>
                     <gid>0</gid>
-                    <password>${ADMIN_PASSWORD}</password>
+                    <password>#{ADMIN_PASSWORD}</password>
                     <ssh_keydir>/opt/idsvr/home/admin/.ssh</ssh_keydir>
                     <homedir>/opt/idsvr/home/admin</homedir>
                 </user>
