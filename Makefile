@@ -22,8 +22,8 @@ clean:
 test: all
 	docker-compose up -d
 	@echo "Waiting for the Curity Identity Server to start..."
-	@bash -c 'while [[ "$$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8443)" != "404" ]]; do sleep 1; done'
-	PATH=$(NGINX_SRC_DIR)/objs:$$PATH prove -v t/
+	@bash -c 'c=0; while [[ $$c -lt 25 && "$$(curl -fs -w ''%{http_code}'' localhost:8443)" != "404" ]]; do ((c++)); echo -n "."; sleep 1; done'
+	PATH=$(NGINX_SRC_DIR)/objs:$$PATH prove -v -f t/
 	docker-compose down
 
 .build.info $(NGINX_SRC_DIR)/Makefile:
