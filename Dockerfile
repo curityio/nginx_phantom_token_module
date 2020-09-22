@@ -176,6 +176,7 @@ COPY --from=ubuntu20-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phan
 COPY --from=centos6-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos6.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
 COPY --from=centos7-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos7.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
 COPY --from=centos8-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos8.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
+COPY --from=debian9-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian9.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
 COPY --from=debian10-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian10.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
 COPY --from=amzn-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
 COPY --from=amzn2-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn2.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
