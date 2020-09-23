@@ -9,6 +9,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -25,6 +26,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -43,6 +45,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -59,6 +62,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -75,6 +79,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -91,6 +96,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -109,6 +115,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -127,6 +134,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -143,6 +151,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -160,6 +169,7 @@ COPY config /tmp
 COPY Makefile /tmp
 COPY phantom_token.c /tmp
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
@@ -169,6 +179,7 @@ RUN ./configure && make
 FROM alpine
 
 ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
 COPY --from=ubuntu18-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.18.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=ubuntu20-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.20.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=centos6-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.6.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
