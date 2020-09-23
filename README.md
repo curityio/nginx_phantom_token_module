@@ -264,6 +264,16 @@ sudo -u nginx \
 
 If all certification tests and the phantom-token specific tests (see below) pass, the build can be certified. Also, it should be released on GitHub.
 
+## Building dynamic modules
+
+You can build the module (for all supported platforms) using the `build.sh` script.
+
+This script reuquires docker and builds locally all 10 platforms that are listed below in Releases. You can build for any NGINX release by running it like so:
+
+`NGINX_VERSION=X.X.X ./build.sh`
+
+After running, all 10 `.so` files will be in the `./build` directory.
+
 ## Compatibility
 
 This module is compatible with Curity version >= 2.2. It has been tested with NGINX 1.13.7 (NGINX Plus Release 14) and NGINX 1.13.10 (NGINX Plus Release 15). It is likely to work with other, newish versions of NGINX, but only these have been tested, pre-built and verified.
