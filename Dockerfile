@@ -36,8 +36,7 @@ RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configur
 FROM centos:6 as centos6-builder
 
 RUN yum install -y \
- gcc pcre-devel zlib-devel
-
+    gcc pcre-devel zlib-devel
 
 COPY configure /tmp
 COPY config /tmp
@@ -165,7 +164,6 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN ./configure && make
-
 
 ######
 FROM alpine
