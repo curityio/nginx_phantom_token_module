@@ -3,9 +3,11 @@
 set -e
 
 SRC_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-NGINX_VERSION=${NGINX_VERSION:-1.15.2}
+
+NGINX_VERSION=${NGINX_VERSION:-1.19.0}
 BUILD_INFO_FILE="$SRC_DIR/.build.info"
 test -f "$BUILD_INFO_FILE" && . "$BUILD_INFO_FILE"
+
 declare -a CONFIG_OPTS=($CONFIG_OPTS --with-compat --with-cc-opt="-Wformat -Werror=format-security")
 
 if [[ -z "$NGINX_SRC_DIR" ]]; then
