@@ -291,14 +291,16 @@ To test this module, you'll need the [Test::Nginx Perl module](https://github.co
 
 To run the tests do the following:
 
-* run `./configure`, make sure you select _Yes_ for Debug features and _No_ for Dynamic module 
+* run `./configure`, make sure you select _No_ for Dynamic module 
 * run `make`
-* edit the `docker-compose.yaml` file and configure the variables `ADMIN_PASSWORD` and `LICENSE_KEY`
+* Setup an `ADMIN_PASSWORD` and the `LICENSE_KEY` for the Curity Identity server that is used in tests*
 * run `make test`
 
 This, will run `prove` passing in the test or test directory (`t`). 
 
 Internet access to `hub.docker.com` is required for the `curity.t` test suite to pass, if the images required are not present locally.
+
+\* These variables can be set inline, in your environment or in the docker-compose.yaml file.
 
 NGINX must be in the system path; the tests will run the first `nginx` command that's found or bail if none is located. Also, the tests assume that the module is statically linked with NGINX. Before running them, be sure that the module is linked into the NGINX binary. Also, debug logging must be compiled into NGINX for some tests in `config.t` to pass. (This is the case if `nginx -V` includes `--with-debug` in the output.)
 
