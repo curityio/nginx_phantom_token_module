@@ -3,52 +3,65 @@
 set -e
 
 SRC_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
 NGINX_VERSION=${NGINX_VERSION:-1.19.0}
-BUILD_INFO_FILE="$SRC_DIR/.build.info"; test -f "$BUILD_INFO_FILE" && . "$BUILD_INFO_FILE"
+BUILD_INFO_FILE="$SRC_DIR/.build.info"
+test -f "$BUILD_INFO_FILE" && . "$BUILD_INFO_FILE"
+
 declare -a CONFIG_OPTS=($CONFIG_OPTS --with-compat --with-cc-opt="-Wformat -Werror=format-security")
 
 if [[ -z "$NGINX_SRC_DIR" ]]; then
-    read -t 60 -e -p "Path to NGINX (leave blank to download version $NGINX_VERSION): " NGINX_SRC_DIR ||:
+  read -t 60 -e -p "Path to NGINX (leave blank to download version $NGINX_VERSION): " NGINX_SRC_DIR || :
 
-    NGINX_SRC_DIR=${NGINX_SRC_DIR/\~/$HOME}
+  NGINX_SRC_DIR=${NGINX_SRC_DIR/\~/$HOME}
 
-    if [[ -z "$NGINX_SRC_DIR" ]]; then
-        NGINX_SRC_DIR="$SRC_DIR/nginx-$NGINX_VERSION"
+  if [[ -z "$NGINX_SRC_DIR" ]]; then
+    NGINX_SRC_DIR="$SRC_DIR/nginx-$NGINX_VERSION"
 
-        # Double check that the directory doesn't already exist before downloading NGINX anew 
-        if [[ ! -d "$NGINX_SRC_DIR" ]]; then
-            if [[ ! -r nginx-${NGINX_VERSION}.tar.gz ]]; then
-                wget https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
-            fi
-    
-            tar -xzf nginx-${NGINX_VERSION}.tar.gz
+    # Double check that the directory doesn't already exist before downloading NGINX anew
+    if [[ ! -d "$NGINX_SRC_DIR" ]]; then
+      if [[ ! -r nginx-${NGINX_VERSION}.tar.gz ]]; then
+        if [ -z "$DOWNLOAD_PROGRAM" ]; then
+          if hash curl &>/dev/null; then
+            DOWNLOAD_PROGRAM="curl -O"
+          elif hash wget &>/dev/null; then
+            DOWNLOAD_PROGRAM="wget"
+          else
+            echo "Couldn't find curl or wget, please install either of these programs."
+            exit 1
+          fi
         fi
+        $DOWNLOAD_PROGRAM https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
+      fi
+
+      tar -xzf nginx-${NGINX_VERSION}.tar.gz
     fi
+  fi
 fi
 
 if [[ -z "${NGINX_DEBUG+xxx}" ]]; then
-    read -t 10 -p "Do you want to enable debug features (not recommended for production usage) [y/N]: " NGINX_DEBUG ||:
-fi      
+  read -t 10 -p "Do you want to enable debug features (not recommended for production usage) [y/N]: " NGINX_DEBUG || :
+fi
 
 if [[ "$NGINX_DEBUG" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-    CONFIG_OPTS+=(--with-debug --with-cc-opt="-O0 -g3")
+  CONFIG_OPTS+=(--with-debug --with-cc-opt="-O0 -g3")
 else
-    CONFIG_OPTS+=(--with-cc-opt="-DNDEBUG")
+  CONFIG_OPTS+=(--with-cc-opt="-DNDEBUG")
 fi
 
 if [[ -z "$DYNAMIC_MODULE" ]]; then
-    read -t 10 -p "Do you want to create a dynamic module (required for use with NGINX+) [Y/n]: " DYNAMIC_MODULE ||:
+  read -t 10 -p "Do you want to create a dynamic module (required for use with NGINX+) [Y/n]: " DYNAMIC_MODULE || :
 fi
 
 if [[ "$DYNAMIC_MODULE" =~ ^([yY][eE][sS]|[yY])+$ ]] || [[ -z "$DYNAMIC_MODULE" ]]; then
-    CONFIG_OPTS+=(--add-dynamic-module=$SRC_DIR)
-    DYNAMIC_MODULE=Y
+  CONFIG_OPTS+=(--add-dynamic-module=$SRC_DIR)
+  DYNAMIC_MODULE=Y
 else
-    CONFIG_OPTS+=(--add-module=$SRC_DIR)
-fi  
+  CONFIG_OPTS+=(--add-module=$SRC_DIR)
+fi
 
 BUILD_INFO=("NGINX_SRC_DIR=$NGINX_SRC_DIR" "NGINX_VERSION=$NGINX_VERSION" "NGINX_DEBUG=$NGINX_DEBUG" "DYNAMIC_MODULE=$DYNAMIC_MODULE")
 
-printf '%s\n' "${BUILD_INFO[@]}" > $BUILD_INFO_FILE
+printf '%s\n' "${BUILD_INFO[@]}" >$BUILD_INFO_FILE
 
 cd $NGINX_SRC_DIR && ./configure "${CONFIG_OPTS[@]}" $*
