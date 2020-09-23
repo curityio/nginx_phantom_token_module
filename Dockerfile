@@ -171,16 +171,16 @@ RUN ./configure && make
 FROM alpine
 
 ARG NGINX_VERSION
-COPY --from=ubuntu18-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu18.04.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=ubuntu20-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu20.04.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=centos6-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos6.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=centos7-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos7.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=centos8-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos8.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=debian9-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian9.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=debian10-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian10.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=amzn-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=amzn2-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn2.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
-COPY --from=alpine-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/alpine.ngx_curity_http_phantom_token_module.$NGINX_VERSION.so
+COPY --from=ubuntu18-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.18.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=ubuntu20-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.20.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=centos6-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.6.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=centos7-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.7.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=centos8-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.8.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=debian9-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.stretch.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=debian10-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.buster.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=amzn-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=amzn2-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn2.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=alpine-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/alpine.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 
 ENTRYPOINT ["sleep"]
 
