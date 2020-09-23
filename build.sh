@@ -4,7 +4,17 @@ NGINX_VERSION=${NGINX_VERSION:-1.19.0}
 NGINX_TARBALL=nginx-${NGINX_VERSION}.tar.gz
 
 if [[ ! -r $NGINX_TARBALL ]]; then
-    wget https://nginx.org/download/nginx-"${NGINX_VERSION}".tar.gz
+  if [ -z "$DOWNLOAD_PROGRAM" ]; then
+      if hash curl &>/dev/null; then
+        DOWNLOAD_PROGRAM="curl -O"
+      elif hash wget &>/dev/null; then
+        DOWNLOAD_PROGRAM="wget"
+      else
+        echo "Couldn't find curl or wget, please install either of these programs."
+        exit 1
+      fi
+  fi
+    $DOWNLOAD_PROGRAM https://nginx.org/download/nginx-"${NGINX_VERSION}".tar.gz
 fi
 
 docker build -t nginx-module-builder \
