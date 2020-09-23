@@ -1,0 +1,19 @@
+version: '3.2'
+services:
+  curity-service:
+    image: curity/idsvr
+    ports:
+      - 6749:6749
+      - 8443:8443
+    environment:
+      - ADMIN=true
+      - SERVICE_ROLE=default
+      - LICENSE_KEY=${LICENSE_KEY:?err}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?err}
+    volumes:
+      - ./curity-test-config.xml:/opt/idsvr/etc/init/curity-test-config.xml
+
+  httpbin-service:
+    image: kennethreitz/httpbin
+    ports:
+      - 8080:80
