@@ -7,7 +7,7 @@ default all: .build.info
 
 module modules: .build.info $(NGINX_SRC_DIR)/Makefile
 ifneq (, $(filter y yes Y YES Yes, $(DYNAMIC_MODULE)))
-	cd $(NGINX_SRC_DIR) && make -f Makefile modules
+	cd $(NGINX_SRC_DIR) && $(MAKE) -f Makefile modules
 else
 	$(error Rerun the configure script and indicate that a dynamic module should be built)	
 endif	
