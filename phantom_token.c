@@ -484,7 +484,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->headers_in.authorization->value.data = authorization_header_data;
     introspection_request->headers_in.authorization->value.len = authorization_header_data_len;
 
-    ngx_http_set_ctx(request, module_context, ngx_curity_http_phantom_token_module);
+    ngx_http_set_ctx(request, module_context, ngx_curity_http_phantom_token_module)
 
     return NGX_AGAIN;
 }
@@ -728,13 +728,13 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
 {
     phantom_token_configuration_t *parent_config = parent, *child_config = child;
 
-    ngx_conf_merge_off_value(child_config->enable, parent_config->enable, 0);
-    ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "");
-    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api");
-    ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL);
-    ngx_conf_merge_str_value(child_config->space_separated_scopes, parent_config->space_separated_scopes, "");
+    ngx_conf_merge_off_value(child_config->enable, parent_config->enable, 0)
+    ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "")
+    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api")
+    ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL)
+    ngx_conf_merge_str_value(child_config->space_separated_scopes, parent_config->space_separated_scopes, "")
     ngx_conf_merge_str_value(child_config->base64encoded_client_credential,
-                             parent_config->base64encoded_client_credential, "");
+                             parent_config->base64encoded_client_credential, "")
 
     if (child_config->scopes != NULL && child_config->space_separated_scopes.len == 0)
     {
