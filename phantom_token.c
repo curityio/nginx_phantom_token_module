@@ -204,7 +204,8 @@ static ngx_int_t set_accept_header_value(ngx_http_request_t *request, const char
 
     accept_header->hash = 1;
     ngx_str_set(&accept_header->key, "Accept");
-    ngx_str_set(&accept_header->value, value);
+    accept_header->value.len = ngx_strlen(value);
+    accept_header->value.data = (u_char *)value;
     accept_header->lowcase_key = (u_char *)"accept";
 
     request->headers_in.accept = accept_header;
