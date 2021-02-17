@@ -35,23 +35,6 @@ RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
 RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
 
 ######
-FROM centos:6 as centos6-builder
-
-RUN yum install -y \
-    gcc pcre-devel zlib-devel
-
-COPY configure /tmp
-COPY config /tmp
-COPY Makefile /tmp
-COPY phantom_token.c /tmp
-ARG NGINX_VERSION
-ENV NGINX_VERSION=$NGINX_VERSION
-ADD nginx-$NGINX_VERSION.tar.gz /tmp/
-
-WORKDIR /tmp
-RUN ./configure && make
-
-######
 FROM centos:7 as centos7-builder
 
 RUN yum install -y \
@@ -182,7 +165,6 @@ ARG NGINX_VERSION
 ENV NGINX_VERSION=$NGINX_VERSION
 COPY --from=ubuntu18-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.18.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=ubuntu20-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.20.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
-COPY --from=centos6-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.6.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=centos7-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.7.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=centos8-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.8.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=debian9-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.stretch.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
