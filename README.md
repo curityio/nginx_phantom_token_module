@@ -5,7 +5,7 @@
 
 NGINX module that introspects access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662), producing a "phantom token" that can be forwarded to back-end APIs and Web services.
 
-More details an be found in [The Phantom Token Approach](https://curity.io/resources/learn/phantom-token-pattern/) article.
+More details can be found in [The Phantom Token Approach](https://curity.io/resources/learn/phantom-token-pattern/) article.
 
 This module, when enabled, filters incoming requests, denying access to those which do *not* have a valid OAuth access token presented in an `Authorization` header. From this header, the access_token is extracted and introspected using the configured endpoint. Curity replies to this request according to the standard. For an active access token, the body of Curity's response contains the JWT that replaces the access token in the header of the request that is forwarded by NGINX to the back-end. If the token is not valid or absent, no request to the back-end is made and the caller is given a 401, unauthorized, error. This flow is shown in the following diagram:
 
