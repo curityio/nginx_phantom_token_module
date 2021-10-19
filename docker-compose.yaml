@@ -1,7 +1,7 @@
 version: '3.2'
 services:
   curity-service:
-    image: curity/idsvr
+    image: curity.azurecr.io/curity/idsvr
     ports:
       - 6749:6749
       - 8443:8443
