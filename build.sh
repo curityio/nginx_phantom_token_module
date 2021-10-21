@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NGINX_VERSION=${NGINX_VERSION:-1.19.0}
+NGINX_VERSION=${NGINX_VERSION:-1.21.3}
 NGINX_TARBALL=nginx-${NGINX_VERSION}.tar.gz
 
 if [[ ! -r $NGINX_TARBALL ]]; then
