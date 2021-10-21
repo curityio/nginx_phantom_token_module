@@ -632,10 +632,10 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     ngx_str_t cache_data = ngx_null_string;
 
 #if (NGX_HTTP_CACHE)
-    if (!request->cache || !request->cache->buf)
+    if (request->cache && !request->cache->buf)
     {
-        // No cache; read JWT from response to sub-request
-        jwt_start = request->header_end + sizeof("\r\n") - 1;
+        // We have a cache but it's not primed
+        ngx_http_file_cache_open(request);
     }
 
     if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
@@ -652,6 +652,10 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
             jwt_start = cache_data.data;
         }
     }
+    else
+    {
+        jwt_start = request->header_end + sizeof("\r\n") - 1; // FIXME: Won't work if JWT is large
+    }
 
     if (jwt_start == NULL)
     {
@@ -664,7 +668,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 #else
-    jwt_start = request->header_end + sizeof("\r\n") - 1;
+    jwt_start = request->header_end + sizeof("\r\n") - 1; // FIXME: Won't work if JWT is large
 #endif
 
     size_t jwt_len = request->headers_out.content_length_n;
