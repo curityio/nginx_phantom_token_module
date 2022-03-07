@@ -6,7 +6,7 @@ RESPONSE_FILE=response.txt
 #
 # The user must set these to valid values
 #
-LICENSE_FILE_PATH=~/.curity/license.json
+LICENSE_FILE_PATH=
 ADMIN_PASSWORD=Password1
 if [ ! -f "$LICENSE_FILE_PATH" ]; then
   echo 'Please supply the LICENSE_FILE_PATH parameter'
