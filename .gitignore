@@ -58,4 +58,4 @@ nginx-*.tar.gz*
 nginx-*/
 t/servroot
 response.txt
-valgrind_results.txt
+valgrind-results.txt
