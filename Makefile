@@ -20,11 +20,10 @@ clean:
 	rm -rf .build.info nginx-$(NGINX_VERSION) nginx-$(NGINX_VERSION).tar.gz* t/servroot
 
 test: all
-	docker-compose up -d
-	@echo "Waiting for the Curity Identity Server to start..."
-	@bash -c 'c=0; while [[ $$c -lt 25 && "$$(curl -fs -w ''%{http_code}'' localhost:8443)" != "404" ]]; do ((c++)); echo -n "."; sleep 1; done'
-	PATH=$(NGINX_SRC_DIR)/objs:$$PATH prove -v -f t/
-	docker-compose down
+	@bash -c 'NGINX_SRC_DIR="$(NGINX_SRC_DIR)" ./resources/test/run.sh'
+
+memorytest:
+	@bash -c 'NGINX_SRC_DIR="$(NGINX_SRC_DIR)" ./resources/memorytest/run.sh'
 
 .build.info $(NGINX_SRC_DIR)/Makefile:
 	$(error You need to run the configure script in the root of this directory before building the source)

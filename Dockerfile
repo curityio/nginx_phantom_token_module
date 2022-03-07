@@ -30,7 +30,7 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
 RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
 RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
 
@@ -52,7 +52,7 @@ WORKDIR /tmp
 RUN ./configure && make
 
 ######
-FROM centos:8 as centos8-builder
+FROM quay.io/centos/centos:stream8 as centos8-builder
 
 RUN yum install -y \
      gcc pcre-devel zlib-devel make
@@ -83,7 +83,7 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
 RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
 RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
 
@@ -102,7 +102,7 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
 RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
 RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
 
