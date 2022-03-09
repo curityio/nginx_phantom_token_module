@@ -307,7 +307,7 @@ To run the tests do the following:
 
 * run `./configure`, make sure you select _No_ for Dynamic module 
 * run `make`
-* Setup an `ADMIN_PASSWORD` and the `LICENSE_KEY` for the Curity Identity server that is used in tests*
+* Edit the resources/test/run.sh script and set the `ADMIN_PASSWORD` and `LICENSE_FILE_PATH` values for the Curity Identity server*
 * run `make test`
 
 This, will run `prove` passing in the test or test directory (`t`). 

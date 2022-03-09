@@ -1,0 +1,24 @@
+version: '3.2'
+services:
+
+  # The target API used in proxy_pass URLs, for tests running on the local computer
+  httpbin-service:
+    image: kennethreitz/httpbin
+    ports:
+      - 8080:80
+
+  # During tests the module calls the Curity Identity Server to introspect tokens
+  curity-service:
+    image: curity.azurecr.io/curity/idsvr
+    ports:
+      - 6749:6749
+      - 8443:8443
+    environment:
+      - ADMIN=true
+      - SERVICE_ROLE=default
+      - LICENSE_KEY=${LICENSE_KEY:?err}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?err}
+    volumes:
+      - ../curity-test-config.xml:/opt/idsvr/etc/init/curity-test-config.xml
+
+  

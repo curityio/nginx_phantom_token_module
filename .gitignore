@@ -57,3 +57,5 @@ cmake-build-debug
 nginx-*.tar.gz*
 nginx-*/
 t/servroot
+response.txt
+valgrind-results.txt
