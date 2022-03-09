@@ -23,7 +23,7 @@ test: all
 	@bash -c 'NGINX_SRC_DIR="$(NGINX_SRC_DIR)" ./resources/test/run.sh'
 
 memorytest:
-	@bash -c 'NGINX_SRC_DIR="$(NGINX_SRC_DIR)" ./resources/memorytest/run.sh'
+	@bash -c './resources/memorytest/run.sh'
 
 .build.info $(NGINX_SRC_DIR)/Makefile:
 	$(error You need to run the configure script in the root of this directory before building the source)

@@ -4,12 +4,29 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 RESPONSE_FILE=response.txt
 
 #
-# The user must set these to valid values
+# Input parameters
 #
 LICENSE_FILE_PATH=
 ADMIN_PASSWORD=Password1
+
+#
+# Prompt if required, and expand relative paths such as those containing ~
+#
+if [ "$LICENSE_FILE_PATH" == '' ]; then
+  read -t 10 -p 'Enter the path to the license file for the Curity Identity Server: ' LICENSE_FILE_PATH || :
+fi
+LICENSE_FILE_PATH=$(eval echo "$LICENSE_FILE_PATH")
+
+#
+# Check we have valid data before proceeding
+#
 if [ ! -f "$LICENSE_FILE_PATH" ]; then
-  echo 'Please supply the LICENSE_FILE_PATH parameter'
+  echo 'A valid LICENSE_FILE_PATH parameter was not supplied'
+  exit
+fi
+LICENSE_KEY=$(cat "$LICENSE_FILE_PATH" | jq -r .License)
+if [ "$LICENSE_KEY" == '' ]; then
+  echo 'A valid license key was not found'
   exit
 fi
 
@@ -26,7 +43,6 @@ fi
 #
 # Deploy the system
 #
-LICENSE_KEY=$(cat $LICENSE_FILE_PATH | jq -r .License)
 export LICENSE_KEY && export ADMIN_PASSWORD && docker compose up -d
 
 #
