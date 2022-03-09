@@ -1,7 +1,6 @@
 #!/bin/bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
-RESPONSE_FILE=response.txt
 
 #
 # Input parameters
@@ -52,6 +51,13 @@ echo 'Waiting for the Curity Identity Server to start ...'
 c=0; while [[ $c -lt 25 && "$(curl -fs -w ''%{http_code}'' localhost:8443)" != "404" ]]; do ((c++)); echo -n "."; sleep 1; done
 
 #
+# Test parameters
+#
+CLIENT_ID='test-client'
+CLIENT_SECRET='secret1'
+RESPONSE_FILE=response.txt
+
+#
 # Run curl tests to call the API via the reverse proxy
 #
 echo
@@ -64,8 +70,8 @@ do
   echo -n "."
   HTTP_STATUS=$(curl -s -X POST http://localhost:8443/oauth/v2/oauth-token \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "client_id=test-client" \
-    -d "client_secret=secret1" \
+    -d "client_id=$CLIENT_ID" \
+    -d "client_secret=$CLIENT_SECRET" \
     -d "grant_type=client_credentials" \
     -o $RESPONSE_FILE -w '%{http_code}')
   if [ "$HTTP_STATUS" != '200' ]; then
@@ -99,6 +105,7 @@ done
 #
 # Output valgrind results
 #
+echo
 echo 'Retrieving valgrind memory results ...'
 DOCKER_CONTAINER_ID=$(docker container ls | grep "nginx_custom" | awk '{print $1}')
 docker cp "$DOCKER_CONTAINER_ID:/valgrind-results.txt" .
