@@ -14,12 +14,12 @@
  *  limitations under the License.
  */
 
-#include <stdbool.h>
-#include <assert.h>
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <ngx_string.h>
+#include <stdbool.h>
+#include <assert.h>
 
 #define UNENCODED_CLIENT_CREDENTIALS_BUF_LEN 255
 
@@ -320,7 +320,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
     u_char *bearer_token_pos;
 
-    if ((bearer_token_pos = ngx_strcasestrn((u_char*)request->headers_in.authorization->value.data, 
+    if ((bearer_token_pos = ngx_strcasestrn((u_char*)request->headers_in.authorization->value.data,
         (char*)BEARER, BEARER_SIZE - 1)) == NULL)
     {
         // return unauthorized when Authorization header is not Bearer
