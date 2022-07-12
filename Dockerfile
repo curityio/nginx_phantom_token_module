@@ -31,7 +31,7 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
+RUN wget https://sourceforge.net/projects/libpng/files/zlib/1.2.11/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
 RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
 
 ######
@@ -84,7 +84,7 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
+RUN wget https://sourceforge.net/projects/libpng/files/zlib/1.2.11/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
 RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
 
 ######
@@ -103,7 +103,7 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
+RUN wget https://sourceforge.net/projects/libpng/files/zlib/1.2.11/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
 RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
 
 ######
