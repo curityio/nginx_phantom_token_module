@@ -53,6 +53,8 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
 static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
                                                 ngx_int_t introspection_subrequest_status_code);
 
+static ngx_int_t write_error_response(ngx_http_request_t *request, ngx_int_t status, phantom_token_configuration_t *module_location_config);
+
 /**
  * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>.
  *
@@ -75,8 +77,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
  *
  * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
  */
-static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_str_t realm,
-                                             ngx_str_t space_separated_scopes, char *error_code);
+static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, phantom_token_configuration_t *module_location_config, char *error_code);
 
 /**
  * Sets the base-64-encoded client ID and secret in the module's configuration setting structure.
@@ -287,20 +288,19 @@ static ngx_int_t handler(ngx_http_request_t *request)
             }
             else if (module_context->status == NGX_HTTP_NO_CONTENT)
             {
-                return set_www_authenticate_header(request, module_location_config->realm,
-                                                          module_location_config->space_separated_scopes, NULL);
+                return set_www_authenticate_header(request, module_location_config, NULL);
             }
             else if (module_context->status == NGX_HTTP_SERVICE_UNAVAILABLE)
             {
-                return NGX_HTTP_SERVICE_UNAVAILABLE;
+                return write_error_response(request, NGX_HTTP_SERVICE_UNAVAILABLE, module_location_config);
             }
             else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR || module_context->status == NGX_HTTP_NOT_FOUND
                 || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
             {
-                return NGX_HTTP_BAD_GATEWAY;
+                return write_error_response(request, NGX_HTTP_BAD_GATEWAY, module_location_config);
             }
 
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            return write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
         }
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
@@ -314,8 +314,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
 
-        return set_www_authenticate_header(request, module_location_config->realm,
-                                           module_location_config->space_separated_scopes, NULL);
+        return set_www_authenticate_header(request, module_location_config, NULL);
     }
 
     u_char *bearer_token_pos;
@@ -328,8 +327,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
                        "Authorization header does not contain a bearer token");
 
-        return set_www_authenticate_header(request, module_location_config->realm,
-                                           module_location_config->space_separated_scopes, NULL);
+        return set_www_authenticate_header(request, module_location_config, NULL);
     }
 
     bearer_token_pos += BEARER_SIZE;
@@ -361,7 +359,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     if (ngx_http_subrequest(request, &module_location_config->introspection_endpoint, NULL, &introspection_request,
                             introspection_request_callback, NGX_HTTP_SUBREQUEST_WAITED) != NGX_OK)
     {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
     }
 
     // extract access token from header
@@ -490,8 +488,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     return NGX_AGAIN;
 }
 
-static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_str_t realm,
-                                             ngx_str_t space_separated_scopes, char *error_code)
+static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, phantom_token_configuration_t *module_location_config, char *error_code)
 {
     request->headers_out.www_authenticate = ngx_list_push(&request->headers_out.headers);
 
@@ -516,20 +513,20 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
     static const size_t ERROR_CODE_PREFIX_SIZE = sizeof(ERROR_CODE_PREFIX) - 1;
 
     size_t bearer_data_size = BEARER_SIZE + sizeof('\0'); // Add one for the nul byte
-    bool realm_provided = realm.len > 0;
-    bool scopes_provided = space_separated_scopes.len > 0;
+    bool realm_provided = module_location_config->realm.len > 0;
+    bool scopes_provided = module_location_config->space_separated_scopes.len > 0;
     bool error_code_provided = error_code != NULL;
     bool append_one_comma = false, append_two_commas = false;
     size_t error_code_len = 0;
 
     if (realm_provided)
     {
-        bearer_data_size += REALM_PREFIX_SIZE + realm.len + TOKEN_SUFFIX_SIZE;
+        bearer_data_size += REALM_PREFIX_SIZE + module_location_config->realm.len + TOKEN_SUFFIX_SIZE;
     }
 
     if (scopes_provided)
     {
-        bearer_data_size += SCOPE_PREFIX_SIZE + space_separated_scopes.len + TOKEN_SUFFIX_SIZE;
+        bearer_data_size += SCOPE_PREFIX_SIZE + module_location_config->space_separated_scopes.len + TOKEN_SUFFIX_SIZE;
     }
 
     if (error_code_provided)
@@ -562,7 +559,7 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
     if (realm_provided)
     {
         p = ngx_cpymem(p, REALM_PREFIX, REALM_PREFIX_SIZE);
-        p = ngx_cpymem(p, realm.data, realm.len);
+        p = ngx_cpymem(p, module_location_config->realm.data, module_location_config->realm.len);
         p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
 
         if (append_one_comma)
@@ -574,7 +571,7 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
     if (scopes_provided)
     {
         p = ngx_cpymem(p, SCOPE_PREFIX, SCOPE_PREFIX_SIZE);
-        p = ngx_cpymem(p, space_separated_scopes.data, space_separated_scopes.len);
+        p = ngx_cpymem(p, module_location_config->space_separated_scopes.data, module_location_config->space_separated_scopes.len);
         p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
 
         if (append_one_comma || append_two_commas)
@@ -607,7 +604,7 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, ngx_st
 
     assert(request->headers_out.www_authenticate->value.len <= bearer_data_size);
 
-    return NGX_HTTP_UNAUTHORIZED;
+    return write_error_response(request, NGX_HTTP_UNAUTHORIZED, module_location_config);
 }
 
 static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
@@ -810,4 +807,71 @@ static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting
     ngx_conf_log_error(NGX_LOG_EMERG, config_setting, 0, "invalid client ID and/or secret");
 
     return "invalid_client_credential";
+}
+
+/*
+ * Add the error response as a JSON object that is easier to handle than the default HTML response that NGINX returns
+ * Note that for SPAs, the OAuth Proxy plugin runs before this one and adds CORS headers so that the browser can read this payload
+ * http://nginx.org/en/docs/dev/development_guide.html#http_response_body
+ */
+static ngx_int_t write_error_response(ngx_http_request_t *request, ngx_int_t status, phantom_token_configuration_t *module_location_config)
+{
+    ngx_int_t rc;
+    ngx_str_t code;
+    ngx_str_t message;
+    u_char jsonErrorData[256];
+    ngx_chain_t output;
+    ngx_buf_t *body = NULL;
+    const char *errorFormat = NULL;
+    size_t errorLen = 0;
+
+    if (request->method != NGX_HTTP_HEAD)
+    {
+        body = ngx_calloc_buf(request->pool);
+        if (body == NULL)
+        {
+            ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Failed to allocate memory for error body");
+            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        }
+        else
+        {
+            if (status == NGX_HTTP_UNAUTHORIZED)
+            {
+                ngx_str_set(&code, "unauthorized_request");
+                ngx_str_set(&message, "Access denied due to missing, invalid or expired credentials");
+            }
+            else
+            {
+                ngx_str_set(&code, "server_error");
+                ngx_str_set(&message, "Problem encountered processing the request");
+            }
+
+            /* The string length calculation replaces the two '%V' markers with their actual values */
+            errorFormat = "{\"code\":\"%V\", \"message\":\"%V\"}";
+            errorLen = ngx_strlen(errorFormat) + code.len + message.len - 4;
+            ngx_snprintf(jsonErrorData, sizeof(jsonErrorData) - 1, errorFormat, &code, &message);
+            jsonErrorData[errorLen] = 0;
+
+            request->headers_out.status = status;
+            request->headers_out.content_length_n = errorLen;
+            ngx_str_set(&request->headers_out.content_type, "application/json");
+            rc = ngx_http_send_header(request);
+            if (rc == NGX_ERROR || rc > NGX_OK || request->header_only) {
+                return rc;
+            }
+            
+            body->pos = jsonErrorData;
+            body->last = jsonErrorData + errorLen;
+            body->memory = 1;
+            body->last_buf = 1;
+            body->last_in_chain = 1;
+            output.buf = body;
+            output.next = NULL;
+
+            /* When setting a body ourself we must return the result of the filter, to prevent a 'header already sent' error */
+            return ngx_http_output_filter(request, &output);
+        }
+    }
+
+    return status;
 }

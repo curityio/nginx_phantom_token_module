@@ -100,6 +100,14 @@ GET /t
 
 --- error_code: 401
 
+--- response_headers
+content-type: application/json
+WWW-Authenticate: Bearer realm="api"
+
+--- response_body_like chomp
+{"code":"unauthorized_request", "message":"Access denied due to missing, invalid or expired credentials"}
+
+
 === Test 3: The wrong kind of HTTP method is used results in an access denied error
 
 --- config
@@ -143,6 +151,13 @@ GET /t
 
 --- error_code: 401
 
+--- response_headers
+content-type: application/json
+WWW-Authenticate: Bearer realm="api"
+
+--- response_body_like chomp
+{"code":"unauthorized_request", "message":"Access denied due to missing, invalid or expired credentials"}
+
 === Test 4: A valid token with trash after results in an access denied error
 
 --- config
@@ -165,6 +180,10 @@ GET /t
 "Authorization: bearer " . $main::token . "z"
 
 --- error_code: 401
+
+--- response_headers
+content-type: application/json
+WWW-Authenticate: Bearer realm="api"
 
 === Test 5: The bearer HTTP method can be in upper case
 
