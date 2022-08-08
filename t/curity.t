@@ -105,7 +105,7 @@ content-type: application/json
 WWW-Authenticate: Bearer realm="api"
 
 --- response_body_like chomp
-{"code":"unauthorized_request", "message":"Access denied due to missing, invalid or expired credentials"}
+{"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
 
 
 === Test 3: The wrong kind of HTTP method is used results in an access denied error
@@ -156,7 +156,7 @@ content-type: application/json
 WWW-Authenticate: Bearer realm="api"
 
 --- response_body_like chomp
-{"code":"unauthorized_request", "message":"Access denied due to missing, invalid or expired credentials"}
+{"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
 
 === Test 4: A valid token with trash after results in an access denied error
 
