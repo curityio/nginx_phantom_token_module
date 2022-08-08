@@ -77,6 +77,10 @@ phantom_token off;
 
 --- config
 
+location /t {
+    return 200;
+}
+
 --- request
 GET /t
 
@@ -85,7 +89,7 @@ GET /t
 --- error_log
 Module disabled
 
---- skip_eval: 1: open(FH, "<", "$FindBin::Bin/../.build.info"); my $skip=0; while (<FH>) { $skip = 1 if ($_ =~ /DEBUG=n/) } $skip
+--- ONLY
 
 === TEST 6: HTTP level config is overridden by location directive
 
