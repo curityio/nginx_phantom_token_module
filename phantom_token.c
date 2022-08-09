@@ -870,7 +870,7 @@ static ngx_int_t write_error_response(ngx_http_request_t *request, ngx_int_t sta
         output.buf = body;
         output.next = NULL;
 
-        /* When setting a body ourself we must return the result of the filter, to prevent a 'header already sent' error */
+        /* When setting a body ourself we must return the result of the filter */
         return ngx_http_output_filter(request, &output);
     }
 }
