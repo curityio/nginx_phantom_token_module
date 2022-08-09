@@ -8,12 +8,12 @@ services:
 
   # Valgrind runs NGINX, which routes to the target API
   nginx-service:
-    image: nginx_custom:v1
+    image: nginx_${DISTRO}:${NGINX_DEPLOY_VERSION}
     ports:
     - 8080:8080
     volumes:
     - ./nginx.conf:/etc/nginx/nginx.conf
-    - ../../build/alpine.ngx_curity_http_phantom_token_module_1.21.6.so:/usr/lib/nginx/modules/ngx_curity_http_phantom_token_module.so
+    - ../../build/${MODULE_FILE}:${MODULE_FOLDER}/ngx_curity_http_phantom_token_module.so
     command: >
       sh -c "/usr/bin/valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=/valgrind-results.txt /usr/sbin/nginx"
 
