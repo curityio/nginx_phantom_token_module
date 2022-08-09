@@ -30,6 +30,14 @@ if [ "$LICENSE_KEY" == '' ]; then
 fi
 
 #
+# Check there is a build of the module
+#
+if [ ! -f '../../build/alpine.ngx_curity_http_phantom_token_module_1.21.6.so' ]; then
+  echo 'Please run the build script to build the module .so file before running this script'
+  exit
+fi
+
+#
 # Build the valgrind image
 #
 echo 'Building the NGINX and valgrind Docker image ...'

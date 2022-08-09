@@ -31,8 +31,27 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
-RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && tar xzvf zlib-1.2.12.tar.gz
+RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.12" ./configure && make
+
+######
+FROM ubuntu:22.04 as ubuntu22-builder
+
+RUN apt-get update && \
+    apt-get install -y build-essential wget
+
+COPY configure /tmp
+COPY config /tmp
+COPY Makefile /tmp
+COPY phantom_token.c /tmp
+ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
+ADD nginx-$NGINX_VERSION.tar.gz /tmp/
+
+WORKDIR /tmp
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && tar xzvf zlib-1.2.12.tar.gz
+RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.12" ./configure && make
 
 ######
 FROM centos:7 as centos7-builder
@@ -52,40 +71,21 @@ WORKDIR /tmp
 RUN ./configure && make
 
 ######
-FROM quay.io/centos/centos:stream8 as centos8-builder
+FROM quay.io/centos/centos:stream9 as centos-stream9-builder
 
 RUN yum install -y \
-     gcc pcre-devel zlib-devel make
+     gcc pcre-devel zlib-devel make openssl-devel
 
 COPY configure /tmp
 COPY config /tmp
 COPY Makefile /tmp
-COPY phantom_token.c /tmp
+COPY src/* /tmp/src/
 ARG NGINX_VERSION
 ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN ./configure && make
-
-######
-FROM debian:stretch as debian9-builder
-
-RUN apt update && apt install -y \
-    wget build-essential git tree software-properties-common dirmngr apt-transport-https ufw
-
-COPY configure /tmp
-COPY config /tmp
-COPY Makefile /tmp
-COPY phantom_token.c /tmp
-ARG NGINX_VERSION
-ENV NGINX_VERSION=$NGINX_VERSION
-ADD nginx-$NGINX_VERSION.tar.gz /tmp/
-
-WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
-RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
 
 ######
 FROM debian:buster as debian10-builder
@@ -103,14 +103,14 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz && tar xzvf zlib-1.2.11.tar.gz
-RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.11" ./configure && make
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && tar xzvf zlib-1.2.12.tar.gz
+RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.12" ./configure && make
 
 ######
-FROM amazonlinux:1 as amzn-builder
+FROM debian:bullseye as debian11-builder
 
-RUN yum install -y \
- gcc pcre-devel zlib-devel make
+RUN apt update && apt install -y \
+    wget build-essential git tree software-properties-common dirmngr apt-transport-https ufw
 
 COPY configure /tmp
 COPY config /tmp
@@ -121,7 +121,9 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN ./configure && make
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && tar xzvf zlib-1.2.12.tar.gz
+RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.12" ./configure && make
 
 ######
 FROM amazonlinux:2 as amzn2-builder
@@ -165,11 +167,11 @@ ARG NGINX_VERSION
 ENV NGINX_VERSION=$NGINX_VERSION
 COPY --from=ubuntu18-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.18.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=ubuntu20-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.20.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=ubuntu22-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/ubuntu.22.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=centos7-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.7.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
-COPY --from=centos8-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.8.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
-COPY --from=debian9-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.stretch.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=centos-stream9-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.stream.9.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=debian10-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.buster.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
-COPY --from=amzn-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=debian11-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.bullseye.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=amzn2-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn2.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=alpine-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/alpine.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 

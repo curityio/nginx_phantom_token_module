@@ -13,7 +13,7 @@ services:
     - 8080:8080
     volumes:
     - ./nginx.conf:/etc/nginx/nginx.conf
-    - ../../build/alpine.ngx_curity_http_phantom_token_module_1.21.3.so:/usr/lib/nginx/modules/ngx_curity_http_phantom_token_module.so
+    - ../../build/alpine.ngx_curity_http_phantom_token_module_1.21.6.so:/usr/lib/nginx/modules/ngx_curity_http_phantom_token_module.so
     command: >
       sh -c "/usr/bin/valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=/valgrind-results.txt /usr/sbin/nginx"
 
