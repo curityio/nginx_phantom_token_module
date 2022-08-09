@@ -857,6 +857,7 @@ static ngx_int_t write_error_response(ngx_http_request_t *request, ngx_int_t sta
         request->headers_out.status = status;
         request->headers_out.content_length_n = error_len;
         ngx_str_set(&request->headers_out.content_type, "application/json");
+
         rc = ngx_http_send_header(request);
         if (rc == NGX_ERROR || rc > NGX_OK || request->header_only) {
             return rc;
@@ -870,8 +871,10 @@ static ngx_int_t write_error_response(ngx_http_request_t *request, ngx_int_t sta
         output.buf = body;
         output.next = NULL;
 
-        /* Return an error result to prevent a 'header already sent' warning in logs */
-        ngx_http_output_filter(request, &output);
-        return NGX_ERROR;
+        /* Return an error result, which also requires finalize_request to be called, to prevent a 'header already sent' warning in logs
+           https://forum.nginx.org/read.php?29,280514,280521#msg-280521 */
+        rc = ngx_http_output_filter(request, &output);
+        ngx_http_finalize_request(request, rc);
+        return NGX_DONE;
     }
 }
