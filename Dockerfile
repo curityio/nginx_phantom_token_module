@@ -30,9 +30,9 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && tar xzvf zlib-1.2.12.tar.gz
-RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.12" ./configure && make
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.12.tar.gz --strip-components=1
+RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
 FROM ubuntu:22.04 as ubuntu22-builder
@@ -49,9 +49,9 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && tar xzvf zlib-1.2.12.tar.gz
-RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.12" ./configure && make
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.12.tar.gz --strip-components=1
+RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
 FROM centos:7 as centos7-builder
@@ -102,9 +102,9 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && tar xzvf zlib-1.2.12.tar.gz
-RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.12" ./configure && make
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.12.tar.gz --strip-components=1
+RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
 FROM debian:bullseye as debian11-builder
@@ -121,9 +121,9 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && tar xzvf pcre-8.44.tar.gz
-RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && tar xzvf zlib-1.2.12.tar.gz
-RUN CONFIG_OPTS="--with-pcre=../pcre-8.44 --with-zlib=../zlib-1.2.12" ./configure && make
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.12.tar.gz --strip-components=1
+RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
 FROM amazonlinux:2 as amzn2-builder
