@@ -100,6 +100,13 @@ GET /t
 
 --- error_code: 401
 
+--- response_headers
+content-type: application/json
+WWW-Authenticate: Bearer realm="api"
+
+--- response_body_like chomp
+{"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
+
 === Test 3: The wrong kind of HTTP method is used results in an access denied error
 
 --- config
@@ -143,7 +150,14 @@ GET /t
 
 --- error_code: 401
 
-=== Test 4: A valid token with trash after results in an access denied error
+--- response_headers
+content-type: application/json
+WWW-Authenticate: Bearer realm="api"
+
+--- response_body_like chomp
+{"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
+
+=== Test 5: A valid token with trash after results in an access denied error
 
 --- config
 location tt {
@@ -166,7 +180,11 @@ GET /t
 
 --- error_code: 401
 
-=== Test 5: The bearer HTTP method can be in upper case
+--- response_headers
+content-type: application/json
+WWW-Authenticate: Bearer realm="api"
+
+=== Test 6: The bearer HTTP method can be in upper case
 
 --- config
 location tt {
@@ -194,7 +212,7 @@ main::process_json_from_backend()
 
 --- response_body: GOOD
 
-=== Test 6: The bearer HTTP method can be in mixed case
+=== Test 7: The bearer HTTP method can be in mixed case
 
 --- config
 location tt {
@@ -222,7 +240,7 @@ main::process_json_from_backend()
 
 --- response_body: GOOD
 
-=== Test 6: The bearer HTTP method can have > 1 space before it
+=== Test 8: The bearer HTTP method can have > 1 space before it
 
 --- config
 location tt {
@@ -249,3 +267,61 @@ GET /t
 main::process_json_from_backend()
 
 --- response_body: GOOD
+
+=== Test 9: A misconfigured client secret results in a 502 error
+
+--- config
+location tt {
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+}
+
+location /t {
+    proxy_pass         "http://localhost:8080/anything";
+
+    phantom_token on;
+    phantom_token_client_credential "test-nginx" "incorrect_secret";
+    phantom_token_introspection_endpoint tt;
+}
+
+--- error_code: 502
+
+--- request
+GET /t
+
+--- more_headers eval
+"Authorization: bearer               " . $main::token
+
+--- response_headers
+content-type: application/json
+
+--- response_body_like chomp
+{"code":"server_error","message":"Problem encountered processing the request"}
+
+=== Test 10: An unreachable authorization server results in a 502 error
+
+--- config
+location tt {
+    proxy_pass "http://localhost:9443/oauth/v2/oauth-introspect";
+}
+
+location /t {
+    proxy_pass         "http://localhost:8080/anything";
+
+    phantom_token on;
+    phantom_token_client_credential "test-nginx" "secret2";
+    phantom_token_introspection_endpoint tt;
+}
+
+--- error_code: 502
+
+--- request
+GET /t
+
+--- more_headers eval
+"Authorization: bearer               " . $main::token
+
+--- response_headers
+content-type: application/json
+
+--- response_body_like chomp
+{"code":"server_error","message":"Problem encountered processing the request"}
