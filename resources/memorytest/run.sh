@@ -10,13 +10,13 @@ if [ "$LICENSE_FILE_PATH" == '' ]; then
 fi
 LICENSE_FILE_PATH=$(eval echo "$LICENSE_FILE_PATH")
 if [ ! -f "$LICENSE_FILE_PATH" ]; then
-  echo 'A valid LICENSE_FILE_PATH parameter was not supplied'
-  exit
+  >&2 echo 'A valid LICENSE_FILE_PATH parameter was not supplied'
+  exit 1
 fi
 LICENSE_KEY=$(cat "$LICENSE_FILE_PATH" | jq -r .License)
 if [ "$LICENSE_KEY" == '' ]; then
-  echo 'A valid license key was not found'
-  exit
+  >&2 echo 'A valid license key was not found'
+  exit 1
 fi
 
 #
@@ -107,16 +107,16 @@ esac
 # Check for a valid distro
 #
 if [ "$MODULE_FILE" == '' ]; then
-  echo 'Please enter a supported Linux distribution as a command line argument'
-  exit
+  >&2 echo 'Please enter a supported Linux distribution as a command line argument'
+  exit 1
 fi
 
 #
 # Check that the image has been built
 #
 if [ ! -f "../../build/${MODULE_FILE}" ]; then
-  echo "The Phantom Token plugin for $DISTRO version $NGINX_DEPLOY_VERSION has not been built"
-  exit
+  >&2 echo "The Phantom Token plugin for $DISTRO version $NGINX_DEPLOY_VERSION has not been built"
+  exit 1
 fi
 
 #
@@ -125,7 +125,7 @@ fi
 echo 'Building the NGINX and valgrind Docker image ...'
 docker build --no-cache -f "$DISTRO/Dockerfile" --build-arg NGINX_DEPLOY_VERSION="$NGINX_DEPLOY_VERSION" -t "nginx_$DISTRO:$NGINX_DEPLOY_VERSION" .
 if [ $? -ne 0 ]; then
-  echo "Problem encountered building the NGINX $DISTRO docker image"
+  >&2 echo "Problem encountered building the NGINX $DISTRO docker image"
   exit 1
 fi
 
@@ -142,7 +142,7 @@ export NGINX_PATH
 export CONF_PATH
 docker compose up -d
 if [ $? -ne 0 ]; then
-  echo 'Problem encountered running the Docker Compose deployment'
+  >&2 echo 'Problem encountered running the Docker Compose deployment'
   exit 1
 fi
 
@@ -190,7 +190,7 @@ do
     echo -n "."
     HTTP_STATUS=$(curl -s -X GET 'http://localhost:8080/api' -H "Authorization: Bearer $ACCESS_TOKEN" -o $RESPONSE_FILE -w '%{http_code}')
     if [ "$HTTP_STATUS" != '200' ]; then
-      echo "Unexpected status during API call: $HTTP_STATUS"
+      >&2 echo "Unexpected status during API call: $HTTP_STATUS"
     fi
   done
 
@@ -200,7 +200,7 @@ do
   echo -n "."
   HTTP_STATUS=$(curl -s -X GET 'http://localhost:8080/api' -H "Authorization: Bearer xxx" -o $RESPONSE_FILE -w '%{http_code}')
   if [ "$HTTP_STATUS" != '401' ]; then
-    echo "Unexpected status during API call: $HTTP_STATUS"
+    >&2 echo "Unexpected status during API call: $HTTP_STATUS"
   fi
 done
 

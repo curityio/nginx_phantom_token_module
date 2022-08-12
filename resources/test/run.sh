@@ -19,13 +19,13 @@ LICENSE_FILE_PATH=$(eval echo "$LICENSE_FILE_PATH")
 # Check we have valid data before proceeding
 #
 if [ ! -f "$LICENSE_FILE_PATH" ]; then
-  echo 'A valid LICENSE_FILE_PATH parameter was not supplied'
-  exit
+  >&2 echo 'A valid LICENSE_FILE_PATH parameter was not supplied'
+  exit 1
 fi
 LICENSE_KEY=$(cat "$LICENSE_FILE_PATH" | jq -r .License)
 if [ "$LICENSE_KEY" == '' ]; then
-  echo 'A valid license key was not found'
-  exit
+  >&2 echo 'A valid license key was not found'
+  exit 1 
 fi
 
 #
