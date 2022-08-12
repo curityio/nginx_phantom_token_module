@@ -5,7 +5,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 #
 # Input parameters
 #
-LICENSE_FILE_PATH=
 ADMIN_PASSWORD=Password1
 
 #
