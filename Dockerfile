@@ -31,7 +31,7 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
-RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.12.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.13.tar.gz --strip-components=1
 RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
@@ -50,7 +50,7 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
-RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.12.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.13.tar.gz --strip-components=1
 RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
@@ -103,7 +103,7 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
-RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.12.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.13.tar.gz --strip-components=1
 RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
@@ -122,7 +122,7 @@ ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
 RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
-RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.12.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.13.tar.gz --strip-components=1
 RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
