@@ -277,9 +277,11 @@ NGINX must be in the system path; the tests will run the first `nginx` command t
 ## Status
 This module is fit for production usage. 
 
+## Development Setup
+If you wish to customize this module by building from source, see the [Development Wiki](https://github.com/curityio/nginx_phantom_token_module/wiki) for instructions.
+
 ## More Information
-For more information about Curity, its capabilities, and how to use it to issue phantom tokens, visit [curity.io](https://curity.io/product/token-service/#phantom_tokens). For background information on using Curity for API access, consult the [API integration section of the Curity developer manual](https://support.curity.io/docs/latest/developer-guide/api-integration/overview.html). For additional insights in how to apply this pattern to microservices and APIs, read _[How to Control User Identity within Microservices](http://nordicapis.com/how-to-control-user-identity-within-microservices/)_ on the Nordic APIs blog.
+For more information about Curity, its capabilities, and how to use it to issue phantom tokens for microservices, visit [curity.io](https://curity.io/product/token-service/?=use-cases?tab=microservices). For background information on using Curity for API access, see the [API security resources](https://curity.io/resources/api-security).
 
 ## Licensing
-
 This software is copyright (C) 2017 Curity AB. It is open source software that is licensed under the [Apache v. 2](LICENSE). For commercial support of this module, please contact [Curity sales](mailto:sales@curity.io).
