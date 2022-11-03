@@ -3,9 +3,7 @@
 [![Quality](https://img.shields.io/badge/quality-production-green)](https://curity.io/resources/code-examples/status/)
 [![Availability](https://img.shields.io/badge/availability-binary-blue)](https://curity.io/resources/code-examples/status/)
 
-NGINX module that introspects access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662), producing a "phantom token" that can be forwarded to back-end APIs and Web services.
-
-More details can be found in [The Phantom Token Approach](https://curity.io/resources/learn/phantom-token-pattern/) article.
+NGINX module that introspects access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662), producing a "phantom token" that can be forwarded to back-end APIs and Web services. Read more about the [Phantom Token approach](https://curity.io/resources/learn/phantom-token-pattern/).
 
 This module, when enabled, filters incoming requests, denying access to those which do *not* have a valid OAuth access token presented in an `Authorization` header. From this header, the access_token is extracted and introspected using the configured endpoint. Curity replies to this request according to the standard. For an active access token, the body of Curity's response contains the JWT that replaces the access token in the header of the request that is forwarded by NGINX to the back-end. If the token is not valid or absent, no request to the back-end is made and the caller is given a 401, unauthorized, error. This flow is shown in the following diagram:
 
@@ -262,7 +260,7 @@ This module is fit for production usage.
 If you wish to build this module from source, in order to run against other NGINX versions, or to change the module's logic, see the [Development Wiki](https://github.com/curityio/nginx_phantom_token_module/wiki) for instructions.
 
 ## More Information
-For more information about Curity, its capabilities, and how to use it to issue phantom tokens for microservices, visit [curity.io](https://curity.io/product/token-service/?=use-cases?tab=microservices). For background information on using Curity for API access, see the [API security resources](https://curity.io/resources/api-security).
+For more information about the Curity Identity Server, its capabilities, and how to use it to issue phantom tokens for microservices, visit [curity.io](https://curity.io/product/token-service/?=use-cases?tab=microservices). For background information on using Curity for API access, see the [API security resources](https://curity.io/resources/api-security).
 
 ## Licensing
-This software is copyright (C) 2017 Curity AB. It is open source software that is licensed under the [Apache v. 2](LICENSE). For commercial support of this module, please contact [Curity sales](mailto:sales@curity.io).
+This software is copyright (C) 2022 Curity AB. It is open source software that is licensed under the [Apache v. 2](LICENSE). For commercial support of this module, please contact [Curity sales](mailto:sales@curity.io).
