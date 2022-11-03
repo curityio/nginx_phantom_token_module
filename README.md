@@ -255,30 +255,11 @@ Pre-built binaries of this module are provided for the following versions of NGI
 | Ubuntu 20.04 LTS (Focal Fossa)     | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.20.04.ngx_curity_http_phantom_token_module_1.21.6.so)    | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.20.04.ngx_curity_http_phantom_token_module_1.21.5.so)    | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.20.04.ngx_curity_http_phantom_token_module_1.21.3.so) | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.20.04.ngx_curity_http_phantom_token_module_1.19.10.so) | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.20.04.ngx_curity_http_phantom_token_module_1.19.5.so) |
 | Ubuntu 22.04 LTS (Jammy Jellyfish) | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.22.04.ngx_curity_http_phantom_token_module_1.21.6.so)    | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.22.04.ngx_curity_http_phantom_token_module_1.21.5.so)    | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.22.04.ngx_curity_http_phantom_token_module_1.21.3.so) | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.22.04.ngx_curity_http_phantom_token_module_1.19.10.so) | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/1.3.0/ubuntu.22.04.ngx_curity_http_phantom_token_module_1.19.5.so) |
 
-## Testing
-
-To test this module, you'll need the [Test::Nginx Perl module](https://github.com/openresty/test-nginx) and [docker-compose](https://docs.docker.com/compose/install/) installed. 
-
-To run the tests do the following:
-
-* run `./configure`, make sure you select _No_ for Dynamic module 
-* run `make`
-* Edit the resources/test/run.sh script and set the `ADMIN_PASSWORD` and `LICENSE_FILE_PATH` values for the Curity Identity server*
-* run `make test`
-
-This, will run `prove` passing in the test or test directory (`t`). 
-
-Internet access to `hub.docker.com` is required for the `curity.t` test suite to pass, if the images required are not present locally.
-
-\* These variables can be set inline, in your environment or in the docker-compose.yaml file.
-
-NGINX must be in the system path; the tests will run the first `nginx` command that's found or bail if none is located. Also, the tests assume that the module is statically linked with NGINX. Before running them, be sure that the module is linked into the NGINX binary. Also, debug logging must be compiled into NGINX for some tests in `config.t` to pass. (This is the case if `nginx -V` includes `--with-debug` in the output.)
-
 ## Status
 This module is fit for production usage. 
 
 ## Development Setup
-If you wish to customize this module by building from source, see the [Development Wiki](https://github.com/curityio/nginx_phantom_token_module/wiki) for instructions.
+If you wish to build this module from source, in order to run against other NGINX versions, or to change the module's logic, see the [Development Wiki](https://github.com/curityio/nginx_phantom_token_module/wiki) for instructions.
 
 ## More Information
 For more information about Curity, its capabilities, and how to use it to issue phantom tokens for microservices, visit [curity.io](https://curity.io/product/token-service/?=use-cases?tab=microservices). For background information on using Curity for API access, see the [API security resources](https://curity.io/resources/api-security).
