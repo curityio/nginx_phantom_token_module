@@ -160,7 +160,7 @@ server {
 ```
 
 ### Complex Configuration
-The following is a more complex configuration where the NGINX reverse proxy is on a seperate host then the Curity Identity Server:
+The following is a more complex configuration where the NGINX reverse proxy is on a separate host to the Curity Identity Server:
 
 ```nginx
 server {
@@ -260,7 +260,7 @@ This module is fit for production usage.
 If you wish to build this module from source, in order to run against other NGINX versions, or to change the module's logic, see the [Development Wiki](https://github.com/curityio/nginx_phantom_token_module/wiki) for instructions.
 
 ## More Information
-For more information about the Curity Identity Server, its capabilities, and how to use it to issue phantom tokens for microservices, visit [curity.io](https://curity.io/product/token-service/?=use-cases?tab=microservices). For background information on using the Curity dentity Server to secure API access, see our [API security resources](https://curity.io/resources/api-security).
+For more information about the Curity Identity Server, its capabilities, and how to use it to issue phantom tokens for microservices, visit [curity.io](https://curity.io/product/token-service/?=use-cases?tab=microservices). For background information on using the Curity Identity Server to secure API access, see our [API security resources](https://curity.io/resources/api-security).
 
 ## Licensing
 This software is copyright (C) 2022 Curity AB. It is open source software that is licensed under the [Apache v. 2](LICENSE). For commercial support of this module, please contact [Curity sales](mailto:sales@curity.io).
