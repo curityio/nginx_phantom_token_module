@@ -8,7 +8,7 @@ ARG NGINX_DEPLOY_VERSION
 
 RUN yum install -y yum-utils
 
-COPY amazon2/nginx.repo /etc/yum.repos.d/nginx.repo
+COPY amazon2023/nginx.repo /etc/yum.repos.d/nginx.repo
 
 RUN yum-config-manager --enable nginx-mainline
 
