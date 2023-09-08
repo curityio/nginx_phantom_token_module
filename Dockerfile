@@ -30,8 +30,8 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
-RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.13.tar.gz --strip-components=1
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.45/pcre-8.45.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.45.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.3.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.3.tar.gz --strip-components=1
 RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
@@ -49,8 +49,8 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
-RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.13.tar.gz --strip-components=1
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.45/pcre-8.45.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.45.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.3.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.3.tar.gz --strip-components=1
 RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
@@ -102,8 +102,8 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
-RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.13.tar.gz --strip-components=1
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.45/pcre-8.45.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.45.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.3.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.3.tar.gz --strip-components=1
 RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
@@ -121,12 +121,48 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.44/pcre-8.44.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.44.tar.gz --strip-components=1
-RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.2.13.tar.gz --strip-components=1
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.45/pcre-8.45.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.45.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.3.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.3.tar.gz --strip-components=1
+RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
+
+######
+FROM debian:bookworm as debian12-builder
+
+RUN apt update && apt install -y \
+    wget build-essential git tree software-properties-common dirmngr apt-transport-https ufw
+
+COPY configure /tmp
+COPY config /tmp
+COPY Makefile /tmp
+COPY phantom_token.c /tmp
+ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
+ADD nginx-$NGINX_VERSION.tar.gz /tmp/
+
+WORKDIR /tmp
+RUN wget https://sourceforge.net/projects/pcre/files/pcre/8.45/pcre-8.45.tar.gz && mkdir -p pcre && tar -xz -C pcre -f pcre-8.45.tar.gz --strip-components=1
+RUN wget https://www.zlib.net/zlib-1.3.tar.gz && mkdir -p zlib && tar -xz -C zlib -f zlib-1.3.tar.gz --strip-components=1
 RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
 
 ######
 FROM amazonlinux:2 as amzn2-builder
+
+RUN yum install -y \
+ gcc pcre-devel zlib-devel make
+
+COPY configure /tmp
+COPY config /tmp
+COPY Makefile /tmp
+COPY phantom_token.c /tmp
+ARG NGINX_VERSION
+ENV NGINX_VERSION=$NGINX_VERSION
+ADD nginx-$NGINX_VERSION.tar.gz /tmp/
+
+WORKDIR /tmp
+RUN ./configure && make
+
+######
+FROM amazonlinux:2023 as amzn2023-builder
 
 RUN yum install -y \
  gcc pcre-devel zlib-devel make
@@ -172,7 +208,9 @@ COPY --from=centos7-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phant
 COPY --from=centos-stream9-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/centos.stream.9.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=debian10-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.buster.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=debian11-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.bullseye.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=debian12-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/debian.bookworm.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=amzn2-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn2.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
+COPY --from=amzn2023-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/amzn2023.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 COPY --from=alpine-builder /tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so /build/alpine.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
 
 ENTRYPOINT ["sleep"]
