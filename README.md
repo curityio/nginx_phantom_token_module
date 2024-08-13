@@ -3,6 +3,9 @@
 [![Quality](https://img.shields.io/badge/quality-production-green)](https://curity.io/resources/code-examples/status/)
 [![Availability](https://img.shields.io/badge/availability-binary-blue)](https://curity.io/resources/code-examples/status/)
 
+> [!NOTE]  Token Exchange module fork
+> This fork changes the module to perform token exchange to JWT to be used with authorization servers that doesn't support token introspection to JWT, for instance Zitadel. Use the authorization servers token endpoint instead of introspection endpoint in the configuration.
+
 NGINX module that introspects access tokens according to [RFC 7662](https://tools.ietf.org/html/rfc7662), producing a "phantom token" that can be forwarded to back-end APIs and Web services. Read more about the [Phantom Token approach](https://curity.io/resources/learn/phantom-token-pattern/).
 
 This module, when enabled, filters incoming requests, denying access to those which do *not* have a valid OAuth access token presented in an `Authorization` header. From this header, the access_token is extracted and introspected using the configured endpoint. The Curity Identity Server replies to this request according to the standard. For an active access token, the body of the Curity Identity Server's response contains the JWT that replaces the access token in the header of the request that is forwarded by NGINX to the back-end. If the token is not valid or absent, no request to the back-end is made and the caller is given a 401, unauthorized, error. This flow is shown in the following diagram:

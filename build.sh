@@ -17,7 +17,7 @@ if [[ ! -r $NGINX_TARBALL ]]; then
     $DOWNLOAD_PROGRAM https://nginx.org/download/nginx-"${NGINX_VERSION}".tar.gz
 fi
 
-docker build --no-cache -t nginx-module-builder \
+docker build --platform linux/amd64 --no-cache -t nginx-module-builder \
   --build-arg NGINX_SRC_DIR=/tmp/nginx-"$NGINX_VERSION" \
   --build-arg NGINX_VERSION="$NGINX_VERSION" \
   --build-arg NGINX_DEBUG=n \
