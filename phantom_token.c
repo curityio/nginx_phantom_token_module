@@ -298,6 +298,10 @@ static ngx_int_t handler(ngx_http_request_t *request)
                 || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
             {
                 return write_error_response(request, NGX_HTTP_BAD_GATEWAY, module_location_config);
+            } else if (module_context->status == NGX_HTTP_BAD_REQUEST)
+            {
+                // Token exchange returns 400 invalid request if access token is invalid
+                return set_www_authenticate_header(request, module_location_config, NULL);
             }
 
             return write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
@@ -363,7 +367,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     }
 
     // extract access token from header
-    u_char *introspect_body_data = ngx_pcalloc(request->pool, request->headers_in.authorization->value.len);
+    u_char *introspect_body_data = ngx_pcalloc(request->pool, request->headers_in.authorization->value.len + 190);
 
     if (introspect_body_data == NULL)
     {
@@ -377,8 +381,8 @@ static ngx_int_t handler(ngx_http_request_t *request)
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    ngx_snprintf(introspect_body_data, request->headers_in.authorization->value.len, "token=%s", bearer_token_pos);
-
+    ngx_snprintf(introspect_body_data, request->headers_in.authorization->value.len + 190, "subject_token=%s&grant_type=urn:ietf:params:oauth:grant-type:token-exchange&requested_token_type=urn:ietf:params:oauth:token-type:jwt&subject_token_type=urn:ietf:params:oauth:token-type:access_token", bearer_token_pos);
+                   
     introspection_body->data = introspect_body_data;
     introspection_body->len = ngx_strlen(introspection_body->data);
 
@@ -607,6 +611,35 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, phanto
     return write_error_response(request, NGX_HTTP_UNAUTHORIZED, module_location_config);
 }
 
+static ngx_str_t extract_access_token(ngx_http_request_t *request, u_char *jwt_start)
+{
+    // Expected incoming JSON format: {"access_token":"<actual JWT>"}
+    ngx_str_t access_token = ngx_null_string;
+
+    char *access_token_start = ngx_strstr(jwt_start, "\"access_token\":") + 15;
+    if (access_token_start == NULL) {
+        // No access token found
+        return access_token;
+    }
+
+    // Remove any extra whitespace after the semi-colon
+    while (isspace(*access_token_start))
+    {
+        access_token_start++;
+    }
+    // Remove starting quotation
+    access_token_start++;
+
+    char *access_token_end = ngx_strstr(access_token_start, "\",");
+
+    u_char subbuff[access_token_end - access_token_start];
+    memcpy(subbuff, access_token_start, access_token_end - access_token_start);
+    access_token.data = subbuff;
+    access_token.len = access_token_end-access_token_start;
+
+    return access_token;
+}
+
 static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
                                                 ngx_int_t introspection_subrequest_status_code)
 {
@@ -668,8 +701,11 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     jwt_start = request->header_end + sizeof("\r\n") - 1; // FIXME: Won't work if JWT is large
 #endif
 
-    size_t jwt_len = request->headers_out.content_length_n;
-    size_t bearer_jwt_len = BEARER_SIZE + jwt_len;
+    // Needs to parse response to extract access_token and calculate length
+    ngx_str_t access_token = extract_access_token(request, jwt_start);
+
+    // size_t jwt_len = access_token.len;
+    size_t bearer_jwt_len = BEARER_SIZE + access_token.len;
 
     module_context->jwt.len = bearer_jwt_len;
     module_context->jwt.data = ngx_pnalloc(request->pool, bearer_jwt_len);
@@ -684,7 +720,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     u_char *p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
 
-    ngx_memcpy(p, jwt_start, jwt_len);
+    ngx_memcpy(p, access_token.data, access_token.len);
 
     if (cache_data.len > 0)
     {
