@@ -752,9 +752,9 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 
-    // Extract scope. TODO: Enable and match with configured scope
-    // ngx_str_t scope = extract_scope(request, jwt_start);
-    // ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Scope: '%V'", &scope);
+    // Extract scope. TODO: Match with configured scope and reject if missmatching. Currently only logging.
+    ngx_str_t scope = extract_scope(request, jwt_start);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Scope: '%V'", &scope);
 
     size_t bearer_jwt_len = BEARER_SIZE + access_token.len;
 
