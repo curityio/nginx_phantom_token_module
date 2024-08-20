@@ -613,16 +613,19 @@ static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, phanto
 
 static ngx_str_t extract_access_token(ngx_http_request_t *request, u_char *jwt_start)
 {
-    // Expected incoming JSON format: {"access_token":"<actual JWT>"}
+    // Expected incoming JSON format: {"access_token":"<actual JWT>","scope":"<scope string>"}
     ngx_str_t access_token = ngx_null_string;
 
-    char *access_token_start = ngx_strstr(jwt_start, "\"access_token\":") + 15;
+    u_char *access_token_start = ngx_strnstr(jwt_start, "\"access_token\":", request->headers_out.content_length_n);
     if (access_token_start == NULL) {
         // No access token found
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "No access token found");
         return access_token;
+    } else {
+        access_token_start+=15; // Move pointer beyond "access_token":
     }
 
-    // Remove any extra whitespace after the semi-colon
+    // Remove any extra whitespace after the colon
     while (isspace(*access_token_start))
     {
         access_token_start++;
@@ -630,14 +633,52 @@ static ngx_str_t extract_access_token(ngx_http_request_t *request, u_char *jwt_s
     // Remove starting quotation
     access_token_start++;
 
-    char *access_token_end = ngx_strstr(access_token_start, "\",");
+    u_char *access_token_end = ngx_strnstr(access_token_start, "\",", request->headers_out.content_length_n - (access_token_start-jwt_start));
+    if (access_token_end == NULL) {
+        // No access token end found
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "No access token end found");
+        return access_token;
+    }
 
-    u_char subbuff[access_token_end - access_token_start];
-    memcpy(subbuff, access_token_start, access_token_end - access_token_start);
-    access_token.data = subbuff;
+    access_token.data = access_token_start;
     access_token.len = access_token_end-access_token_start;
 
     return access_token;
+}
+
+static ngx_str_t extract_scope(ngx_http_request_t *request, u_char *jwt_start)
+{
+    // Expected incoming JSON format: {"access_token":"<actual JWT>","scope":"<scope string>"}
+    ngx_str_t scope = ngx_null_string;
+
+    u_char *scope_start = ngx_strnstr(jwt_start, "\"scope\":", request->headers_out.content_length_n);
+    if (scope_start == NULL) {
+        // No scope found
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "No scope found");
+        return scope;
+    } else {
+        scope_start+=8; // Move pointer beyond "scope":
+    }
+
+    // Remove any extra whitespace after the colon
+    while (isspace(*scope_start))
+    {
+        scope_start++;
+    }
+    // Remove starting quotation
+    scope_start++;
+
+    u_char *scope_end = ngx_strnstr(scope_start, "\",", request->headers_out.content_length_n - (scope_start-jwt_start));
+    if (scope_end == NULL) {
+        // No scope end found
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "No scope end found");
+        return scope;
+    }
+
+    scope.data = scope_start;
+    scope.len = scope_end-scope_start;
+
+    return scope;
 }
 
 static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
@@ -703,8 +744,18 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     // Needs to parse response to extract access_token and calculate length
     ngx_str_t access_token = extract_access_token(request, jwt_start);
+    if (access_token.data == NULL)
+    {
+        module_context->done = 1;
+        module_context->status = NGX_HTTP_UNAUTHORIZED;
 
-    // size_t jwt_len = access_token.len;
+        return introspection_subrequest_status_code;
+    }
+
+    // Extract scope. TODO: Enable and match with configured scope
+    // ngx_str_t scope = extract_scope(request, jwt_start);
+    // ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Scope: '%V'", &scope);
+
     size_t bearer_jwt_len = BEARER_SIZE + access_token.len;
 
     module_context->jwt.len = bearer_jwt_len;
