@@ -92,13 +92,6 @@ case $DISTRO in
     MODULE_FOLDER='/etc/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
-    ;;   
-
-  'centos7')
-    MODULE_FILE="centos.7.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
-    MODULE_FOLDER='/etc/nginx/modules'
-    NGINX_PATH='/usr/sbin/nginx'
-    CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'centosstream9')

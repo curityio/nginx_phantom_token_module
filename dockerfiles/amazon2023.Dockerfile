@@ -1,4 +1,4 @@
-FROM amazonlinux:2023 as amzn2023-builder
+FROM amazonlinux:2023
 
 RUN yum install -y \
  gcc pcre-devel zlib-devel make

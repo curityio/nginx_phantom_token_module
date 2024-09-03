@@ -1,4 +1,4 @@
-FROM debian:bookworm as debian12-builder
+FROM debian:bookworm
 
 RUN apt update && apt install -y \
     build-essential git tree software-properties-common dirmngr apt-transport-https ufw libpcre2-dev zlib1g-dev

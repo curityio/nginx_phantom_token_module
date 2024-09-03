@@ -8,7 +8,7 @@ FROM quay.io/centos/centos:stream9
 ARG NGINX_DEPLOY_VERSION
 
 RUN yum install -y yum-utils
-COPY centos7/nginx.repo /etc/yum.repos.d/nginx.repo
+COPY centosstream9/nginx.repo /etc/yum.repos.d/nginx.repo
 RUN yum-config-manager --enable nginx-mainline
 
 # 'yum list available nginx --showduplicates' shows versions available

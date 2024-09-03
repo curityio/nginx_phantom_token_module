@@ -1,4 +1,4 @@
-FROM debian:bullseye as debian11-builder
+FROM debian:bullseye
 
 RUN apt update && apt install -y \
     build-essential git tree software-properties-common dirmngr apt-transport-https ufw libpcre2-dev zlib1g-dev

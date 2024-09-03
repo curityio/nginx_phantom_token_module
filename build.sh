@@ -16,7 +16,6 @@ if [ "$LINUX_DISTRO" != 'alpine' ] &&
    [ "$LINUX_DISTRO" != 'ubuntu24' ] &&
    [ "$LINUX_DISTRO" != 'amazon2' ] &&
    [ "$LINUX_DISTRO" != 'amazon2023' ] &&
-   [ "$LINUX_DISTRO" != 'centos7' ] &&
    [ "$LINUX_DISTRO" != 'centosstream9' ]; then
   echo "$LINUX_DISTRO is not a supported Linux distribution"
   exit 1
@@ -39,9 +38,7 @@ function getLibraryPrefix() {
     echo 'amzn2'
   elif [ "$LINUX_DISTRO" == 'amazon2023' ]; then
     echo 'amzn2023'
-  elif [ "$LINUX_DISTRO" == 'centos7' ]; then
-    echo 'centos.7'
-  elif [ "$PREFIX" == 'centosstream9' ]; then
+  elif [ "$LINUX_DISTRO" == 'centosstream9' ]; then
     echo 'centos.stream.9'
   fi
 }

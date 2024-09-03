@@ -5,7 +5,7 @@
 ##################################################################################
 
 NGINX_VERSIONS=('1.25.5' '1.25.3' '1.25.1' '1.23.4' '1.23.2')
-LINUX_DISTROS=('alpine' 'debian11' 'debian12' 'ubuntu20' 'ubuntu22' 'ubuntu24' 'amazon2' 'amazon2023' 'centos7' 'centosstream9')
+LINUX_DISTROS=('alpine' 'debian11' 'debian12' 'ubuntu20' 'ubuntu22' 'ubuntu24' 'amazon2' 'amazon2023' 'centosstream9')
 rm log.txt 2>/dev/null
 
 #

@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream9 as centos-stream9-builder
+FROM quay.io/centos/centos:stream9
 
 RUN yum install -y \
      gcc pcre-devel zlib-devel make

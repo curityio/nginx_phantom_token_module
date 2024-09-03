@@ -1,4 +1,4 @@
-FROM amazonlinux:2 as amzn2-builder
+FROM amazonlinux:2
 
 RUN yum install -y \
  gcc pcre-devel zlib-devel make
