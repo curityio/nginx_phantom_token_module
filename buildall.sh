@@ -4,8 +4,8 @@
 # Builds an entire release with all supported NGINX versions and Linux OS versions
 ##################################################################################
 
-export NGINX_VERSIONS=('1.25.5' '1.25.3' '1.25.1' '1.23.4' '1.23.2')
-export LINUX_DISTROS=('alpine' 'debian11' 'debian12' 'ubuntu20' 'ubuntu22' 'ubuntu24' 'amazon2' 'amazon2023' 'centos7' 'centosstream9')
+NGINX_VERSIONS=('1.25.5' '1.25.3' '1.25.1' '1.23.4' '1.23.2')
+LINUX_DISTROS=('alpine' 'debian11' 'debian12' 'ubuntu20' 'ubuntu22' 'ubuntu24' 'amazon2' 'amazon2023' 'centos7' 'centosstream9')
 rm log.txt 2>/dev/null
 
 #
@@ -34,6 +34,8 @@ do
     if [ "$(isValidBuild $LINUX_DISTRO $NGINX_VERSION)" == 'true' ]; then
       
       echo "Building the NGINX $NGINX_VERSION phantom token module for $LINUX_DISTRO ..."
+      export NGINX_VERSION=$NGINX_VERSION
+      export LINUX_DISTRO=$LINUX_DISTRO
       ./build.sh 1>>./log.txt 2>&1
       if [ $? -ne 0 ]; then
         exit 1

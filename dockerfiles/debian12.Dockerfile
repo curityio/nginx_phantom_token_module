@@ -12,4 +12,4 @@ ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/
 
 WORKDIR /tmp
-RUN CONFIG_OPTS="--with-pcre=../pcre --with-zlib=../zlib" ./configure && make
+RUN ./configure && make
