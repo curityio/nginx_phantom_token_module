@@ -19,4 +19,4 @@ http://nginx.org/packages/mainline/ubuntu `lsb_release -cs` nginx" \
 # 'apt list -a nginx' shows versions available
 RUN apt update
 RUN apt list -a nginx
-RUN apt install -y nginx=$NGINX_DEPLOY_VERSION-1~jammy valgrind
+RUN apt install -y nginx=$NGINX_DEPLOY_VERSION-1~noble valgrind
