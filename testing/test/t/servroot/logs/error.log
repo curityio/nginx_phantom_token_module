@@ -1,0 +1,343 @@
+2024/09/04 12:30:34 [debug] 50294#0: bind() 0.0.0.0:1984 #9 
+2024/09/04 12:30:34 [notice] 50294#0: using the "kqueue" event method
+2024/09/04 12:30:34 [notice] 50294#0: nginx/1.25.5
+2024/09/04 12:30:34 [notice] 50294#0: built by clang 15.0.0 (clang-1500.3.9.4)
+2024/09/04 12:30:34 [notice] 50294#0: OS: Darwin 23.6.0
+2024/09/04 12:30:34 [notice] 50294#0: hw.ncpu: 16
+2024/09/04 12:30:34 [notice] 50294#0: net.inet.tcp.sendspace: 131072
+2024/09/04 12:30:34 [notice] 50294#0: kern.ipc.somaxconn: 128
+2024/09/04 12:30:34 [notice] 50294#0: hw.cachelinesize: 64
+2024/09/04 12:30:34 [notice] 50294#0: getrlimit(RLIMIT_NOFILE): 2560:9223372036854775807
+2024/09/04 12:30:34 [debug] 50295#0: write: 10, 00007FF7B87973F0, 6, 0
+2024/09/04 12:30:34 [debug] 50295#0: add cleanup: 00007F941600EDF8
+2024/09/04 12:30:34 [debug] 50295#0: malloc: 00007F9415105160:8
+2024/09/04 12:30:34 [debug] 50295#0: malloc: 00007F941580BA00:16384
+2024/09/04 12:30:34 [debug] 50295#0: malloc: 00007F941580FA00:16384
+2024/09/04 12:30:34 [debug] 50295#0: malloc: 00007F9415813A00:15872
+2024/09/04 12:30:34 [debug] 50295#0: malloc: 00007F9415808600:6656
+2024/09/04 12:30:34 [debug] 50295#0: malloc: 00007F9415817800:6656
+2024/09/04 12:30:34 [debug] 50295#0: kevent set event: 9: ft:-1 fl:0005
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: -1, changes: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 9: ft:-1 fl:0005 ff:00000000 d:1 ud:00007F9415808600
+2024/09/04 12:30:34 [debug] 50295#0: accept on 0.0.0.0:1984, ready: 1
+2024/09/04 12:30:34 [debug] 50295#0: posix_memalign: 00007F9415204080:512 @16
+2024/09/04 12:30:34 [debug] 50295#0: *1 accept: 127.0.0.1:65354 fd:10
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer add: 10: 60000:430317778
+2024/09/04 12:30:34 [debug] 50295#0: *1 reusable connection: 1
+2024/09/04 12:30:34 [debug] 50295#0: *1 kevent set event: 10: ft:-1 fl:0025
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 23
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: 60000, changes: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 10: ft:-1 fl:0025 ff:00000000 d:124 ud:00007F9415808668
+2024/09/04 12:30:34 [debug] 50295#0: *1 http wait request handler
+2024/09/04 12:30:34 [debug] 50295#0: *1 malloc: 00007F9416008A00:1024
+2024/09/04 12:30:34 [debug] 50295#0: *1 recv: eof:0, avail:124, err:0
+2024/09/04 12:30:34 [debug] 50295#0: *1 recv: fd:10 124 of 1024
+2024/09/04 12:30:34 [debug] 50295#0: *1 reusable connection: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 posix_memalign: 00007F941600A800:4096 @16
+2024/09/04 12:30:34 [debug] 50295#0: *1 http process request line
+2024/09/04 12:30:34 [debug] 50295#0: *1 http request line: "GET /t HTTP/1.1"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http uri: "/t"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http args: ""
+2024/09/04 12:30:34 [debug] 50295#0: *1 http exten: ""
+2024/09/04 12:30:34 [debug] 50295#0: *1 posix_memalign: 00007F941600FA00:4096 @16
+2024/09/04 12:30:34 [debug] 50295#0: *1 http process request header line
+2024/09/04 12:30:34 [debug] 50295#0: *1 http header: "Host: localhost"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http header: "Connection: close"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http header: "Authorization: BEARER _0XBPWQQ_41885ae3-7206-42ea-908d-1260b5e51ca2"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http header done
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer del: 10: 430317778
+2024/09/04 12:30:34 [debug] 50295#0: *1 rewrite phase: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 test location: "tt"
+2024/09/04 12:30:34 [debug] 50295#0: *1 test location: "/"
+2024/09/04 12:30:34 [debug] 50295#0: *1 test location: "t"
+2024/09/04 12:30:34 [debug] 50295#0: *1 using configuration "/t"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http cl:-1 max:31457280
+2024/09/04 12:30:34 [debug] 50295#0: *1 rewrite phase: 2
+2024/09/04 12:30:34 [debug] 50295#0: *1 post rewrite phase: 3
+2024/09/04 12:30:34 [debug] 50295#0: *1 generic phase: 4
+2024/09/04 12:30:34 [debug] 50295#0: *1 generic phase: 5
+2024/09/04 12:30:34 [debug] 50295#0: *1 access phase: 6
+2024/09/04 12:30:34 [debug] 50295#0: *1 Handling request to convert token to JWT
+2024/09/04 12:30:34 [debug] 50295#0: *1 http subrequest "tt?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http posted request: "tt?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 rewrite phase: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 test location: "tt"
+2024/09/04 12:30:34 [debug] 50295#0: *1 using configuration "tt"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http cl:51 max:31457280
+2024/09/04 12:30:34 [debug] 50295#0: *1 rewrite phase: 2
+2024/09/04 12:30:34 [debug] 50295#0: *1 post rewrite phase: 3
+2024/09/04 12:30:34 [debug] 50295#0: *1 generic phase: 4
+2024/09/04 12:30:34 [debug] 50295#0: *1 generic phase: 5
+2024/09/04 12:30:34 [debug] 50295#0: *1 generic phase: 10
+2024/09/04 12:30:34 [debug] 50295#0: *1 generic phase: 11
+2024/09/04 12:30:34 [debug] 50295#0: *1 posix_memalign: 00007F9416010A00:4096 @16
+2024/09/04 12:30:34 [debug] 50295#0: *1 http init upstream, client timer: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 kevent set event: 10: ft:-2 fl:0025
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: "Host"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script var: "localhost:8443"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: "Connection"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: "close"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: "Content-Length"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script var: "51"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: ""
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Authorization: Basic dGVzdC1uZ2lueDpzZWNyZXQy"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Accept: application/jwt"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Content-type: application/x-www-form-urlencoded"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header:
+"POST /oauth/v2/oauth-introspect HTTP/1.0
+Host: localhost:8443
+Connection: close
+Content-Length: 51
+Authorization: Basic dGVzdC1uZ2lueDpzZWNyZXQy
+Accept: application/jwt
+Content-type: application/x-www-form-urlencoded
+
+"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http cleanup add: 00007F94160109E8
+2024/09/04 12:30:34 [debug] 50295#0: *1 get rr peer, try: 2
+2024/09/04 12:30:34 [debug] 50295#0: *1 get rr peer, current: 00007F9414825A68 -1
+2024/09/04 12:30:34 [debug] 50295#0: *1 stream socket 11
+2024/09/04 12:30:34 [debug] 50295#0: *1 connect to [::1]:8443, fd:11 #2
+2024/09/04 12:30:34 [debug] 50295#0: *1 kevent set event: 11: ft:-1 fl:0025
+2024/09/04 12:30:34 [debug] 50295#0: *1 kevent set event: 11: ft:-2 fl:0025
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream connect: -2
+2024/09/04 12:30:34 [debug] 50295#0: *1 posix_memalign: 00007F9415204280:128 @16
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer add: 11: 60000:430317778
+2024/09/04 12:30:34 [debug] 50295#0: *1 http finalize request: -4, "tt?" a:1, c:3
+2024/09/04 12:30:34 [debug] 50295#0: *1 http request count:3 blk:0
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 0
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: 60000, changes: 3
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 10: ft:-2 fl:0025 ff:00000000 d:146988 ud:00007F9415817868
+2024/09/04 12:30:34 [debug] 50295#0: *1 http run request: "tt?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream check client, write event:1, "tt"
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 1
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: 59999, changes: 0
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 11: ft:-2 fl:0025 ff:00000000 d:146808 ud:00007F94158178D0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream request: "tt?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream send request handler
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream send request
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream send request body
+2024/09/04 12:30:34 [debug] 50295#0: *1 chain writer buf fl:0 s:226
+2024/09/04 12:30:34 [debug] 50295#0: *1 chain writer buf fl:1 s:51
+2024/09/04 12:30:34 [debug] 50295#0: *1 chain writer in: 00007F9416011218
+2024/09/04 12:30:34 [debug] 50295#0: *1 writev: 277 of 277
+2024/09/04 12:30:34 [debug] 50295#0: *1 chain writer out: 0000000000000000
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer del: 11: 430317778
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer add: 11: 60000:430317779
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 0
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: 60000, changes: 0
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 11: ft:-2 fl:0025 ff:00000000 d:146808 ud:00007F94158178D0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream request: "tt?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream dummy handler
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 0
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: 60000, changes: 0
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 11: ft:-1 fl:0025 ff:00000000 d:1150 ud:00007F94158086D0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream request: "tt?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream process header
+2024/09/04 12:30:34 [debug] 50295#0: *1 malloc: 00007F9414012600:4096
+2024/09/04 12:30:34 [debug] 50295#0: *1 recv: eof:0, avail:1150, err:0
+2024/09/04 12:30:34 [debug] 50295#0: *1 recv: fd:11 1150 of 4096
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy status 200 "200 OK"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Date: Wed, 04 Sep 2024 10:30:34 GMT"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "X-Content-Type-Options: nosniff"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "X-XSS-Protection: 1; mode=block"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Content-Security-Policy: frame-ancestors 'none'"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "X-Frame-Options: DENY"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Expires: Wed, 04 Sep 2024 10:35:31 GMT"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Cache-Control: max-age=296, must-revalidate"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Content-Type: application/jwt"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Content-Length: 819"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header done
+2024/09/04 12:30:34 [debug] 50295#0: *1 finalize http upstream request: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 finalize http proxy request
+2024/09/04 12:30:34 [debug] 50295#0: *1 free rr peer 2 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 close http upstream connection: 11
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9415204280, unused: 48
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer del: 11: 430317779
+2024/09/04 12:30:34 [debug] 50295#0: *1 reusable connection: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http finalize request: 0, "tt?" a:1, c:2
+2024/09/04 12:30:34 [debug] 50295#0: *1 auth request done status = 200
+2024/09/04 12:30:34 [debug] 50295#0: *1 posix_memalign: 00007F9414013600:4096 @16
+2024/09/04 12:30:34 [debug] 50295#0: *1 http wake parent request: "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http posted request: "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 access phase: 6
+2024/09/04 12:30:34 [debug] 50295#0: *1 Handling request to convert token to JWT
+2024/09/04 12:30:34 [debug] 50295#0: *1 access phase: 7
+2024/09/04 12:30:34 [debug] 50295#0: *1 access phase: 8
+2024/09/04 12:30:34 [debug] 50295#0: *1 post access phase: 9
+2024/09/04 12:30:34 [debug] 50295#0: *1 generic phase: 10
+2024/09/04 12:30:34 [debug] 50295#0: *1 generic phase: 11
+2024/09/04 12:30:34 [debug] 50295#0: *1 http init upstream, client timer: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: "Host"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script var: "localhost:8080"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: "Connection"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: "close"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: ""
+2024/09/04 12:30:34 [debug] 50295#0: *1 http script copy: ""
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Authorization: Bearer eyJraWQiOiItMjAyMDIxMjM3MyIsIng1dCI6IktwdlhqdEJQeWx3RHNENWtWLTN1bkVzQXozRSIsImFsZyI6IlJTMjU2In0.eyJqdGkiOiIwZjY0MDEyNy04MzIzLTQ5NmItOTZmMi1mYTkwMDZkZGI5MzkiLCJkZWxlZ2F0aW9uSWQiOiIxMzc4Y2E4Yy1jN2FlLTQ5MDctOGI1ZS1lMmFhNTU3MzdhNmMiLCJleHAiOjE3MjU0NDYxMzEsIm5iZiI6MTcyNTQ0NTgzMSwic2NvcGUiOiIiLCJpc3MiOiJodHRwOi8vYjhiMzIyYWUwZjFjOjg0NDMvb2F1dGgvdjIvb2F1dGgtYW5vbnltb3VzIiwic3ViIjoidGVzdC1jbGllbnQiLCJhdWQiOiJ0ZXN0LWNsaWVudCIsImlhdCI6MTcyNTQ0NTgzMSwicHVycG9zZSI6ImFjY2Vzc190b2tlbiJ9.JiToW3GGWQFLIL0wpbWo1nn7QiqhvGZHQNTKU7prf5Uze0CVKy3zbTMO_FB5OGJnPXom1vq-NhIO7p65dCH_HHrO0ZXw1gVtrYXtvt1IbfSKvzPunm9_AP1IyzdEu_RaQCbhnBAPXE1vryuQw3DsBtCyxiaI_sUhzjNf7lD7dPx6_fpHDO6k30OeSY5QmtF6G5FWq5IikVTRBIS0J5ApZOCdGKJzBVi5KVuGIlEaJXZFG88z8P3LxqM4Tpz8hATAkXDcOdGtfvR5QicSuTRUV5bZQn_vSNLfBU3Bw3nTu6NJfMPG0HG_666XPCWfhakNEiSrMEFbh5w_oUG_GaOC2A"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Accept: application/jwt"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Accept: */*"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header:
+"GET /anything HTTP/1.0
+Host: localhost:8080
+Connection: close
+Authorization: Bearer eyJraWQiOiItMjAyMDIxMjM3MyIsIng1dCI6IktwdlhqdEJQeWx3RHNENWtWLTN1bkVzQXozRSIsImFsZyI6IlJTMjU2In0.eyJqdGkiOiIwZjY0MDEyNy04MzIzLTQ5NmItOTZmMi1mYTkwMDZkZGI5MzkiLCJkZWxlZ2F0aW9uSWQiOiIxMzc4Y2E4Yy1jN2FlLTQ5MDctOGI1ZS1lMmFhNTU3MzdhNmMiLCJleHAiOjE3MjU0NDYxMzEsIm5iZiI6MTcyNTQ0NTgzMSwic2NvcGUiOiIiLCJpc3MiOiJodHRwOi8vYjhiMzIyYWUwZjFjOjg0NDMvb2F1dGgvdjIvb2F1dGgtYW5vbnltb3VzIiwic3ViIjoidGVzdC1jbGllbnQiLCJhdWQiOiJ0ZXN0LWNsaWVudCIsImlhdCI6MTcyNTQ0NTgzMSwicHVycG9zZSI6ImFjY2Vzc190b2tlbiJ9.JiToW3GGWQFLIL0wpbWo1nn7QiqhvGZHQNTKU7prf5Uze0CVKy3zbTMO_FB5OGJnPXom1vq-NhIO7p65dCH_HHrO0ZXw1gVtrYXtvt1IbfSKvzPunm9_AP1IyzdEu_RaQCbhnBAPXE1vryuQw3DsBtCyxiaI_sUhzjNf7lD7dPx6_fpHDO6k30OeSY5QmtF6G5FWq5IikVTRBIS0J5ApZOCdGKJzBVi5KVuGIlEaJXZFG88z8P3LxqM4Tpz8hATAkXDcOdGtfvR5QicSuTRUV5bZQn_vSNLfBU3Bw3nTu6NJfMPG0HG_666XPCWfhakNEiSrMEFbh5w_oUG_GaOC2A
+Accept: application/jwt
+Accept: */*
+
+"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http cleanup add: 00007F9414014250
+2024/09/04 12:30:34 [debug] 50295#0: *1 get rr peer, try: 2
+2024/09/04 12:30:34 [debug] 50295#0: *1 get rr peer, current: 00007F9414825EE8 -1
+2024/09/04 12:30:34 [debug] 50295#0: *1 stream socket 11
+2024/09/04 12:30:34 [debug] 50295#0: *1 connect to [::1]:8080, fd:11 #3
+2024/09/04 12:30:34 [debug] 50295#0: *1 kevent set event: 11: ft:-1 fl:0025
+2024/09/04 12:30:34 [debug] 50295#0: *1 kevent set event: 11: ft:-2 fl:0025
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream connect: -2
+2024/09/04 12:30:34 [debug] 50295#0: *1 posix_memalign: 00007F9413F04560:128 @16
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer add: 11: 60000:430317800
+2024/09/04 12:30:34 [debug] 50295#0: *1 http finalize request: -4, "/t?" a:1, c:2
+2024/09/04 12:30:34 [debug] 50295#0: *1 http request count:2 blk:0
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 21
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: 60000, changes: 2
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 11: ft:-2 fl:0025 ff:00000000 d:146808 ud:00007F94158178D1
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream request: "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream send request handler
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream send request
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream send request body
+2024/09/04 12:30:34 [debug] 50295#0: *1 chain writer buf fl:1 s:948
+2024/09/04 12:30:34 [debug] 50295#0: *1 chain writer in: 00007F94160111F8
+2024/09/04 12:30:34 [debug] 50295#0: *1 writev: 948 of 948
+2024/09/04 12:30:34 [debug] 50295#0: *1 chain writer out: 0000000000000000
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer del: 11: 430317800
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer add: 11: 60000:430317801
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 1
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: 60000, changes: 0
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 11: ft:-2 fl:0025 ff:00000000 d:146808 ud:00007F94158178D1
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream request: "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream dummy handler
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 0
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: 60000, changes: 0
+2024/09/04 12:30:34 [debug] 50295#0: kevent events: 1
+2024/09/04 12:30:34 [debug] 50295#0: kevent: 11: ft:-1 fl:0025 ff:00000000 d:226 ud:00007F94158086D1
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream request: "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream process header
+2024/09/04 12:30:34 [debug] 50295#0: *1 malloc: 00007F9416011A00:4096
+2024/09/04 12:30:34 [debug] 50295#0: *1 recv: eof:0, avail:226, err:0
+2024/09/04 12:30:34 [debug] 50295#0: *1 recv: fd:11 1367 of 4096
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy status 200 "200 OK"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Server: gunicorn/19.9.0"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Date: Wed, 04 Sep 2024 10:30:34 GMT"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Connection: close"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Content-Type: application/json"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Content-Length: 1141"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Access-Control-Allow-Origin: *"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header: "Access-Control-Allow-Credentials: true"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy header done
+2024/09/04 12:30:34 [debug] 50295#0: *1 posix_memalign: 00007F9416012A00:4096 @16
+2024/09/04 12:30:34 [debug] 50295#0: *1 HTTP/1.1 200 OK
+Server: nginx/1.25.5
+Date: Wed, 04 Sep 2024 10:30:34 GMT
+Content-Type: application/json
+Content-Length: 1141
+Connection: close
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+
+2024/09/04 12:30:34 [debug] 50295#0: *1 write new buf t:1 f:0 00007F9416012A70, pos 00007F9416012A70, size: 223 file: 0, size: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http write filter: l:0 f:0 s:223
+2024/09/04 12:30:34 [debug] 50295#0: *1 http cacheable: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http proxy filter init s:200 h:0 c:0 l:1141
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream process upstream
+2024/09/04 12:30:34 [debug] 50295#0: *1 pipe read upstream: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 pipe preread: 1141
+2024/09/04 12:30:34 [debug] 50295#0: *1 pipe buf free s:0 t:1 f:0 00007F9416011A00, pos 00007F9416011AE2, size: 1141 file: 0, size: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 pipe length: 1141
+2024/09/04 12:30:34 [debug] 50295#0: *1 input buf #0
+2024/09/04 12:30:34 [debug] 50295#0: *1 pipe write downstream: 1
+2024/09/04 12:30:34 [debug] 50295#0: *1 pipe write downstream flush in
+2024/09/04 12:30:34 [debug] 50295#0: *1 http output filter "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http copy filter: "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http postpone filter "/t?" 00007F9416011218
+2024/09/04 12:30:34 [debug] 50295#0: *1 write old buf t:1 f:0 00007F9416012A70, pos 00007F9416012A70, size: 223 file: 0, size: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 write new buf t:1 f:0 00007F9416011A00, pos 00007F9416011AE2, size: 1141 file: 0, size: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http write filter: l:0 f:0 s:1364
+2024/09/04 12:30:34 [debug] 50295#0: *1 http copy filter: 0 "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 pipe write downstream done
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer: 11, old: 430317801, new: 430317802
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream exit: 0000000000000000
+2024/09/04 12:30:34 [debug] 50295#0: *1 finalize http upstream request: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 finalize http proxy request
+2024/09/04 12:30:34 [debug] 50295#0: *1 free rr peer 2 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 close http upstream connection: 11
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9413F04560, unused: 48
+2024/09/04 12:30:34 [debug] 50295#0: *1 event timer del: 11: 430317801
+2024/09/04 12:30:34 [debug] 50295#0: *1 reusable connection: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http upstream temp fd: -1
+2024/09/04 12:30:34 [debug] 50295#0: *1 http output filter "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http copy filter: "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http postpone filter "/t?" 00007FF7B8797160
+2024/09/04 12:30:34 [debug] 50295#0: *1 write old buf t:1 f:0 00007F9416012A70, pos 00007F9416012A70, size: 223 file: 0, size: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 write old buf t:1 f:0 00007F9416011A00, pos 00007F9416011AE2, size: 1141 file: 0, size: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 write new buf t:0 f:0 0000000000000000, pos 0000000000000000, size: 0 file: 0, size: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http write filter: l:1 f:0 s:1364
+2024/09/04 12:30:34 [debug] 50295#0: *1 http write filter limit 2097152
+2024/09/04 12:30:34 [debug] 50295#0: *1 writev: 1364 of 1364
+2024/09/04 12:30:34 [debug] 50295#0: *1 http write filter 0000000000000000
+2024/09/04 12:30:34 [debug] 50295#0: *1 http copy filter: 0 "/t?"
+2024/09/04 12:30:34 [debug] 50295#0: *1 http finalize request: 0, "/t?" a:1, c:1
+2024/09/04 12:30:34 [debug] 50295#0: *1 http request count:1 blk:0
+2024/09/04 12:30:34 [debug] 50295#0: *1 http close request
+2024/09/04 12:30:34 [debug] 50295#0: *1 http log handler
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9416011A00
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9414012600
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F941600A800, unused: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F941600FA00, unused: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9416010A00, unused: 2
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9414013600, unused: 6
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9416012A00, unused: 3049
+2024/09/04 12:30:34 [debug] 50295#0: *1 close http connection: 10
+2024/09/04 12:30:34 [debug] 50295#0: *1 reusable connection: 0
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9416008A00
+2024/09/04 12:30:34 [debug] 50295#0: *1 free: 00007F9415204080, unused: 136
+2024/09/04 12:30:34 [debug] 50295#0: timer delta: 1
+2024/09/04 12:30:34 [debug] 50295#0: worker cycle
+2024/09/04 12:30:34 [debug] 50295#0: kevent timer: -1, changes: 0
+2024/09/04 12:30:35 [notice] 50295#0: signal 3 (SIGQUIT) received from 50238, shutting down
+2024/09/04 12:30:35 [debug] 50295#0: kevent events: -1
+2024/09/04 12:30:35 [info] 50295#0: kevent() failed (4: Interrupted system call)
+2024/09/04 12:30:35 [debug] 50295#0: timer delta: 53
+2024/09/04 12:30:35 [debug] 50295#0: flush files
+2024/09/04 12:30:35 [notice] 50295#0: exit
+2024/09/04 12:30:35 [debug] 50295#0: close listening 0.0.0.0:1984 #9 
+2024/09/04 12:30:35 [debug] 50295#0: run cleanup: 00007F941600EDF8
+2024/09/04 12:30:35 [debug] 50295#0: run cleanup: 00007F9414825880
+2024/09/04 12:30:35 [debug] 50295#0: cleanup resolver
+2024/09/04 12:30:35 [debug] 50295#0: run cleanup: 00007F941480B910
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F9416009600
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F941481D600
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F941481C400
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F941481B200
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F941481A000
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F9414809A00, unused: 0
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F9414812A00, unused: 0
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F941481E600, unused: 0
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F9414822600, unused: 0
+2024/09/04 12:30:35 [debug] 50295#0: free: 00007F941600BA00, unused: 3056
