@@ -48,5 +48,5 @@ PATH="$NGINX_SRC_DIR/objs:$PATH" prove -v -f t/
 #
 # Free resources
 #
-cd resources/test
+cd testing/test
 docker-compose down

@@ -62,7 +62,7 @@ docker build --no-cache -t nginx-module-builder \
   --build-arg NGINX_VERSION="$NGINX_VERSION" \
   --build-arg NGINX_DEBUG=n \
   --build-arg DYNAMIC_MODULE=Y \
-  -f dockerfiles/$LINUX_DISTRO.Dockerfile .
+  -f builders/$LINUX_DISTRO.Dockerfile .
 if [ $? -ne 0 ]; then
   echo "Docker build problem encountered for OS $LINUX_DISTRO and NGINX $NGINX_VERSION"
   exit 1

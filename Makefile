@@ -20,10 +20,10 @@ clean:
 	rm -rf .build.info nginx-$(NGINX_VERSION) nginx-$(NGINX_VERSION).tar.gz* t/servroot
 
 test: all
-	@bash -c 'NGINX_SRC_DIR="$(NGINX_SRC_DIR)" ./resources/test/run.sh'
+	@bash -c 'NGINX_SRC_DIR="$(NGINX_SRC_DIR)" ./testing/test/run.sh'
 
-memorytest:
-	@bash -c './resources/memorytest/run.sh'
+integration:
+	@bash -c './testing/integration/run.sh'
 
 .build.info $(NGINX_SRC_DIR)/Makefile:
 	$(error You need to run the configure script in the root of this directory before building the source)
