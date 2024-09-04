@@ -58,10 +58,7 @@ if [[ ! -r $NGINX_TARBALL ]]; then
 fi
 
 docker build --no-cache -t nginx-module-builder \
-  --build-arg NGINX_SRC_DIR=/tmp/nginx-"$NGINX_VERSION" \
   --build-arg NGINX_VERSION="$NGINX_VERSION" \
-  --build-arg NGINX_DEBUG=n \
-  --build-arg DYNAMIC_MODULE=Y \
   -f builders/$LINUX_DISTRO.Dockerfile .
 if [ $? -ne 0 ]; then
   echo "Docker build problem encountered for OS $LINUX_DISTRO and NGINX $NGINX_VERSION"
@@ -70,8 +67,7 @@ fi
 
 mkdir -p build
 LIBRARY_PREFIX=$(getLibraryPrefix)
-docker run --name nginx-modules -d nginx-module-builder
+docker run --name nginx-modules nginx-module-builder
 docker cp nginx-modules:/tmp/nginx-$NGINX_VERSION/objs/ngx_curity_http_phantom_token_module.so ./build/$LIBRARY_PREFIX.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so
-docker stop -t 0 nginx-modules
 docker rm nginx-modules
 docker rmi nginx-module-builder
