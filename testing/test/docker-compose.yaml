@@ -18,4 +18,4 @@ services:
       - LICENSE_KEY=${LICENSE_KEY:?err}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:?err}
     volumes:
-      - ./curity-test-config.xml:/opt/idsvr/etc/init/curity-test-config.xml
+      - ../curity-test-config.xml:/opt/idsvr/etc/init/curity-test-config.xml

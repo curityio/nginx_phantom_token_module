@@ -1,7 +1,7 @@
 FROM quay.io/centos/centos:stream9
 
 RUN yum install -y \
-     gcc pcre-devel zlib-devel make
+     gcc pcre2-devel zlib-devel make
 
 COPY configure /tmp
 COPY config /tmp
