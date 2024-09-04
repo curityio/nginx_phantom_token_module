@@ -42,11 +42,9 @@ c=0; while [[ $c -lt 25 && "$(curl -fs -w ''%{http_code}'' localhost:8443)" != "
 #
 # Run integration tests
 #
-cd ../..
 PATH="$NGINX_SRC_DIR/objs:$PATH" prove -v -f t/
 
 #
 # Free resources
 #
-cd resources/test
 docker-compose down

@@ -1,4 +1,3 @@
-version: '3.2'
 services:
 
   # The target API used in proxy_pass URLs, for tests running on the local computer
@@ -20,5 +19,3 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:?err}
     volumes:
       - ../curity-test-config.xml:/opt/idsvr/etc/init/curity-test-config.xml
-
-  

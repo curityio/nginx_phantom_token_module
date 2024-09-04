@@ -3,7 +3,7 @@
 # http://nginx.org/en/linux_packages.html#Ubuntu
 #
 
-FROM ubuntu:18.04
+FROM ubuntu:24.04
 ARG NGINX_DEPLOY_VERSION
 
 RUN apt update
@@ -18,5 +18,5 @@ http://nginx.org/packages/mainline/ubuntu `lsb_release -cs` nginx" \
 
 # 'apt list -a nginx' shows versions available
 RUN apt update
-RUN apt install -y nginx=$NGINX_DEPLOY_VERSION-1~bionic valgrind
-
+RUN apt list -a nginx
+RUN apt install -y nginx=$NGINX_DEPLOY_VERSION-1~noble valgrind
