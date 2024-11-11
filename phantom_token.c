@@ -224,17 +224,20 @@ static ngx_int_t handler(ngx_http_request_t *request)
     if (!module_location_config->enable)
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Module disabled");
-
         return NGX_DECLINED;
+    }
+
+    if (request->method == NGX_HTTP_OPTIONS)
+    {
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Not processing OPTIONS request");
+        return NGX_OK;
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Handling request to convert token to JWT");
 
     if (module_location_config->base64encoded_client_credential.len == 0)
     {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-                      "Module not configured properly: missing client ID and secret");
-
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Module not configured properly: missing client ID and secret");
         return NGX_DECLINED;
     }
 
@@ -242,9 +245,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
     if (module_location_config->introspection_endpoint.len == 0)
     {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-                      "Module not configured properly: missing introspection endpoint");
-
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Module not configured properly: missing introspection endpoint");
         return NGX_DECLINED;
     }
 
@@ -276,6 +277,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                     if ((result = set_accept_header_value(request, "*/*") != NGX_OK))
                     {
+                        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to set Accept header value");
                         return result;
                     }
                 }
@@ -288,45 +290,42 @@ static ngx_int_t handler(ngx_http_request_t *request)
             }
             else if (module_context->status == NGX_HTTP_NO_CONTENT)
             {
+                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with no content");
                 return set_www_authenticate_header(request, module_location_config, NULL);
             }
             else if (module_context->status == NGX_HTTP_SERVICE_UNAVAILABLE)
             {
+                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with service unavailable");
                 return write_error_response(request, NGX_HTTP_SERVICE_UNAVAILABLE, module_location_config);
             }
             else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR || module_context->status == NGX_HTTP_NOT_FOUND
-                || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
+                  || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
             {
+                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with status code %d", module_context->status);
                 return write_error_response(request, NGX_HTTP_BAD_GATEWAY, module_location_config);
             }
 
             return write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
         }
 
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
-                       "Called again without having received the response from Curity");
-
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Called again without having received the response from the authorization server");
         return NGX_AGAIN;
     }
 
     // return unauthorized when no Authorization header is present
     if (!request->headers_in.authorization || request->headers_in.authorization->value.len <= 0)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
-
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Authorization header not present");
         return set_www_authenticate_header(request, module_location_config, NULL);
     }
 
     u_char *bearer_token_pos;
 
+    // return unauthorized when Authorization header is not Bearer
     if ((bearer_token_pos = ngx_strcasestrn((u_char*)request->headers_in.authorization->value.data,
         (char*)BEARER, BEARER_SIZE - 1)) == NULL)
     {
-        // return unauthorized when Authorization header is not Bearer
-
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
-                       "Authorization header does not contain a bearer token");
-
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Authorization header does not contain a bearer token");
         return set_www_authenticate_header(request, module_location_config, NULL);
     }
 
@@ -339,9 +338,9 @@ static ngx_int_t handler(ngx_http_request_t *request)
     }
 
     module_context = ngx_pcalloc(request->pool, sizeof(phantom_token_module_context_t));
-
     if (module_context == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for module context");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -349,6 +348,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
     if (introspection_request_callback == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for introspection request callback");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -359,21 +359,22 @@ static ngx_int_t handler(ngx_http_request_t *request)
     if (ngx_http_subrequest(request, &module_location_config->introspection_endpoint, NULL, &introspection_request,
                             introspection_request_callback, NGX_HTTP_SUBREQUEST_WAITED) != NGX_OK)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to create subrequest to introspection endpoint");
         write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
     }
 
     // extract access token from header
     u_char *introspect_body_data = ngx_pcalloc(request->pool, request->headers_in.authorization->value.len);
-
     if (introspect_body_data == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for introspection body data");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_str_t *introspection_body = ngx_pcalloc(request->pool, sizeof(ngx_str_t));
-
     if (introspection_body == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for introspection body");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -386,20 +387,21 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
     if (introspection_request->request_body == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for introspection request");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_http_request_body_t *introspection_request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
-
     if (introspection_request_body == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for introspection request body");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_buf_t *introspection_request_body_buffer = ngx_calloc_buf(request->pool);
-
     if (introspection_request_body_buffer == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for introspection request body buffer");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -410,9 +412,9 @@ static ngx_int_t handler(ngx_http_request_t *request)
     introspection_request_body_buffer->temporary = true;
 
     introspection_request_body->bufs = ngx_alloc_chain_link(request->pool);
-
     if (introspection_request_body->bufs == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for introspection request body buffers");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -475,6 +477,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
     if (authorization_header_data == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for authorization header data");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -620,8 +623,8 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     // fail early for not 200 response
     if (request->headers_out.status != NGX_HTTP_OK)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Subrequest failed with response code: %d", request->headers_out.status);
         module_context->done = 1;
-
         return introspection_subrequest_status_code;
     }
 
@@ -638,14 +641,16 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
     {
         // Try to read JWT from cache
-
         cache_data.len = request->cache->length;
         cache_data.data = ngx_pnalloc(request->pool, cache_data.len);
 
-        if (cache_data.data != NULL)
+        if (cache_data.data == NULL)
+        {
+            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for cache data");
+        }
+        else
         {
             ngx_read_file(&request->cache->file, cache_data.data, cache_data.len, request->cache->body_start);
-
             jwt_start = cache_data.data;
         }
     }
@@ -656,9 +661,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     if (jwt_start == NULL)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
-                       "Failed to obtain JWT from introspection response or, if applicable, cache");
-
+        ngx_log_error(NGX_LOG_DEBUG, request->connection->log, 0, "Failed to obtain JWT from introspection response or cache");
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
 
@@ -676,9 +679,9 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     if (module_context->jwt.data == NULL)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for JWT token");
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
-
         return introspection_subrequest_status_code;
     }
 
