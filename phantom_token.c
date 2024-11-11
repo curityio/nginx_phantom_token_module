@@ -674,6 +674,23 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     size_t jwt_len = request->headers_out.content_length_n;
     size_t bearer_jwt_len = BEARER_SIZE + jwt_len;
 
+    // Investigating upstream properties but currently I cannot reproduce the original error
+    if (request->upstream->buffer.last != NULL && request->upstream->buffer.pos != NULL && request->upstream->buffer.end != NULL)
+    {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Upstream buffer last: %d", request->upstream->buffer.last);
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Upstream buffer pos:  %d", request->upstream->buffer.pos);
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Upstream buffer end:  %d", request->upstream->buffer.end);
+
+        if (request->upstream->buffer.pos >= request->upstream->buffer.end)
+        {
+            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: pos greater than end");
+        }
+        if (request->upstream->buffer.last >= request->upstream->buffer.end)
+        {
+            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: last greater than end");
+        }
+    }
+
     module_context->jwt.len = bearer_jwt_len;
     module_context->jwt.data = ngx_pnalloc(request->pool, bearer_jwt_len);
 

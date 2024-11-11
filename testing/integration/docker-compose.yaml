@@ -16,7 +16,7 @@ services:
     command: >
       sh -c "/usr/bin/valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=/valgrind-results.txt /usr/sbin/nginx"
 
-  # Called from the run.sh script to get tokens, and by the module to introspect tokens
+  # Called from the test.sh script to get tokens, and by the module to introspect tokens
   curity-service:
     image: curity.azurecr.io/curity/idsvr
     hostname: identityserver
