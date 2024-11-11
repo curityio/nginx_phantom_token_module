@@ -615,7 +615,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 {
     phantom_token_module_context_t *module_context = (phantom_token_module_context_t*)data;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "auth request done status = %d",
+    ngx_log_error(NGX_LOG_DEBUG, request->connection->log, 0, "Introspection request done status = %d",
                    request->headers_out.status);
 
     module_context->status = request->headers_out.status;
@@ -674,7 +674,9 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     size_t jwt_len = request->headers_out.content_length_n;
     size_t bearer_jwt_len = BEARER_SIZE + jwt_len;
 
-    // Investigating upstream properties but currently I cannot reproduce the original error
+    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Content length: %d", jwt_len);
+
+    // Investigating upstream properties until I can reproduce the original error using a large JWT
     if (request->upstream->buffer.last != NULL && request->upstream->buffer.pos != NULL && request->upstream->buffer.end != NULL)
     {
         ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Upstream buffer last: %d", request->upstream->buffer.last);
