@@ -1,5 +1,9 @@
 #!/bin/bash
 
+######################################################
+# Tear down after testing and report on memory results
+######################################################
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 #

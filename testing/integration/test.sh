@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#####################################
+# Run some API tests after deployment
+#####################################
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 #

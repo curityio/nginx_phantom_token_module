@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#############################################
+# Build and deploy a Docker image for testing
+#############################################
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 #

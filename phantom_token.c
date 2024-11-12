@@ -22,6 +22,7 @@
 #include <assert.h>
 
 #define UNENCODED_CLIENT_CREDENTIALS_BUF_LEN 255
+#undef NGX_HTTP_CACHE
 
 typedef struct
 {
@@ -227,10 +228,11 @@ static ngx_int_t handler(ngx_http_request_t *request)
         return NGX_DECLINED;
     }
 
+    // OPTIONS requests from SPAs can never contain an authorization header so return a standard 204
     if (request->method == NGX_HTTP_OPTIONS)
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Not processing OPTIONS request");
-        return NGX_OK;
+        return NGX_HTTP_NO_CONTENT;
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Handling request to convert token to JWT");
@@ -288,23 +290,32 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                 return NGX_OK;
             }
-            else if (module_context->status == NGX_HTTP_NO_CONTENT)
+            else if (module_context->status == NGX_HTTP_NO_CONTENT || module_context->status == NGX_HTTP_UNAUTHORIZED)
             {
-                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with no content");
                 return set_www_authenticate_header(request, module_location_config, NULL);
             }
             else if (module_context->status == NGX_HTTP_SERVICE_UNAVAILABLE)
             {
                 ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with service unavailable");
-                return write_error_response(request, NGX_HTTP_SERVICE_UNAVAILABLE, module_location_config);
+                return write_error_response(request, module_context->status, module_location_config);
             }
-            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR || module_context->status == NGX_HTTP_NOT_FOUND
-                  || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
+            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR)
             {
-                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with status code %d", module_context->status);
-                return write_error_response(request, NGX_HTTP_BAD_GATEWAY, module_location_config);
+                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with an internal server error");
+                return write_error_response(request, module_context->status, module_location_config);
+            }
+            else if (module_context->status == NGX_HTTP_NOT_FOUND)
+            {
+                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with not found error");
+                return write_error_response(request, module_context->status, module_location_config);
+            }
+            else if (module_context->status == NGX_HTTP_FORBIDDEN)
+            {
+                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with forbidden error");
+                return write_error_response(request, module_context->status, module_location_config);
             }
 
+            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with an internal server error");
             return write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
         }
 
@@ -491,145 +502,28 @@ static ngx_int_t handler(ngx_http_request_t *request)
     return NGX_AGAIN;
 }
 
-static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, phantom_token_configuration_t *module_location_config, char *error_code)
-{
-    request->headers_out.www_authenticate = ngx_list_push(&request->headers_out.headers);
-
-    if (request->headers_out.www_authenticate == NULL)
-    {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    static const char REALM_PREFIX[] = "realm=\"";
-    static const size_t REALM_PREFIX_SIZE = sizeof(REALM_PREFIX) - 1;
-
-    static const char TOKEN_SUFFIX[] = "\"";
-    static const size_t TOKEN_SUFFIX_SIZE = sizeof(TOKEN_SUFFIX) - 1;
-
-    static const char TOKEN_SEPARATER[] = ", ";
-    static const size_t TOKEN_SEPARATER_SIZE = sizeof(TOKEN_SEPARATER) - 1;
-
-    static const char SCOPE_PREFIX[] = "scope=\"";
-    static const size_t SCOPE_PREFIX_SIZE = sizeof(SCOPE_PREFIX) - 1;
-
-    static const u_char ERROR_CODE_PREFIX[] = "error=\"";
-    static const size_t ERROR_CODE_PREFIX_SIZE = sizeof(ERROR_CODE_PREFIX) - 1;
-
-    size_t bearer_data_size = BEARER_SIZE + sizeof('\0'); // Add one for the nul byte
-    bool realm_provided = module_location_config->realm.len > 0;
-    bool scopes_provided = module_location_config->space_separated_scopes.len > 0;
-    bool error_code_provided = error_code != NULL;
-    bool append_one_comma = false, append_two_commas = false;
-    size_t error_code_len = 0;
-
-    if (realm_provided)
-    {
-        bearer_data_size += REALM_PREFIX_SIZE + module_location_config->realm.len + TOKEN_SUFFIX_SIZE;
-    }
-
-    if (scopes_provided)
-    {
-        bearer_data_size += SCOPE_PREFIX_SIZE + module_location_config->space_separated_scopes.len + TOKEN_SUFFIX_SIZE;
-    }
-
-    if (error_code_provided)
-    {
-        error_code_len = ngx_strlen(error_code);
-        bearer_data_size += ERROR_CODE_PREFIX_SIZE + error_code_len + TOKEN_SUFFIX_SIZE;
-    }
-
-    if ((realm_provided && scopes_provided) || (realm_provided && error_code_provided) || (scopes_provided && error_code_provided))
-    {
-        bearer_data_size += TOKEN_SEPARATER_SIZE;
-        append_one_comma = true;
-
-        if (realm_provided && scopes_provided && error_code_provided)
-        {
-            bearer_data_size += TOKEN_SEPARATER_SIZE;
-            append_two_commas = true;
-        }
-    }
-
-    u_char *bearer_data = ngx_pnalloc(request->pool, bearer_data_size);
-
-    if (bearer_data == NULL)
-    {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    u_char *p = ngx_cpymem(bearer_data, BEARER, BEARER_SIZE);
-
-    if (realm_provided)
-    {
-        p = ngx_cpymem(p, REALM_PREFIX, REALM_PREFIX_SIZE);
-        p = ngx_cpymem(p, module_location_config->realm.data, module_location_config->realm.len);
-        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
-
-        if (append_one_comma)
-        {
-            p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
-        }
-    }
-
-    if (scopes_provided)
-    {
-        p = ngx_cpymem(p, SCOPE_PREFIX, SCOPE_PREFIX_SIZE);
-        p = ngx_cpymem(p, module_location_config->space_separated_scopes.data, module_location_config->space_separated_scopes.len);
-        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
-
-        if (append_one_comma || append_two_commas)
-        {
-            p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
-        }
-    }
-
-    if (error_code_provided)
-    {
-        p = ngx_cpymem(p, ERROR_CODE_PREFIX, ERROR_CODE_PREFIX_SIZE);
-        p = ngx_cpymem(p, error_code, error_code_len);
-        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
-    }
-
-    if (!scopes_provided && !realm_provided && !error_code_provided)
-    {
-        // Only 'Bearer' is being sent. Replace the space at the end of BEARER with a null byte.
-        *(p - 1) = '\0';
-    }
-    else
-    {
-        *p = '\0';
-    }
-
-    request->headers_out.www_authenticate->hash = 1;
-    ngx_str_set(&request->headers_out.www_authenticate->key, "WWW-Authenticate");
-    request->headers_out.www_authenticate->value.data = bearer_data;
-    request->headers_out.www_authenticate->value.len = ngx_strlen(bearer_data);
-
-    assert(request->headers_out.www_authenticate->value.len <= bearer_data_size);
-
-    return write_error_response(request, NGX_HTTP_UNAUTHORIZED, module_location_config);
-}
-
 static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
                                                 ngx_int_t introspection_subrequest_status_code)
 {
     phantom_token_module_context_t *module_context = (phantom_token_module_context_t*)data;
+    ngx_str_t cache_data = ngx_null_string;
+    u_char *jwt_start = NULL;
+    size_t jwt_len = 0;
+    size_t bearer_jwt_len = 0;
+    u_char *p = NULL;
+    bool use_buffer_response = false;
 
     ngx_log_error(NGX_LOG_DEBUG, request->connection->log, 0, "Introspection request done status = %d",
                    request->headers_out.status);
 
     module_context->status = request->headers_out.status;
 
-    // fail early for not 200 response
+    // Fail early if the introspection request returned a non 200 response
     if (request->headers_out.status != NGX_HTTP_OK)
     {
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Subrequest failed with response code: %d", request->headers_out.status);
         module_context->done = 1;
         return introspection_subrequest_status_code;
     }
-
-    u_char *jwt_start = NULL;
-    ngx_str_t cache_data = ngx_null_string;
 
 #if (NGX_HTTP_CACHE)
     if (request->cache && !request->cache->buf)
@@ -638,9 +532,9 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         ngx_http_file_cache_open(request);
     }
 
-    if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
+    // When caching is enabled the JWT is always received from the cache, including the initial request from a client with a new opaque access token
+    if (request->cache && request->cache->buf && request->cache->valid_sec > 0)
     {
-        // Try to read JWT from cache
         cache_data.len = request->cache->length;
         cache_data.data = ngx_pnalloc(request->pool, cache_data.len);
 
@@ -652,47 +546,40 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         {
             ngx_read_file(&request->cache->file, cache_data.data, cache_data.len, request->cache->body_start);
             jwt_start = cache_data.data;
+            jwt_len = request->headers_out.content_length_n;
         }
     }
     else
     {
-        jwt_start = request->header_end + sizeof("\r\n") - 1; // FIXME: Won't work if JWT is large
-    }
-
-    if (jwt_start == NULL)
-    {
-        ngx_log_error(NGX_LOG_DEBUG, request->connection->log, 0, "Failed to obtain JWT from introspection response or cache");
-        module_context->done = 1;
-        module_context->status = NGX_HTTP_UNAUTHORIZED;
-
-        return introspection_subrequest_status_code;
+        use_buffer_response = true;
     }
 #else
-    jwt_start = request->header_end + sizeof("\r\n") - 1; // FIXME: Won't work if JWT is large
+    use_buffer_response = true;
 #endif
 
-    size_t jwt_len = request->headers_out.content_length_n;
-    size_t bearer_jwt_len = BEARER_SIZE + jwt_len;
-
-    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Content length: %d", jwt_len);
-
-    // Investigating upstream properties until I can reproduce the original error using a large JWT
-    if (request->upstream->buffer.last != NULL && request->upstream->buffer.pos != NULL && request->upstream->buffer.end != NULL)
+    // When caching is disabled the JWT is always read from upstream buffers
+    if (use_buffer_response)
     {
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Upstream buffer last: %d", request->upstream->buffer.last);
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Upstream buffer pos:  %d", request->upstream->buffer.pos);
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: Upstream buffer end:  %d", request->upstream->buffer.end);
+        if (request->upstream->buffer.last == request->upstream->buffer.end)
+        {
+            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Buffer is maxed out, check the proxy_buffer_size configuration setting");
+            module_context->status = NGX_HTTP_INTERNAL_SERVER_ERROR;
+            return NGX_ERROR;
+        }
 
-        if (request->upstream->buffer.pos >= request->upstream->buffer.end)
-        {
-            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: pos greater than end");
-        }
-        if (request->upstream->buffer.last >= request->upstream->buffer.end)
-        {
-            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "*** INVESTIGATING: last greater than end");
-        }
+        jwt_start = request->upstream->buffer.pos;
+        jwt_len = request->upstream->buffer.last - request->upstream->buffer.pos;
     }
 
+    if (jwt_start == NULL || jwt_len == 0)
+    {
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Failed to obtain JWT from introspection response or cache");
+        module_context->done = 1;
+        module_context->status = NGX_HTTP_UNAUTHORIZED;
+        return introspection_subrequest_status_code;
+    }
+
+    bearer_jwt_len = BEARER_SIZE + jwt_len;
     module_context->jwt.len = bearer_jwt_len;
     module_context->jwt.data = ngx_pnalloc(request->pool, bearer_jwt_len);
 
@@ -704,8 +591,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         return introspection_subrequest_status_code;
     }
 
-    u_char *p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
-
+    p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
     ngx_memcpy(p, jwt_start, jwt_len);
 
     if (cache_data.len > 0)
@@ -829,6 +715,126 @@ static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting
     ngx_conf_log_error(NGX_LOG_EMERG, config_setting, 0, "invalid client ID and/or secret");
 
     return "invalid_client_credential";
+}
+
+
+static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, phantom_token_configuration_t *module_location_config, char *error_code)
+{
+    request->headers_out.www_authenticate = ngx_list_push(&request->headers_out.headers);
+
+    if (request->headers_out.www_authenticate == NULL)
+    {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    static const char REALM_PREFIX[] = "realm=\"";
+    static const size_t REALM_PREFIX_SIZE = sizeof(REALM_PREFIX) - 1;
+
+    static const char TOKEN_SUFFIX[] = "\"";
+    static const size_t TOKEN_SUFFIX_SIZE = sizeof(TOKEN_SUFFIX) - 1;
+
+    static const char TOKEN_SEPARATER[] = ", ";
+    static const size_t TOKEN_SEPARATER_SIZE = sizeof(TOKEN_SEPARATER) - 1;
+
+    static const char SCOPE_PREFIX[] = "scope=\"";
+    static const size_t SCOPE_PREFIX_SIZE = sizeof(SCOPE_PREFIX) - 1;
+
+    static const u_char ERROR_CODE_PREFIX[] = "error=\"";
+    static const size_t ERROR_CODE_PREFIX_SIZE = sizeof(ERROR_CODE_PREFIX) - 1;
+
+    size_t bearer_data_size = BEARER_SIZE + sizeof('\0'); // Add one for the nul byte
+    bool realm_provided = module_location_config->realm.len > 0;
+    bool scopes_provided = module_location_config->space_separated_scopes.len > 0;
+    bool error_code_provided = error_code != NULL;
+    bool append_one_comma = false, append_two_commas = false;
+    size_t error_code_len = 0;
+
+    if (realm_provided)
+    {
+        bearer_data_size += REALM_PREFIX_SIZE + module_location_config->realm.len + TOKEN_SUFFIX_SIZE;
+    }
+
+    if (scopes_provided)
+    {
+        bearer_data_size += SCOPE_PREFIX_SIZE + module_location_config->space_separated_scopes.len + TOKEN_SUFFIX_SIZE;
+    }
+
+    if (error_code_provided)
+    {
+        error_code_len = ngx_strlen(error_code);
+        bearer_data_size += ERROR_CODE_PREFIX_SIZE + error_code_len + TOKEN_SUFFIX_SIZE;
+    }
+
+    if ((realm_provided && scopes_provided) || (realm_provided && error_code_provided) || (scopes_provided && error_code_provided))
+    {
+        bearer_data_size += TOKEN_SEPARATER_SIZE;
+        append_one_comma = true;
+
+        if (realm_provided && scopes_provided && error_code_provided)
+        {
+            bearer_data_size += TOKEN_SEPARATER_SIZE;
+            append_two_commas = true;
+        }
+    }
+
+    u_char *bearer_data = ngx_pnalloc(request->pool, bearer_data_size);
+
+    if (bearer_data == NULL)
+    {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    u_char *p = ngx_cpymem(bearer_data, BEARER, BEARER_SIZE);
+
+    if (realm_provided)
+    {
+        p = ngx_cpymem(p, REALM_PREFIX, REALM_PREFIX_SIZE);
+        p = ngx_cpymem(p, module_location_config->realm.data, module_location_config->realm.len);
+        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
+
+        if (append_one_comma)
+        {
+            p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
+        }
+    }
+
+    if (scopes_provided)
+    {
+        p = ngx_cpymem(p, SCOPE_PREFIX, SCOPE_PREFIX_SIZE);
+        p = ngx_cpymem(p, module_location_config->space_separated_scopes.data, module_location_config->space_separated_scopes.len);
+        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
+
+        if (append_one_comma || append_two_commas)
+        {
+            p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
+        }
+    }
+
+    if (error_code_provided)
+    {
+        p = ngx_cpymem(p, ERROR_CODE_PREFIX, ERROR_CODE_PREFIX_SIZE);
+        p = ngx_cpymem(p, error_code, error_code_len);
+        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
+    }
+
+    if (!scopes_provided && !realm_provided && !error_code_provided)
+    {
+        // Only 'Bearer' is being sent. Replace the space at the end of BEARER with a null byte.
+        *(p - 1) = '\0';
+    }
+    else
+    {
+        *p = '\0';
+    }
+
+    request->headers_out.www_authenticate->hash = 1;
+    ngx_str_set(&request->headers_out.www_authenticate->key, "WWW-Authenticate");
+    request->headers_out.www_authenticate->value.data = bearer_data;
+    request->headers_out.www_authenticate->value.len = ngx_strlen(bearer_data);
+
+    assert(request->headers_out.www_authenticate->value.len <= bearer_data_size);
+
+    return write_error_response(request, NGX_HTTP_UNAUTHORIZED, module_location_config);
 }
 
 /*
