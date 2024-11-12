@@ -560,6 +560,10 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     // When caching is disabled the JWT is always read from upstream buffers
     if (use_buffer_response)
     {
+        // Previous logic that could cause an end of buffer read:
+        // jwt_start = request->header_end + sizeof("\r\n") - 1;
+        // jwt_len = request->headers_out.content_length_n;
+
         if (request->upstream->buffer.last == request->upstream->buffer.end)
         {
             ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Buffer is maxed out, check the proxy_buffer_size configuration setting");
