@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #define UNENCODED_CLIENT_CREDENTIALS_BUF_LEN 255
-#undef NGX_HTTP_CACHE
+/* #undef NGX_HTTP_CACHE */
 
 typedef struct
 {

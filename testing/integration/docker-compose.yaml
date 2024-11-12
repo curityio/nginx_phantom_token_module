@@ -7,7 +7,7 @@ services:
 
   # Valgrind runs NGINX, which routes to the target API
   nginx-service:
-    image: nginx_${DISTRO}:${NGINX_DEPLOY_VERSION}
+    image: nginx_${LINUX_DISTRO}:${NGINX_VERSION}
     ports:
     - 8080:8080
     volumes:

@@ -29,77 +29,77 @@ fi
 if [ "$ADMIN_PASSWORD" == '' ]; then
   ADMIN_PASSWORD=Password1
 fi
-if [ "$DISTRO" == '' ]; then
-  DISTRO='alpine'
+if [ "$LINUX_DISTRO" == '' ]; then
+  LINUX_DISTRO='alpine'
 fi
-if [ "$NGINX_DEPLOY_VERSION" == '' ]; then
-  NGINX_DEPLOY_VERSION='1.25.5'
+if [ "$NGINX_VERSION" == '' ]; then
+  NGINX_VERSION='1.25.5'
 fi
-echo "Deploying for $DISTRO with NGINX version $NGINX_DEPLOY_VERSION ..."
+echo "Deploying for $LINUX_DISTRO with NGINX version $NGINX_VERSION ..."
 
 #
 # Validate input to ensure that we have a supported Linux distribution
 #
-case $DISTRO in
+case $LINUX_DISTRO in
 
   'alpine')
-    MODULE_FILE="alpine.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="alpine.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/usr/lib/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'debian11')
-    MODULE_FILE="debian.bullseye.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="debian.bullseye.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/usr/lib/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'debian12')
-    MODULE_FILE="debian.bookworm.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="debian.bookworm.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/usr/lib/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'ubuntu20')
-    MODULE_FILE="ubuntu.20.04.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="ubuntu.20.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/usr/lib/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'ubuntu22')
-    MODULE_FILE="ubuntu.22.04.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="ubuntu.22.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/usr/lib/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'ubuntu24')
-    MODULE_FILE="ubuntu.24.04.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="ubuntu.24.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/usr/lib/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'amazon2')
-    MODULE_FILE="amzn2.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="amzn2.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/etc/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'amazon2023')
-    MODULE_FILE="amzn2023.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="amzn2023.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/etc/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
   'centosstream9')
-    MODULE_FILE="centos.stream.9.ngx_curity_http_phantom_token_module_$NGINX_DEPLOY_VERSION.so"
+    MODULE_FILE="centos.stream.9.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/etc/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
@@ -107,7 +107,7 @@ case $DISTRO in
 esac
 
 #
-# Check for a valid distro
+# Check for a valid Linux distribution
 #
 if [ "$MODULE_FILE" == '' ]; then
   >&2 echo 'Please enter a supported Linux distribution as a command line argument'
@@ -118,7 +118,7 @@ fi
 # Check that the image has been built
 #
 if [ ! -f "../../build/${MODULE_FILE}" ]; then
-  >&2 echo "The Phantom Token plugin for $DISTRO version $NGINX_DEPLOY_VERSION has not been built"
+  >&2 echo "The Phantom Token plugin for $LINUX_DISTRO version $NGINX_VERSION has not been built"
   exit 1
 fi
 
@@ -126,9 +126,9 @@ fi
 # Build the valgrind image
 #
 echo 'Building the NGINX and valgrind Docker image ...'
-docker build --no-cache -f "$DISTRO/Dockerfile" --build-arg NGINX_DEPLOY_VERSION="$NGINX_DEPLOY_VERSION" -t "nginx_$DISTRO:$NGINX_DEPLOY_VERSION" .
+docker build --no-cache -f "$LINUX_DISTRO/Dockerfile" --build-arg NGINX_VERSION="$NGINX_VERSION" -t "nginx_$LINUX_DISTRO:$NGINX_VERSION" .
 if [ $? -ne 0 ]; then
-  >&2 echo "Problem encountered building the NGINX $DISTRO docker image"
+  >&2 echo "Problem encountered building the NGINX $LINUX_DISTRO docker image"
   exit 1
 fi
 
@@ -137,8 +137,8 @@ fi
 #
 export LICENSE_KEY
 export ADMIN_PASSWORD
-export DISTRO
-export NGINX_DEPLOY_VERSION
+export LINUX_DISTRO
+export NGINX_VERSION
 export MODULE_FILE
 export MODULE_FOLDER
 export NGINX_PATH
