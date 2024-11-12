@@ -7,16 +7,18 @@ use lib "$FindBin::Bin/lib";
 use Test::Nginx::Socket 'no_plan';
 
 SKIP: {
-      our $token = &get_token_from_idsvr();
+      our $token       = &get_token_from_idsvr();
+      our $large_token = &get_large_token_from_idsvr();
 
-      if ($token) {
+      if ($token && $large_token) {
           run_tests();
       }
       else {
-          fail("Could not get token from idsvr");
+          fail("Could not get tokens from idsvr");
       }
 }
 
+# Most tests use a small JWT access token
 sub get_token_from_idsvr {
     use LWP::UserAgent;
  
@@ -26,6 +28,25 @@ sub get_token_from_idsvr {
         "client_id" => "test-client",
         "client_secret" => "secret1",
         "grant_type" => "client_credentials"
+    });
+    my $content = $response->decoded_content();
+
+    my ($result) = $content =~ /access_token":"([^"]+)/;
+
+    return $result;
+}
+
+# The example scope instead issues a large claim so that the JWT is around 6KB
+sub get_large_token_from_idsvr {
+    use LWP::UserAgent;
+ 
+    my $ua = LWP::UserAgent->new();
+
+    my $response = $ua->post("http://localhost:8443/oauth/v2/oauth-token", {
+        "client_id" => "test-client",
+        "client_secret" => "secret1",
+        "grant_type" => "client_credentials",
+        "scope" => "example"
     });
     my $content = $response->decoded_content();
 
@@ -61,7 +82,7 @@ location /t {
 
     phantom_token on;
     phantom_token_client_credential "test-nginx" "secret2";
-    phantom_token_introspection_endpoint tt;    
+    phantom_token_introspection_endpoint tt;
 }
 
 --- error_code: 200
@@ -325,3 +346,33 @@ content-type: application/json
 
 --- response_body_like chomp
 {"code":"server_error","message":"Problem encountered processing the request"}
+
+=== TEST 11: A REF token can be introspected for a large JWT access token
+
+--- config
+location tt {
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_buffer_size 16k;
+    proxy_buffers 4 16k;
+}
+
+location /t {
+    proxy_pass         "http://localhost:8080/anything";
+
+    phantom_token on;
+    phantom_token_client_credential "test-nginx" "secret2";
+    phantom_token_introspection_endpoint tt;
+}
+
+--- error_code: 200
+
+--- request
+GET /t
+
+--- more_headers eval
+"Authorization: bearer " . $main::large_token
+
+--- response_body_filters eval
+main::process_json_from_backend()
+
+--- response_body: GOOD
