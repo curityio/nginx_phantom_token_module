@@ -598,7 +598,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
     ngx_memcpy(p, jwt_start, jwt_len);
 
-    if (cache_data.len > 0)
+    if (!use_buffer_response && cache_data.len > 0)
     {
         ngx_pfree(request->pool, cache_data.data);
     }
