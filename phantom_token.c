@@ -290,32 +290,25 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                 return NGX_OK;
             }
-            else if (module_context->status == NGX_HTTP_NO_CONTENT || module_context->status == NGX_HTTP_UNAUTHORIZED)
+            else if (module_context->status == NGX_HTTP_NO_CONTENT)
             {
+                // A 204 from the Curity Identity Server due to an invalid token results in a 401 response to the client and these are not logged
                 return set_www_authenticate_header(request, module_location_config, NULL);
             }
             else if (module_context->status == NGX_HTTP_SERVICE_UNAVAILABLE)
             {
-                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with service unavailable");
-                return write_error_response(request, module_context->status, module_location_config);
+                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Request failed with a service unavailable error");
+                return write_error_response(request, NGX_HTTP_SERVICE_UNAVAILABLE, module_location_config);
             }
-            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR)
+            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR || module_context->status == NGX_HTTP_NOT_FOUND
+                  || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
             {
-                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with an internal server error");
-                return write_error_response(request, module_context->status, module_location_config);
-            }
-            else if (module_context->status == NGX_HTTP_NOT_FOUND)
-            {
-                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with not found error");
-                return write_error_response(request, module_context->status, module_location_config);
-            }
-            else if (module_context->status == NGX_HTTP_FORBIDDEN)
-            {
-                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with forbidden error");
-                return write_error_response(request, module_context->status, module_location_config);
+                // Indicate a server error, eg if an invalid client secret is configured
+                ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Request failed with an internal error");
+                return write_error_response(request, NGX_HTTP_BAD_GATEWAY, module_location_config);
             }
 
-            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection request failed with an internal server error");
+            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Request failed with an internal server error");
             return write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
         }
 
@@ -326,7 +319,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     // return unauthorized when no Authorization header is present
     if (!request->headers_in.authorization || request->headers_in.authorization->value.len <= 0)
     {
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Authorization header not present");
+        ngx_log_error(NGX_LOG_DEBUG, request->connection->log, 0, "Authorization header not present");
         return set_www_authenticate_header(request, module_location_config, NULL);
     }
 
@@ -336,7 +329,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     if ((bearer_token_pos = ngx_strcasestrn((u_char*)request->headers_in.authorization->value.data,
         (char*)BEARER, BEARER_SIZE - 1)) == NULL)
     {
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Authorization header does not contain a bearer token");
+        ngx_log_error(NGX_LOG_DEBUG, request->connection->log, 0, "Authorization header does not contain a bearer token");
         return set_www_authenticate_header(request, module_location_config, NULL);
     }
 
@@ -597,14 +590,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
     ngx_memcpy(p, jwt_start, jwt_len);
-
-    if (!use_buffer_response && cache_data.len > 0)
-    {
-        ngx_pfree(request->pool, cache_data.data);
-    }
-
     module_context->done = 1;
-
     return introspection_subrequest_status_code;
 }
 
