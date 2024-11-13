@@ -521,6 +521,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     }
 
 #if (NGX_HTTP_CACHE)
+    // When caching is enabled, the introspection response is read from the cache, including the first request with a new opaque access token
     if (request->cache && !request->cache->buf)
     {
         // We have a cache but it's not primed
@@ -529,8 +530,6 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 
     if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
     {
-        // Try to read JWT from cache
-
         cache_data.len = request->cache->length;
         cache_data.data = ngx_pnalloc(request->pool, cache_data.len);
 
@@ -565,11 +564,28 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     jwt_len = request->headers_out.content_length_n;
     bearer_jwt_len = BEARER_SIZE + jwt_len;
 
+    // When caching is not used, the introspection response is read directly and we must handle large JWTs specially
     if (read_response)
-    {   
-        // The buffer containing the response defaults to one memory page and may be insufficient to contain a large JWT, so fail the request
-        buffer_size = request->upstream->buffer.last - request->upstream->buffer.pos;
-        if (buffer_size < jwt_len)
+    {
+        // We use proxy_pass to call the introspection endpoint, so the ngx_http_proxy_module provides the response to the subrequest.
+        // The response is returned as an upstream buffer and it is common to see code like this, to read headers from the buffer.
+        // - https://github.com/nginx/nginx/blob/master/src/http/modules/ngx_http_proxy_module.c#L1905
+        // - rc = ngx_http_parse_header_line(r, &r->upstream->buffer, 1);
+
+        // It is also common that long headers like cookies get truncated, since the default buffer size is only one memory page.
+        // The standard solution to this problem is to configure an increased proxy_buffer_size.
+        // A default or explicit proxy_buffer_size is always used to handle responses, even when proxy buffering is disabled.
+        // - https://www.uptimia.com/questions/fix-upstream-sent-too-big-header-while-reading-response-header-from-upstream-error
+        // - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
+
+        // The buffer can also contain the response body, which the phantom token module needs to read.
+        // Therefore the module also uses the standard proxy_buffer_size solution to receive large JWTs.
+        // We do this by calculating the buffer size as explained in the development guide.
+        // - https://nginx.org/en/docs/dev/development_guide.html
+
+        // Avoid reading past the end of the buffer if the JWT size exceeds the buffer size
+        buffer_size = ngx_buf_size(&request->upstream->buffer);
+        if (jwt_len > buffer_size)
         {
             // The customer needs to extend their buffer size for the introspection request, such as with this configuration:
             //
