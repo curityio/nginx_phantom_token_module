@@ -237,7 +237,7 @@ http {
 }   
 ```
 
-## Disabled Cache Configurations
+## Cacheless Configuration
 
 It is recommended to cache the results of the call to the Curity Identity Server so that you avoid triggering an introspection request for every API request. If you wish to disable caching you should extend the default [proxy_buffer_size](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#directives) to ensure that the module can read large JWTs. Do so by updating the configuration of the introspection request as in the following example.
 

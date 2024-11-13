@@ -528,7 +528,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         ngx_http_file_cache_open(request);
     }
 
-    if (jwt_start == NULL && request->cache && request->cache->buf && request->cache->valid_sec > 0)
+    if (request->cache && request->cache->buf && request->cache->valid_sec > 0)
     {
         cache_data.len = request->cache->length;
         cache_data.data = ngx_pnalloc(request->pool, cache_data.len);
