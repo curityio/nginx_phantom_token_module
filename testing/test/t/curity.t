@@ -7,10 +7,10 @@ use lib "$FindBin::Bin/lib";
 use Test::Nginx::Socket 'no_plan';
 
 SKIP: {
-      our $token       = &get_token_from_idsvr();
-      our $large_token = &get_large_token_from_idsvr();
+      our $token  = &get_token_from_idsvr();
+      our $token2 = &get_token2_from_idsvr();
 
-      if ($token && $large_token) {
+      if ($token && $token2) {
           run_tests();
       }
       else {
@@ -37,7 +37,7 @@ sub get_token_from_idsvr {
 }
 
 # The example scope instead issues a large claim so that the JWT is around 6KB
-sub get_large_token_from_idsvr {
+sub get_token2_from_idsvr {
     use LWP::UserAgent;
  
     my $ua = LWP::UserAgent->new();
@@ -347,7 +347,7 @@ content-type: application/json
 --- response_body_like chomp
 {"code":"server_error","message":"Problem encountered processing the request"}
 
-=== TEST 11: A REF token can be introspected for a large JWT access token
+=== TEST 11: A large JWT can be processed with the correct proxy buffer configuration
 
 --- config
 location tt {
@@ -370,9 +370,38 @@ location /t {
 GET /t
 
 --- more_headers eval
-"Authorization: bearer " . $main::large_token
+"Authorization: bearer " . $main::token2
 
 --- response_body_filters eval
 main::process_json_from_backend()
 
 --- response_body: GOOD
+
+=== TEST 12: A large JWT cannot cause an end of buffer read and returns an error instead
+
+--- config
+location tt {
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+}
+
+location /t {
+    proxy_pass         "http://localhost:8080/anything";
+
+    phantom_token on;
+    phantom_token_client_credential "test-nginx" "secret2";
+    phantom_token_introspection_endpoint tt;
+}
+
+--- error_code: 502
+
+--- request
+GET /t
+
+--- more_headers eval
+"Authorization: bearer " . $main::token2
+
+--- response_headers
+content-type: application/json
+
+--- response_body_like chomp
+{"code":"server_error","message":"Problem encountered processing the request"}
