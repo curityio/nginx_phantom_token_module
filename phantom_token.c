@@ -571,7 +571,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         {
             // The standard solution to truncated responses, commonly used for long headers, is to configure an increased proxy_buffer_size.
             // The customer needs to configure a larger value for the introspection location, such as with the following configuration.
-            // For a large JWT you might then get a buffer_body_size of 6535, even though the total buffer memory size is 16KB.
+            // For a large JWT you might then get a body_buffer_size of 6535, even though the total buffer memory size is 16KB.
             //
             //  location curity {
             //    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
