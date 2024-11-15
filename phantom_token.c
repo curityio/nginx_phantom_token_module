@@ -504,7 +504,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     size_t jwt_len = 0;
     size_t bearer_jwt_len = 0;
     u_char *p = NULL;
-    size_t buffer_size = 0;
+    size_t body_buffer_size = 0;
     bool read_response = false;
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "auth request done status = %d",
@@ -542,52 +542,36 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     }
     else
     {
-        jwt_start = request->header_end + sizeof("\r\n") - 1;
         read_response = true;
     }
-
-    if (jwt_start == NULL)
-    {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
-                       "Failed to obtain JWT from introspection response or, if applicable, cache");
-
-        module_context->done = 1;
-        module_context->status = NGX_HTTP_UNAUTHORIZED;
-
-        return introspection_subrequest_status_code;
-    }
+    
 #else
-    jwt_start = request->header_end + sizeof("\r\n") - 1;
     read_response = true;
 #endif
 
     jwt_len = request->headers_out.content_length_n;
     bearer_jwt_len = BEARER_SIZE + jwt_len;
 
-    // When caching is not used, the introspection response is read directly and we must handle large JWTs specially
+    // When caching is not used, the introspection response is read directly.
+    // This method only receives a single response buffer per introspection request, which needs to contain the full JWT.
     if (read_response)
     {
         // We use proxy_pass to call the introspection endpoint, so the ngx_http_proxy_module provides the response to the subrequest.
-        // The response is returned as an upstream buffer and it is common to see code like this, to read headers from the buffer.
+        // The response is returned as an upstream buffer that NGINX prepares when it calls ngx_http_parse_header_line.
+        // This sets request->header_end and points request->upstream->buffer.pos past headers to the body content.
         // - https://github.com/nginx/nginx/blob/master/src/http/modules/ngx_http_proxy_module.c#L1905
-        // - rc = ngx_http_parse_header_line(r, &r->upstream->buffer, 1);
+        // - https://github.com/nginx/nginx/blob/master/src/http/ngx_http_parse.c#L816
+        jwt_start = request->header_end + sizeof("\r\n") - 1;
 
-        // It is also common that long headers like cookies get truncated, since the default buffer size is only one memory page.
-        // The standard solution to this problem is to configure an increased proxy_buffer_size.
-        // A default or explicit proxy_buffer_size is always used to handle responses, even when proxy buffering is disabled.
-        // - https://www.uptimia.com/questions/fix-upstream-sent-too-big-header-while-reading-response-header-from-upstream-error
-        // - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
-
-        // The buffer can also contain the response body, which the phantom token module needs to read.
-        // Therefore the module also uses the standard proxy_buffer_size solution to receive large JWTs.
-        // We do this by calculating the buffer size as explained in the development guide.
-        // - https://nginx.org/en/docs/dev/development_guide.html
-
-        // Avoid reading past the end of the buffer if the JWT size exceeds the buffer size
-        buffer_size = ngx_buf_size(&request->upstream->buffer);
-        if (jwt_len > buffer_size)
+        // With default configuration, the total buffer memory size is 4KB and the response header size might be 332 bytes.
+        // The ngx_buf_size macro returns the body size only: the size of the JWT or a partial size of the JWT, like 3764 bytes.
+        // If the JWT content length is greater than the body buffer size, we must avoid reading past the end of the buffer.
+        body_buffer_size = ngx_buf_size(&request->upstream->buffer);
+        if (jwt_len > body_buffer_size)
         {
-            // The customer needs to extend their buffer size for the introspection request, such as with this configuration:
+            // The standard solution to truncated responses, commonly used for long headers, is to configure an increased proxy_buffer_size.
+            // The customer needs to configure a larger value for the introspection location, such as with the following configuration.
+            // For a large JWT you might then get a buffer_body_size of 6535, even though the total buffer memory size is 16KB.
             //
             //  location curity {
             //    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
@@ -600,6 +584,17 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
             module_context->status = NGX_HTTP_INTERNAL_SERVER_ERROR;
             return introspection_subrequest_status_code;
         }
+    }
+
+    if (jwt_start == NULL)
+    {
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
+                       "Failed to obtain JWT from introspection response or, if applicable, cache");
+
+        module_context->done = 1;
+        module_context->status = NGX_HTTP_UNAUTHORIZED;
+
+        return introspection_subrequest_status_code;
     }
 
     module_context->jwt.len = bearer_jwt_len;
