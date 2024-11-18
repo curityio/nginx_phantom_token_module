@@ -132,6 +132,7 @@ location / {
 ## Sample Configuration
 
 ### Loading the Module
+
 If the module is downloaded from GitHub or compiled as a shared library (the default) and not explicitly compiled into NGINX, it will need to be loaded using the [load_module](http://nginx.org/en/docs/ngx_core_module.html#load_module) directive. This needs to be done in the _main_ part of the NGINX configuration:
 
 ```nginx
@@ -141,6 +142,7 @@ load_module modules/ngx_curity_http_phantom_token_module.so;
 The file can be an absolute or relative path. If it is not absolute, it should be relative to the NGINX root directory.
 
 ### Simple Configuration
+
 The following is a simple configuration that might be used in demo or development environments where the NGINX reverse proxy is on the same host as the Curity Identity Server:
 
 ```nginx
@@ -160,6 +162,7 @@ server {
 ```
 
 ### Complex Configuration
+
 The following is a more complex configuration where the NGINX reverse proxy is on a separate host to the Curity Identity Server:
 
 ```nginx
@@ -191,6 +194,7 @@ server {
 ```
         
 ### More Advanced Configuration with Separate Servers and Caching
+
 This module takes advantage of NGINX built-in _proxy_cache_ directive. In order to be able to cache the requests made to the introspection endpoint, except of the `proxy_cache_path` in http context and `proxy_cache` in location context, you have to add the following 3 directives in the location context of the introspection endpoint.
 
 - `proxy_cache_methods POST;` POST requests are not cached by default.
@@ -220,6 +224,42 @@ http {
             proxy_cache my_cache;
             proxy_cache_key $request_body;
             proxy_ignore_headers Set-Cookie;
+        }
+    }
+    
+    server {
+        listen 8443;
+        server_name server2.example.com;
+        location / {
+            proxy_pass "https://curity.example.com";
+        }
+    }
+}   
+```
+
+## Cacheless Configuration
+
+It is recommended to cache the results of the call to the Curity Identity Server so that you avoid triggering an introspection request for every API request. If you wish to disable caching you should extend the default [proxy_buffer_size](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#directives) to ensure that the module can read large JWTs. Do so by updating the configuration of the introspection request as in the following example.
+
+```nginx
+http {
+    server {
+        server_name server1.example.com;
+        location /api {
+            proxy_pass         https://example.com/api;
+
+            phantom_token on;
+            phantom_token_client_credential "client_id" "client_secret";
+            phantom_token_introspection_endpoint curity;
+            phantom_token_scopes "scope_a scope_b scope_c";
+            phantom_token_realm "myGoodAPI";
+        }
+        
+        location curity {
+            proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+            proxy_ignore_headers Set-Cookie;
+            proxy_buffer_size 16k;
+            proxy_buffers 4 16k;
         }
     }
     

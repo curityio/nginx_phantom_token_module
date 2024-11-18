@@ -4,7 +4,7 @@
 #
 
 FROM ubuntu:24.04
-ARG NGINX_DEPLOY_VERSION
+ARG NGINX_VERSION
 
 RUN apt update
 RUN apt install -y curl gnupg2 ca-certificates lsb-release ubuntu-keyring
@@ -19,4 +19,4 @@ http://nginx.org/packages/mainline/ubuntu `lsb_release -cs` nginx" \
 # 'apt list -a nginx' shows versions available
 RUN apt update
 RUN apt list -a nginx
-RUN apt install -y nginx=$NGINX_DEPLOY_VERSION-1~noble valgrind
+RUN apt install -y nginx=$NGINX_VERSION-1~noble valgrind
