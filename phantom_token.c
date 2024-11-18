@@ -561,7 +561,7 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
         // This sets request->header_end and points request->upstream->buffer.pos past headers to the body content.
         // - https://github.com/nginx/nginx/blob/master/src/http/modules/ngx_http_proxy_module.c#L1905
         // - https://github.com/nginx/nginx/blob/master/src/http/ngx_http_parse.c#L816
-        jwt_start = request->header_end + sizeof("\r\n") - 1;
+        jwt_start = request->upstream->buffer.pos;
 
         // With default configuration, the total buffer memory size is 4KB and the response header size might be 332 bytes.
         // The ngx_buf_size macro returns the body size only: the size of the JWT or a partial size of the JWT, like 3764 bytes.
