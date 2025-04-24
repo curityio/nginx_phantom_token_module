@@ -210,7 +210,11 @@ static ngx_int_t set_accept_header_value(ngx_http_request_t *request, const char
     accept_header->lowcase_key = (u_char *)"accept";
 
     request->headers_in.accept = accept_header;
-    request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts;
+    
+    // TODO: Further debug whether this is correct and sufficient
+    if (request->headers_in.headers.part.next == NULL) {
+        request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts;
+    }
 
     return NGX_OK;
 }
@@ -270,7 +274,10 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                 if (module_context->original_content_type_header.data == NULL)
                 {
-                    request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts = request->headers_in.headers.last->nelts - 1;
+                    // TODO: Further debug whether this is correct and sufficient
+                    if (request->headers_in.headers.part.next == NULL) {
+                        request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts = request->headers_in.headers.last->nelts - 1;
+                    }
                 }
                 else
                 {
@@ -462,7 +469,11 @@ static ngx_int_t handler(ngx_http_request_t *request)
         content_type_header->lowcase_key = (u_char *)"content-type";
 
         introspection_request->headers_in.content_type = content_type_header;
-        introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
+
+        // TODO: Further debug whether this is correct and sufficient
+        if (introspection_request->headers_in.headers.part.next == NULL) {
+            introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
+        }
     }
     else
     {

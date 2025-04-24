@@ -167,8 +167,6 @@ location /target {
 --- request
 GET /t
 
---- ONLY
-
 --- more_headers eval
 my $data;
 $data .= "accept: */*\n";

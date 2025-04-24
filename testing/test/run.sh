@@ -45,7 +45,7 @@ c=0; while [[ $c -lt 25 && "$(curl -fs -w ''%{http_code}'' localhost:8443)" != "
 #
 # Run integration tests
 #
-PATH="$NGINX_SRC_DIR/objs:$PATH" prove -v -f t/data.t
+PATH="$NGINX_SRC_DIR/objs:$PATH" prove -v -f t/
 
 #
 # Free resources
