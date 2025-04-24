@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+####################################################
+# Tests to ensure that configuration works correctly
+####################################################
+
 use FindBin;
 use Test::Nginx::Socket 'no_plan';
 run_tests();
@@ -112,4 +116,3 @@ GET /t
 
 --- no_error_log
 Module disabled
-

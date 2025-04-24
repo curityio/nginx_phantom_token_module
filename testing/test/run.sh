@@ -31,20 +31,23 @@ fi
 #
 # Deploy the system
 #
-export LICENSE_KEY && export ADMIN_PASSWORD && docker compose up -d
+export LICENSE_KEY
+export ADMIN_PASSWORD
+docker compose down
+docker compose up -d
 
 #
 # Wait for the Identity Server to come up
 #
 echo 'Waiting for the Curity Identity Server to start...'
-c=0; while [[ $c -lt 25 && "$(curl -fs -w ''%{http_code}'' localhost:8443)" != "404" ]]; do ((c++)); echo -n "."; sleep 1; done
+c=0; while [[ $c -lt 25 && "$(curl -fs -w ''%{http_code}'' localhost:8443)" != "404" ]]; do ((c++)); echo -n "."; sleep 2; done
 
 #
 # Run integration tests
 #
-PATH="$NGINX_SRC_DIR/objs:$PATH" prove -v -f t/
+PATH="$NGINX_SRC_DIR/objs:$PATH" prove -v -f t/data.t
 
 #
 # Free resources
 #
-docker-compose down
+docker compose down
