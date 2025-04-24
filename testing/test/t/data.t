@@ -12,6 +12,8 @@ use Test::Nginx::Socket 'no_plan';
 
 SKIP: {
       our $token = &get_token_from_idsvr();
+      #our $long_header_value = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      our $long_header_value = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
       if ($token) {
           run_tests();
@@ -50,7 +52,7 @@ sub process_json_from_backend {
         my ($response) = @_;
         
         # Uncomment to see the introspection response data
-        #print("$response\n");
+        print("$response\n");
 
         if ($response =~ /Authorization": "[Bb]earer ey/) {
             return "GOOD"; # A JWT (which starts with "ey") was forwarded to the back-end
@@ -152,13 +154,16 @@ location /target {
     add_header 'sec-fetch-mode' $http_sec_fetch_mode;
     add_header 'sec-fetch-site' $http_sec_fetch_site;
     add_header 'user-agent' $http_user_agent;
-    add_header 'x-fixture-a' $http_x_fixture_a;
-    add_header 'x-fixture-b' $http_x_fixture_b;
-    add_header 'x-fixture-c' $http_x_fixture_c;
-    add_header 'x-fixture-d' $http_x_fixture_d;
-    add_header 'x-fixture-e' $http_x_fixture_e;
-    add_header 'x-fixture-f' $http_x_fixture_f;
-    add_header 'x-fixture-g' $http_x_fixture_g;
+    add_header 'x-fixture-0' $http_x_fixture_0;
+    add_header 'x-fixture-1' $http_x_fixture_1;
+    add_header 'x-fixture-2' $http_x_fixture_2;
+    add_header 'x-fixture-3' $http_x_fixture_3;
+    add_header 'x-fixture-4' $http_x_fixture_4;
+    add_header 'x-fixture-5' $http_x_fixture_5;
+    add_header 'x-fixture-6' $http_x_fixture_6;
+    add_header 'x-fixture-7' $http_x_fixture_7;
+    add_header 'x-fixture-8' $http_x_fixture_8;
+    add_header 'x-fixture-9' $http_x_fixture_9;
     return 200;
 }
 
@@ -168,46 +173,54 @@ location /target {
 GET /t
 
 --- more_headers eval
-my $data;
-$data .= "accept: */*\n";
-$data .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
-$data .= "authorization: Bearer $main::token\n";
-$data .= "cache-control: no-cache\n";
-$data .= "dnt: 1\n";
-$data .= "origin: https://random.example.com\n";
-$data .= "pragma: no-cache\n";
-$data .= "priority: u=1, i\n";
-$data .= "referer: https://random.example.com/\n";
-$data .= "sec-fetch-dest: empty\n";
-$data .= "sec-fetch-mode: cors\n";
-$data .= "sec-fetch-site: same-site\n";
-$data .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\n";
-$data .= "x-fixture-a: a\n";
-$data .= "x-fixture-b: b\n";
-$data .= "x-fixture-c: c\n";
-$data .= "x-fixture-d: d\n";
-$data .= "x-fixture-e: e\n";
-$data .= "x-fixture-f: f\n";
-$data .= "x-fixture-g: g\n";
-$data;
+my $request;
+$request .= "x-fixture-0: 0$main::long_header_value\n";
+$request .= "x-fixture-1: 1$main::long_header_value\n";
+$request .= "x-fixture-2: 2$main::long_header_value\n";
+$request .= "x-fixture-3: 3$main::long_header_value\n";
+$request .= "x-fixture-4: 4$main::long_header_value\n";
+$request .= "accept: */*\n";
+$request .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
+$request .= "authorization: Bearer $main::token\n";
+$request .= "cache-control: no-cache\n";
+$request .= "dnt: 1\n";
+$request .= "origin: https://random.example.com\n";
+$request .= "pragma: no-cache\n";
+$request .= "priority: u=1, i\n";
+$request .= "referer: https://random.example.com/\n";
+$request .= "sec-fetch-dest: empty\n";
+$request .= "sec-fetch-mode: cors\n";
+$request .= "sec-fetch-site: same-site\n";
+$request .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\n";
+$request .= "x-fixture-5: 5$main::long_header_value\n";
+$request .= "x-fixture-6: 6$main::long_header_value\n";
+$request .= "x-fixture-7: 7$main::long_header_value\n";
+$request .= "x-fixture-8: 8$main::long_header_value\n";
+$request .= "x-fixture-9: 9$main::long_header_value\n";
+$request;
 
---- response_headers
-accept: */*
-accept-language: en-GB,en-US;q=0.9,en;q=0.8
-cache-control: no-cache
-dnt: 1
-origin: https://random.example.com
-pragma: no-cache
-priority: u=1, i
-referer: https://random.example.com/
-sec-fetch-dest: empty
-sec-fetch-mode: cors
-sec-fetch-site: same-site
-user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36
-x-fixture-a: a
-x-fixture-b: b
-x-fixture-c: c
-x-fixture-d: d
-x-fixture-e: e
-x-fixture-f: f
-x-fixture-g: g
+--- response_headers eval
+my $response;
+$response .= "x-fixture-0: 0$main::long_header_value\n";
+$response .= "x-fixture-1: 1$main::long_header_value\n";
+$response .= "x-fixture-2: 2$main::long_header_value\n";
+$response .= "x-fixture-3: 3$main::long_header_value\n";
+$response .= "x-fixture-4: 4$main::long_header_value\n";
+$response .= "accept: */*\n";
+$response .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
+$response .= "cache-control: no-cache\n";
+$response .= "dnt: 1\n";
+$response .= "origin: https://random.example.com\n";
+$response .= "pragma: no-cache\n";
+$response .= "priority: u=1, i\n";
+$response .= "referer: https://random.example.com/\n";
+$response .= "sec-fetch-dest: empty\n";
+$response .= "sec-fetch-mode: cors\n";
+$response .= "sec-fetch-site: same-site\n";
+$response .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\n";
+$response .= "x-fixture-5: 5$main::long_header_value\n";
+$response .= "x-fixture-6: 6$main::long_header_value\n";
+$response .= "x-fixture-7: 7$main::long_header_value\n";
+$response .= "x-fixture-8: 8$main::long_header_value\n";
+$response .= "x-fixture-9: 9$main::long_header_value\n";
+$response;
