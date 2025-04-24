@@ -211,8 +211,10 @@ static ngx_int_t set_accept_header_value(ngx_http_request_t *request, const char
 
     request->headers_in.accept = accept_header;
     
-    // TODO: Further debug whether this is correct and sufficient
+    // TODO 1: Further debug whether this is correct and sufficient
     if (request->headers_in.headers.part.next == NULL) {
+        
+        // Does not cause header truncation
         request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts;
     }
 
@@ -274,8 +276,10 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
                 if (module_context->original_content_type_header.data == NULL)
                 {
-                    // TODO: Further debug whether this is correct and sufficient
+                    // TODO 2: Further debug whether this is correct and sufficient
                     if (request->headers_in.headers.part.next == NULL) {
+                        
+                        // 2 causes header truncation
                         request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts = request->headers_in.headers.last->nelts - 1;
                     }
                 }
@@ -470,8 +474,10 @@ static ngx_int_t handler(ngx_http_request_t *request)
 
         introspection_request->headers_in.content_type = content_type_header;
 
-        // TODO: Further debug whether this is correct and sufficient
+        // TODO 3: Further debug whether this is correct and sufficient
         if (introspection_request->headers_in.headers.part.next == NULL) {
+            
+            // 3 causes header truncation
             introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
         }
     }

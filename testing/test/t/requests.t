@@ -49,7 +49,7 @@ sub process_json_from_backend {
         my ($response) = @_;
         
         # Uncomment to see the introspection response data
-        print("$response\n");
+        # print("$response\n");
 
         if ($response =~ /Authorization": "[Bb]earer ey/) {
             return "GOOD"; # A JWT (which starts with "ey") was forwarded to the back-end
@@ -62,7 +62,7 @@ sub process_json_from_backend {
 
 __DATA__
 
-=== TEST R1: A REF token can be introspected for a phantom token
+=== TEST REQUEST_1: A REF token can be introspected for a phantom token
 
 --- config
 location tt {
@@ -90,7 +90,7 @@ main::process_json_from_backend()
 
 --- response_body: GOOD
 
-=== Test R2: An unknown token results in an access denied error
+=== Test REQUEST_2: An unknown token results in an access denied error
 
 --- config
 location tt {
@@ -120,7 +120,7 @@ WWW-Authenticate: Bearer realm="api"
 --- response_body_like chomp
 {"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
 
-=== Test R3: The wrong kind of HTTP method is used results in an access denied error
+=== Test REQUEST_3: The wrong kind of HTTP method is used results in an access denied error
 
 --- config
 location tt {
@@ -143,7 +143,7 @@ GET /t
 
 --- error_code: 401
 
-=== Test R4: A request with no authorization request header results in an access denied error
+=== Test REQUEST_4: A request with no authorization request header results in an access denied error
 
 --- config
 location tt {
@@ -170,7 +170,7 @@ WWW-Authenticate: Bearer realm="api"
 --- response_body_like chomp
 {"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
 
-=== Test R5: A valid token with trash after results in an access denied error
+=== Test REQUEST_5: A valid token with trash after results in an access denied error
 
 --- config
 location tt {
@@ -197,7 +197,7 @@ GET /t
 content-type: application/json
 WWW-Authenticate: Bearer realm="api"
 
-=== Test R6: The bearer HTTP method can be in upper case
+=== Test REQUEST_6: The bearer HTTP method can be in upper case
 
 --- config
 location tt {
@@ -225,7 +225,7 @@ main::process_json_from_backend()
 
 --- response_body: GOOD
 
-=== Test R7: The bearer HTTP method can be in mixed case
+=== Test REQUEST_7: The bearer HTTP method can be in mixed case
 
 --- config
 location tt {
@@ -253,7 +253,7 @@ main::process_json_from_backend()
 
 --- response_body: GOOD
 
-=== Test R8: The bearer HTTP method can have > 1 space before it
+=== Test REQUEST_8: The bearer HTTP method can have > 1 space before it
 
 --- config
 location tt {
@@ -281,7 +281,7 @@ main::process_json_from_backend()
 
 --- response_body: GOOD
 
-=== Test R9: A misconfigured client secret results in a 502 error
+=== Test REQUEST_9: A misconfigured client secret results in a 502 error
 
 --- config
 location tt {
@@ -310,7 +310,7 @@ content-type: application/json
 --- response_body_like chomp
 {"code":"server_error","message":"Problem encountered processing the request"}
 
-=== Test R10: An unreachable authorization server results in a 502 error
+=== Test REQUEST_10: An unreachable authorization server results in a 502 error
 
 --- config
 location tt {
@@ -339,7 +339,7 @@ content-type: application/json
 --- response_body_like chomp
 {"code":"server_error","message":"Problem encountered processing the request"}
 
-=== TEST R11: Upstream receives custom headers correctly
+=== TEST REQUEST_11: Upstream receives browser headers correctly
 
 --- config
 location tt {
@@ -355,8 +355,20 @@ location /t {
 }
 
 location /target {
-    add_header 'x-custom1' $http_x_custom1;
-    add_header 'x-custom2' $http_x_custom2;
+    add_header 'accept' $http_accept;
+    add_header 'accept-language' $http_accept_language;
+    add_header 'cache-control' $http_cache_control;
+    add_header 'dnt' $http_dnt;
+    add_header 'origin' $http_origin;
+    add_header 'pragma' $http_pragma;
+    add_header 'priority' $http_priority;
+    add_header 'referer' $http_referer;
+    add_header 'sec-fetch-dest' $http_sec_fetch_dest;
+    add_header 'sec-fetch-mode' $http_sec_fetch_mode;
+    add_header 'sec-fetch-site' $http_sec_fetch_site;
+    add_header 'user-agent' $http_user_agent;
+    add_header 'x-custom-1' $http_x_custom_1;
+    add_header 'x-custom-2' $http_x_custom_2;
     return 200;
 }
 
@@ -366,12 +378,38 @@ location /target {
 GET /t
 
 --- more_headers eval
-my $data;
-$data .= "x-custom1: custom value 1\n";
-$data .= "Authorization: bearer $main::token\n";
-$data .= "x-custom2: custom value 2\n";
-$data;
+my $request;
+$request .= "accept: */*\n";
+$request .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
+$request .= "authorization: Bearer $main::token\n";
+$request .= "cache-control: no-cache\n";
+$request .= "dnt: 1\n";
+$request .= "origin: https://random.example.com\n";
+$request .= "pragma: no-cache\n";
+$request .= "priority: u=1, i\n";
+$request .= "referer: https://random.example.com/\n";
+$request .= "sec-fetch-dest: empty\n";
+$request .= "sec-fetch-mode: cors\n";
+$request .= "sec-fetch-site: same-site\n";
+$request .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\n";
+$request .= "x-custom-1: custom header 1\n";
+$request .= "x-custom-2: custom header 2\n";
+$request;
 
---- response_headers
-x-custom1: custom value 1
-x-custom2: custom value 2
+--- response_headers eval
+my $response;
+$response .= "accept: */*\n";
+$response .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
+$response .= "cache-control: no-cache\n";
+$response .= "dnt: 1\n";
+$response .= "origin: https://random.example.com\n";
+$response .= "pragma: no-cache\n";
+$response .= "priority: u=1, i\n";
+$response .= "referer: https://random.example.com/\n";
+$response .= "sec-fetch-dest: empty\n";
+$response .= "sec-fetch-mode: cors\n";
+$response .= "sec-fetch-site: same-site\n";
+$response .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\n";
+$response .= "x-custom-1: custom header 1\n";
+$response .= "x-custom-2: custom header 2\n";
+$response;

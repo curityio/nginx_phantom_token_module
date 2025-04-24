@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-#####################################################
-# Tests to ensure that large requests works correctly
-#####################################################
+####################################################
+# Tests to ensure that large requests work correctly
+####################################################
 
 use strict;
 use warnings;
@@ -12,8 +12,7 @@ use Test::Nginx::Socket 'no_plan';
 
 SKIP: {
       our $token = &get_token_from_idsvr();
-      #our $long_header_value = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      our $long_header_value = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      our $long_header_value = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
       if ($token) {
           run_tests();
@@ -52,7 +51,7 @@ sub process_json_from_backend {
         my ($response) = @_;
         
         # Uncomment to see the introspection response data
-        print("$response\n");
+        # print("$response\n");
 
         if ($response =~ /Authorization": "[Bb]earer ey/) {
             return "GOOD"; # A JWT (which starts with "ey") was forwarded to the back-end
@@ -65,7 +64,7 @@ sub process_json_from_backend {
 
 __DATA__
 
-=== TEST L1: A large JWT can be processed with the correct proxy buffer configuration
+=== TEST LARGE_DATA_1: A large JWT can be processed with the correct proxy buffer configuration
 
 --- config
 location tt {
@@ -95,7 +94,7 @@ main::process_json_from_backend()
 
 --- response_body: GOOD
 
-=== TEST L2: A large JWT cannot cause an end of buffer read and returns an error instead
+=== TEST LARGE_DATA_2: A large JWT cannot cause an end of buffer read and returns an error instead
 
 --- config
 location tt {
@@ -124,7 +123,7 @@ content-type: application/json
 --- response_body_like chomp
 {"code":"server_error","message":"Problem encountered processing the request"}
 
-=== TEST L3: Upstream receives a large JWT and many custom headers correctly
+=== TEST LARGE_DATA_3: Upstream receives a large JWT and many custom headers correctly
 
 --- config
 location tt {
@@ -135,6 +134,8 @@ location tt {
 
 location /t {
     proxy_pass http://localhost:1984/target;
+    proxy_buffer_size 16k;
+    proxy_buffers 4 16k;
 
     phantom_token on;
     phantom_token_client_credential "test-nginx" "secret2";
@@ -142,6 +143,7 @@ location /t {
 }
 
 location /target {
+
     add_header 'accept' $http_accept;
     add_header 'accept-language' $http_accept_language;
     add_header 'cache-control' $http_cache_control;

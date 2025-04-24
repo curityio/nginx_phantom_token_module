@@ -10,7 +10,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: Client ID configured without secret fails
+=== TEST CONFIG_1: Client ID configured without secret fails
 
 --- config
 location = /t {
@@ -23,7 +23,7 @@ location = /t {
 --- error_log
 invalid number of arguments in "phantom_token_client_credential" directive
 
-=== TEST 2: All required settings are configured correctly
+=== TEST CONFIG_2: All required settings are configured correctly
 
 --- config
 location tt {
@@ -39,7 +39,7 @@ location /t {
 --- request
 GET /
 
-=== TEST 3: Curity endpoint not configured fails
+=== TEST CONFIG_3: Curity endpoint not configured fails
 
 --- config
 
@@ -56,7 +56,7 @@ GET /t
 --- error_log
 Module not configured properly: missing introspection endpoint
 
-=== TEST 4: Curity endpoint not configured doesn't fail when module is disabled
+=== TEST CONFIG_4: Curity endpoint not configured doesn't fail when module is disabled
 
 --- config
 
@@ -73,7 +73,7 @@ GET /t
 --- no_error_log
 Module not configured properly: missing introspection endpoint
 
-=== TEST 5: Module can be disabled at the HTTP level
+=== TEST CONFIG_5: Module can be disabled at the HTTP level
 
 --- http_config
 
@@ -91,7 +91,7 @@ Module disabled
 
 --- skip_eval: 1: open(FH, "<", "$FindBin::Bin/../.build.info"); my $skip=0; while (<FH>) { $skip = 1 if ($_ =~ /DEBUG=n/) } $skip
 
-=== TEST 6: HTTP level config is overridden by location directive
+=== TEST CONFIG_6: HTTP level config is overridden by location directive
 
 --- http_config
 
