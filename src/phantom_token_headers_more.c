@@ -14,8 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*
+/********************************************************************************************************************
  * This module manipulates headers using code from the mature and widely used headers-more library.
  * The code is based on the 0.38 tag from January 2025 and is slightly adapted to remove headers-more specific types.
  * - https://github.com/openresty/headers-more-nginx-module
@@ -24,7 +23,7 @@
  * Each buffer (.part) is an array of struct header (ngx_list_part_t *).
  * When a header is set, removed or updated, buffers and nelts values must be updated accurately.
  * This module deals with all low-level processing to keep other module code business-focused.
- **/
+ ********************************************************************************************************************/
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -33,12 +32,12 @@
 #include <assert.h>
 
 /**
- * Remove an element from the list and the part that contains it.
+ * Remove an element from the list and the part that contains it
  * See the headers more function: ngx_http_headers_more_rm_header_helper
  */
-ngx_int_t headers_more_remove_header(ngx_list_t *l,
-                                     ngx_list_part_t *cur,
-                                     ngx_uint_t i) {
+ngx_int_t headers_more_remove_header_in(ngx_list_t *l,
+                                        ngx_list_part_t *cur,
+                                        ngx_uint_t i) {
     ngx_table_elt_t *data;
     ngx_list_part_t *new, *part;
 
@@ -142,12 +141,12 @@ ngx_int_t headers_more_remove_header(ngx_list_t *l,
 }
 
 /**
- * Set the header with the given key from the list.
+ * Set the header with the given key from the list
  * See the headers-more function: set_header_helper
  */
-ngx_int_t headers_more_set_header(ngx_http_request_t *r, ngx_str_t key,
-                                  ngx_str_t value,
-                                  ngx_table_elt_t **output_header) {
+ngx_int_t headers_more_set_header_in(ngx_http_request_t *r, ngx_str_t key,
+                                     ngx_str_t value,
+                                     ngx_table_elt_t **output_header) {
     ngx_list_part_t *part;
     ngx_table_elt_t *h, *matched;
     ngx_uint_t rc;
@@ -187,7 +186,7 @@ retry:
         // If value is 0, remove the header. If there are duplicates, remove
         // them all.
         if (value.len == 0 || (matched && matched != &h[i])) {
-            rc = headers_more_remove_header(&r->headers_in.headers, part, i);
+            rc = headers_more_remove_header_in(&r->headers_in.headers, part, i);
 
             assert(
                 !(r->headers_in.headers.part.next == NULL &&
@@ -261,10 +260,10 @@ retry:
 
 
 /**
- * Clear a header and update buffers.
+ * Clear a header and update buffers
  */
-void headers_more_clear_header(ngx_http_request_t *r, ngx_str_t key)
+void headers_more_clear_header_in(ngx_http_request_t *r, ngx_str_t key)
 {
     ngx_str_t value = ngx_null_string;
-    headers_more_set_header(r, key, value, NULL);
+    headers_more_set_header_in(r, key, value, NULL);
 }

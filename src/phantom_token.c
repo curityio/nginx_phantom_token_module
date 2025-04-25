@@ -20,19 +20,11 @@
 #include <ngx_string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include "phantom_token.h"
 #include "phantom_token_headers_more.h"
+#include "phantom_token_utils.h"
 
 #define UNENCODED_CLIENT_CREDENTIALS_BUF_LEN 255
-
-typedef struct
-{
-    ngx_str_t base64encoded_client_credential;
-    ngx_str_t introspection_endpoint;
-    ngx_str_t realm;
-    ngx_array_t *scopes;
-    ngx_str_t space_separated_scopes;
-    ngx_flag_t enable;
-} phantom_token_configuration_t;
 
 typedef struct
 {
@@ -45,61 +37,15 @@ typedef struct
 
 static ngx_int_t post_configuration(ngx_conf_t *config);
 
-static ngx_int_t handler(ngx_http_request_t *request);
-
 static void *create_location_configuration(ngx_conf_t *config);
 
 static char *merge_location_configuration(ngx_conf_t *main_config, void *parent, void *child);
 
-static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
-                                                ngx_int_t introspection_subrequest_status_code);
-
-static ngx_int_t write_error_response(ngx_http_request_t *request, ngx_int_t status, phantom_token_configuration_t *module_location_config);
-
-/**
- * Adds a WWW-Authenticate header to the given request's output headers that conforms to <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</>.
- *
- * After calling this method, a WWW-Authenticate header will be added that uses the Bearer scheme. If the realm and or
- * scopes were also configured, then these too will be included. For instance, if scopes are configured, then the
- * following output header will be added: <code> WWW-Authenticate: Bearer scope="scope1 scope2 scope3"</code>. If only
- * realm is configured, then a response header like this one would be added:
- * <code>WWW-Authenticate: Bearer realm="myGoodRealm"</code>. If both are configured, the two will be included and
- * separated by a comma, like this: <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>.
- *
- * @param request the current request
- * @param realm the configured realm
- * @param space_separated_scopes the space-separated list of configured scopes
- * @param error an error code or NULL if none. Refer to
- * <a href="https://tools.ietf.org/html/rfc6750#section-3.1">RFC 6750 § 3.1</a> for standard values.
- *
- * @return <code>NGX_HTTP_UNAUTHORIZED</code>
- *
- * @example <code>WWW-Authenticate: Bearer realm="myGoodRealm", scope="scope1 scope2 scope3"</code>
- *
- * @see <a href="https://tools.ietf.org/html/rfc6750">RFC 6750</a>
- */
-static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, phantom_token_configuration_t *module_location_config, char *error_code);
-
-/**
- * Sets the base-64-encoded client ID and secret in the module's configuration setting structure.
- *
- * This method assumes the module's command where this setter function (<code>set</code>) is used has a
- * configuration (<code>conf</code>) of <code>NGX_HTTP_LOC_CONF_OFFSET<code> and an <code>offset</code> of
- * <code>base64encoded_client_credential</code>. If this is not the case, the result pointer <em>may</em> point to an
- * unexpected location and the handler may not be able to use the configured values. Also, the command should have a
- * type that includes <code>NGX_CONF_TAKE2</code>.
- *
- * @param config_setting the configuration setting that is being set
- * @param command the module's command where this slot setter function is being used
- * @param result a pointer to the location where the result will be stored; it should be a pointer to a
- * <code>ngx_str_t</code>.
- *
- * @return <code>NGX_CONF_OK</code> upon success; some other character string on failure.
- */
 static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result);
 
-static const char BEARER[] = "Bearer ";
-static const size_t BEARER_SIZE = sizeof(BEARER) - 1;
+static ngx_int_t handler(ngx_http_request_t *request);
+
+static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data, ngx_int_t introspection_subrequest_status_code);
 
 static ngx_command_t phantom_token_module_directives[] =
 {
@@ -187,34 +133,143 @@ ngx_module_t ngx_curity_http_phantom_token_module =
     NGX_MODULE_V1_PADDING
 };
 
-/**
- * Sets the request's Accept header to the given value.
- *
- * @param request the request to which the header value will be set
- * @param value the value to set
- * @return NGX_OK if no error has occurred; NGX_ERROR if an error occurs.
- */
-static ngx_int_t set_accept_header_value(ngx_http_request_t *request,
-                                         ngx_str_t value)
+static ngx_int_t post_configuration(ngx_conf_t *config)
 {
+    ngx_http_core_main_conf_t *main_config = ngx_http_conf_get_module_main_conf(config, ngx_http_core_module);
+    ngx_http_handler_pt *h = ngx_array_push(&main_config->phases[NGX_HTTP_ACCESS_PHASE].handlers);
 
-    ngx_str_t accept = ngx_string("Accept");
-    ngx_uint_t found = headers_more_set_header(request, accept, value, &request->headers_in.accept);
-
-    if (found != NGX_OK)
+    if (h == NULL)
     {
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0,
-                      "Failed to set header accept: %V", &value);
         return NGX_ERROR;
     }
+
+    *h = handler;
 
     return NGX_OK;
 }
 
-static ngx_int_t handler(ngx_http_request_t *request)
+static void *create_location_configuration(ngx_conf_t *config)
+{
+    phantom_token_configuration_t *location_config = ngx_pcalloc(config->pool, sizeof(phantom_token_configuration_t));
+
+    if (location_config == NULL)
+    {
+        return NGX_CONF_ERROR;
+    }
+
+    location_config->enable = NGX_CONF_UNSET_UINT;
+    location_config->scopes = NGX_CONF_UNSET_PTR;
+
+    return location_config;
+}
+
+static char *merge_location_configuration(ngx_conf_t *main_config, void *parent, void *child)
+{
+    phantom_token_configuration_t *parent_config = parent, *child_config = child;
+
+    ngx_conf_merge_off_value(child_config->enable, parent_config->enable, 0)
+    ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "")
+    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api")
+    ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL)
+    ngx_conf_merge_str_value(child_config->space_separated_scopes, parent_config->space_separated_scopes, "")
+    ngx_conf_merge_str_value(child_config->base64encoded_client_credential,
+                             parent_config->base64encoded_client_credential, "")
+
+    if (child_config->scopes != NULL && child_config->space_separated_scopes.len == 0)
+    {
+        // Flatten scopes into a space-separated list
+        ngx_str_t *scope = child_config->scopes->elts;
+        size_t space_separated_scopes_data_size = child_config->scopes->nelts;
+        ngx_uint_t i;
+
+        for (i = 0; i < child_config->scopes->nelts; i++)
+        {
+            space_separated_scopes_data_size += scope[i].len;
+        }
+
+        u_char *space_separated_scopes_data = ngx_pcalloc(main_config->pool, space_separated_scopes_data_size);
+
+        if (space_separated_scopes_data == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        u_char *p = space_separated_scopes_data;
+
+        for (i = 0; i < child_config->scopes->nelts; i++)
+        {
+            p = ngx_cpymem(p, scope[i].data, scope[i].len);
+            *p = ' ';
+            p++;
+        }
+
+        *(p - 1) = '\0';
+
+        child_config->space_separated_scopes.data = space_separated_scopes_data;
+        child_config->space_separated_scopes.len = ngx_strlen(space_separated_scopes_data);
+
+        assert(child_config->space_separated_scopes.len <= space_separated_scopes_data_size);
+    }
+
+    return NGX_CONF_OK;
+}
+
+/**
+ * Sets the base-64-encoded client ID and secret in the module's configuration setting structure.
+ *
+ * This method assumes the module's command where this setter function (<code>set</code>) is used has a
+ * configuration (<code>conf</code>) of <code>NGX_HTTP_LOC_CONF_OFFSET<code> and an <code>offset</code> of
+ * <code>base64encoded_client_credential</code>. If this is not the case, the result pointer <em>may</em> point to an
+ * unexpected location and the handler may not be able to use the configured values. Also, the command should have a
+ * type that includes <code>NGX_CONF_TAKE2</code>.
+ *
+ * @param config_setting the configuration setting that is being set
+ * @param command the module's command where this slot setter function is being used
+ * @param result a pointer to the location where the result will be stored; it should be a pointer to a
+ * <code>ngx_str_t</code>.
+ *
+ * @return <code>NGX_CONF_OK</code> upon success; some other character string on failure.
+ */
+static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result)
+{
+    ngx_str_t *base64encoded_client_credential = result;
+    ngx_str_t *args = config_setting->args->elts;
+    ngx_str_t client_id = args[1], client_secret = args[2]; // sub 0 is the directive itself
+
+    if (client_id.len > 0 && client_secret.len > 0)
+    {
+        u_char unencoded_client_credentials_data[UNENCODED_CLIENT_CREDENTIALS_BUF_LEN];
+        u_char *p = ngx_snprintf(unencoded_client_credentials_data, sizeof(unencoded_client_credentials_data), "%V:%V",
+                                 &client_id, &client_secret);
+        ngx_str_t unencoded_client_credentials = { p - unencoded_client_credentials_data,
+                                                   unencoded_client_credentials_data };
+
+        base64encoded_client_credential->data = ngx_palloc(
+                config_setting->pool, ngx_base64_encoded_length(unencoded_client_credentials.len));
+
+        if (base64encoded_client_credential->data == NULL)
+        {
+            return NGX_CONF_ERROR;
+        }
+
+        ngx_encode_base64(base64encoded_client_credential, &unencoded_client_credentials);
+
+        return NGX_CONF_OK;
+    }
+
+    ngx_conf_log_error(NGX_LOG_EMERG, config_setting, 0, "invalid client ID and/or secret");
+
+    return "invalid_client_credential";
+}
+
+/**
+ * The main handler logic
+ */
+ngx_int_t handler(ngx_http_request_t *request)
 {
     phantom_token_configuration_t *module_location_config = ngx_http_get_module_loc_conf(
-            request, ngx_curity_http_phantom_token_module);
+            request,
+            ngx_curity_http_phantom_token_module);
 
     // Return OK if the module is not active
     if (!module_location_config->enable)
@@ -262,16 +317,16 @@ static ngx_int_t handler(ngx_http_request_t *request)
             {
                 // Introspection was successful. Replace the incoming Authorization header with one that has the JWT.
                 ngx_str_t authorization = ngx_string("Authorization");
-                headers_more_set_header(request, authorization, module_context->jwt, &request->headers_in.authorization);
+                headers_more_set_header_in(request, authorization, module_context->jwt, &request->headers_in.authorization);
                 
                 ngx_str_t content_type = ngx_string("Content-Type");
                 if (module_context->original_content_type_header.data == NULL)
                 {
-                    headers_more_clear_header(request, content_type);
+                    headers_more_clear_header_in(request, content_type);
                 }
                 else
                 {
-                    headers_more_set_header(request, content_type, module_context->original_content_type_header, &request->headers_in.content_type);
+                    headers_more_set_header_in(request, content_type, module_context->original_content_type_header, &request->headers_in.content_type);
                 }
 
                 if (request->headers_in.accept == NULL)
@@ -279,7 +334,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
                     ngx_int_t result;
                     ngx_str_t accept_value = ngx_string("*/*");
 
-                    if ((result = set_accept_header_value(request, accept_value) != NGX_OK))
+                    if ((result = utils_set_accept_header_value(request, accept_value) != NGX_OK))
                     {
                         return result;
                     }
@@ -293,19 +348,19 @@ static ngx_int_t handler(ngx_http_request_t *request)
             }
             else if (module_context->status == NGX_HTTP_NO_CONTENT)
             {
-                return set_www_authenticate_header(request, module_location_config, NULL);
+                return utils_set_www_authenticate_header(request, module_location_config, NULL);
             }
             else if (module_context->status == NGX_HTTP_SERVICE_UNAVAILABLE)
             {
-                return write_error_response(request, NGX_HTTP_SERVICE_UNAVAILABLE, module_location_config);
+                return utils_write_error_response(request, NGX_HTTP_SERVICE_UNAVAILABLE, module_location_config);
             }
             else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR || module_context->status == NGX_HTTP_NOT_FOUND
                 || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
             {
-                return write_error_response(request, NGX_HTTP_BAD_GATEWAY, module_location_config);
+                return utils_write_error_response(request, NGX_HTTP_BAD_GATEWAY, module_location_config);
             }
 
-            return write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
+            return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
         }
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
@@ -319,7 +374,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
 
-        return set_www_authenticate_header(request, module_location_config, NULL);
+        return utils_set_www_authenticate_header(request, module_location_config, NULL);
     }
 
     u_char *bearer_token_pos;
@@ -332,7 +387,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
                        "Authorization header does not contain a bearer token");
 
-        return set_www_authenticate_header(request, module_location_config, NULL);
+        return utils_set_www_authenticate_header(request, module_location_config, NULL);
     }
 
     bearer_token_pos += BEARER_SIZE;
@@ -364,7 +419,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
     if (ngx_http_subrequest(request, &module_location_config->introspection_endpoint, NULL, &introspection_request,
                             introspection_request_callback, NGX_HTTP_SUBREQUEST_WAITED) != NGX_OK)
     {
-        write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
+        utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
     }
 
     // extract access token from header
@@ -433,7 +488,7 @@ static ngx_int_t handler(ngx_http_request_t *request)
         ngx_int_t result;
         ngx_str_t application_jwt = ngx_string("application/jwt");
 
-        if ((result = set_accept_header_value(introspection_request, application_jwt) != NGX_OK))
+        if ((result = utils_set_accept_header_value(introspection_request, application_jwt) != NGX_OK))
         {
             return result;
         }
@@ -503,8 +558,13 @@ static ngx_int_t handler(ngx_http_request_t *request)
     return NGX_AGAIN;
 }
 
-static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data,
-                                                ngx_int_t introspection_subrequest_status_code)
+/**
+ * The main logic to handle the introspection response
+ */
+static ngx_int_t introspection_response_handler(
+    ngx_http_request_t *request,
+    void *data,
+    ngx_int_t introspection_subrequest_status_code)
 {
     phantom_token_module_context_t *module_context = (phantom_token_module_context_t*)data;
     ngx_str_t cache_data = ngx_null_string;
@@ -628,307 +688,4 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
     module_context->done = 1;
 
     return introspection_subrequest_status_code;
-}
-
-static ngx_int_t post_configuration(ngx_conf_t *config)
-{
-    ngx_http_core_main_conf_t *main_config = ngx_http_conf_get_module_main_conf(config, ngx_http_core_module);
-    ngx_http_handler_pt *h = ngx_array_push(&main_config->phases[NGX_HTTP_ACCESS_PHASE].handlers);
-
-    if (h == NULL)
-    {
-        return NGX_ERROR;
-    }
-
-    *h = handler;
-
-    return NGX_OK;
-}
-
-static void *create_location_configuration(ngx_conf_t *config)
-{
-    phantom_token_configuration_t *location_config = ngx_pcalloc(config->pool, sizeof(phantom_token_configuration_t));
-
-    if (location_config == NULL)
-    {
-        return NGX_CONF_ERROR;
-    }
-
-    location_config->enable = NGX_CONF_UNSET_UINT;
-    location_config->scopes = NGX_CONF_UNSET_PTR;
-
-    return location_config;
-}
-
-static char *merge_location_configuration(ngx_conf_t *main_config, void *parent, void *child)
-{
-    phantom_token_configuration_t *parent_config = parent, *child_config = child;
-
-    ngx_conf_merge_off_value(child_config->enable, parent_config->enable, 0)
-    ngx_conf_merge_str_value(child_config->introspection_endpoint, parent_config->introspection_endpoint, "")
-    ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api")
-    ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL)
-    ngx_conf_merge_str_value(child_config->space_separated_scopes, parent_config->space_separated_scopes, "")
-    ngx_conf_merge_str_value(child_config->base64encoded_client_credential,
-                             parent_config->base64encoded_client_credential, "")
-
-    if (child_config->scopes != NULL && child_config->space_separated_scopes.len == 0)
-    {
-        // Flatten scopes into a space-separated list
-        ngx_str_t *scope = child_config->scopes->elts;
-        size_t space_separated_scopes_data_size = child_config->scopes->nelts;
-        ngx_uint_t i;
-
-        for (i = 0; i < child_config->scopes->nelts; i++)
-        {
-            space_separated_scopes_data_size += scope[i].len;
-        }
-
-        u_char *space_separated_scopes_data = ngx_pcalloc(main_config->pool, space_separated_scopes_data_size);
-
-        if (space_separated_scopes_data == NULL)
-        {
-            return NGX_CONF_ERROR;
-        }
-
-        u_char *p = space_separated_scopes_data;
-
-        for (i = 0; i < child_config->scopes->nelts; i++)
-        {
-            p = ngx_cpymem(p, scope[i].data, scope[i].len);
-            *p = ' ';
-            p++;
-        }
-
-        *(p - 1) = '\0';
-
-        child_config->space_separated_scopes.data = space_separated_scopes_data;
-        child_config->space_separated_scopes.len = ngx_strlen(space_separated_scopes_data);
-
-        assert(child_config->space_separated_scopes.len <= space_separated_scopes_data_size);
-    }
-
-    return NGX_CONF_OK;
-}
-
-static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result)
-{
-    ngx_str_t *base64encoded_client_credential = result;
-    ngx_str_t *args = config_setting->args->elts;
-    ngx_str_t client_id = args[1], client_secret = args[2]; // sub 0 is the directive itself
-
-    if (client_id.len > 0 && client_secret.len > 0)
-    {
-        u_char unencoded_client_credentials_data[UNENCODED_CLIENT_CREDENTIALS_BUF_LEN];
-        u_char *p = ngx_snprintf(unencoded_client_credentials_data, sizeof(unencoded_client_credentials_data), "%V:%V",
-                                 &client_id, &client_secret);
-        ngx_str_t unencoded_client_credentials = { p - unencoded_client_credentials_data,
-                                                   unencoded_client_credentials_data };
-
-        base64encoded_client_credential->data = ngx_palloc(
-                config_setting->pool, ngx_base64_encoded_length(unencoded_client_credentials.len));
-
-        if (base64encoded_client_credential->data == NULL)
-        {
-            return NGX_CONF_ERROR;
-        }
-
-        ngx_encode_base64(base64encoded_client_credential, &unencoded_client_credentials);
-
-        return NGX_CONF_OK;
-    }
-
-    ngx_conf_log_error(NGX_LOG_EMERG, config_setting, 0, "invalid client ID and/or secret");
-
-    return "invalid_client_credential";
-}
-
-
-static ngx_int_t set_www_authenticate_header(ngx_http_request_t *request, phantom_token_configuration_t *module_location_config, char *error_code)
-{
-    request->headers_out.www_authenticate = ngx_list_push(&request->headers_out.headers);
-
-    if (request->headers_out.www_authenticate == NULL)
-    {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    static const char REALM_PREFIX[] = "realm=\"";
-    static const size_t REALM_PREFIX_SIZE = sizeof(REALM_PREFIX) - 1;
-
-    static const char TOKEN_SUFFIX[] = "\"";
-    static const size_t TOKEN_SUFFIX_SIZE = sizeof(TOKEN_SUFFIX) - 1;
-
-    static const char TOKEN_SEPARATER[] = ", ";
-    static const size_t TOKEN_SEPARATER_SIZE = sizeof(TOKEN_SEPARATER) - 1;
-
-    static const char SCOPE_PREFIX[] = "scope=\"";
-    static const size_t SCOPE_PREFIX_SIZE = sizeof(SCOPE_PREFIX) - 1;
-
-    static const u_char ERROR_CODE_PREFIX[] = "error=\"";
-    static const size_t ERROR_CODE_PREFIX_SIZE = sizeof(ERROR_CODE_PREFIX) - 1;
-
-    size_t bearer_data_size = BEARER_SIZE + sizeof('\0'); // Add one for the nul byte
-    bool realm_provided = module_location_config->realm.len > 0;
-    bool scopes_provided = module_location_config->space_separated_scopes.len > 0;
-    bool error_code_provided = error_code != NULL;
-    bool append_one_comma = false, append_two_commas = false;
-    size_t error_code_len = 0;
-
-    if (realm_provided)
-    {
-        bearer_data_size += REALM_PREFIX_SIZE + module_location_config->realm.len + TOKEN_SUFFIX_SIZE;
-    }
-
-    if (scopes_provided)
-    {
-        bearer_data_size += SCOPE_PREFIX_SIZE + module_location_config->space_separated_scopes.len + TOKEN_SUFFIX_SIZE;
-    }
-
-    if (error_code_provided)
-    {
-        error_code_len = ngx_strlen(error_code);
-        bearer_data_size += ERROR_CODE_PREFIX_SIZE + error_code_len + TOKEN_SUFFIX_SIZE;
-    }
-
-    if ((realm_provided && scopes_provided) || (realm_provided && error_code_provided) || (scopes_provided && error_code_provided))
-    {
-        bearer_data_size += TOKEN_SEPARATER_SIZE;
-        append_one_comma = true;
-
-        if (realm_provided && scopes_provided && error_code_provided)
-        {
-            bearer_data_size += TOKEN_SEPARATER_SIZE;
-            append_two_commas = true;
-        }
-    }
-
-    u_char *bearer_data = ngx_pnalloc(request->pool, bearer_data_size);
-
-    if (bearer_data == NULL)
-    {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    u_char *p = ngx_cpymem(bearer_data, BEARER, BEARER_SIZE);
-
-    if (realm_provided)
-    {
-        p = ngx_cpymem(p, REALM_PREFIX, REALM_PREFIX_SIZE);
-        p = ngx_cpymem(p, module_location_config->realm.data, module_location_config->realm.len);
-        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
-
-        if (append_one_comma)
-        {
-            p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
-        }
-    }
-
-    if (scopes_provided)
-    {
-        p = ngx_cpymem(p, SCOPE_PREFIX, SCOPE_PREFIX_SIZE);
-        p = ngx_cpymem(p, module_location_config->space_separated_scopes.data, module_location_config->space_separated_scopes.len);
-        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
-
-        if (append_one_comma || append_two_commas)
-        {
-            p = ngx_cpymem(p, TOKEN_SEPARATER, TOKEN_SEPARATER_SIZE);
-        }
-    }
-
-    if (error_code_provided)
-    {
-        p = ngx_cpymem(p, ERROR_CODE_PREFIX, ERROR_CODE_PREFIX_SIZE);
-        p = ngx_cpymem(p, error_code, error_code_len);
-        p = ngx_cpymem(p, TOKEN_SUFFIX, TOKEN_SUFFIX_SIZE);
-    }
-
-    if (!scopes_provided && !realm_provided && !error_code_provided)
-    {
-        // Only 'Bearer' is being sent. Replace the space at the end of BEARER with a null byte.
-        *(p - 1) = '\0';
-    }
-    else
-    {
-        *p = '\0';
-    }
-
-    request->headers_out.www_authenticate->hash = 1;
-    ngx_str_set(&request->headers_out.www_authenticate->key, "WWW-Authenticate");
-    request->headers_out.www_authenticate->value.data = bearer_data;
-    request->headers_out.www_authenticate->value.len = ngx_strlen(bearer_data);
-
-    assert(request->headers_out.www_authenticate->value.len <= bearer_data_size);
-
-    return write_error_response(request, NGX_HTTP_UNAUTHORIZED, module_location_config);
-}
-
-/*
- * Add the error response as a JSON object that is easier to handle than the default HTML response that NGINX returns
- * http://nginx.org/en/docs/dev/development_guide.html#http_response_body
- */
-static ngx_int_t write_error_response(ngx_http_request_t *request, ngx_int_t status, phantom_token_configuration_t *module_location_config)
-{
-    ngx_int_t rc;
-    ngx_str_t code;
-    ngx_str_t message;
-    u_char json_error_data[256];
-    ngx_chain_t output;
-    ngx_buf_t *body = NULL;
-    const char *error_format = NULL;
-    size_t error_len = 0;
-
-    if (request->method == NGX_HTTP_HEAD)
-    {
-        return status;
-    }
-
-    body = ngx_calloc_buf(request->pool);
-    if (body == NULL)
-    {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Failed to allocate memory for error body");
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-    else
-    {
-        if (status == NGX_HTTP_UNAUTHORIZED)
-        {
-            ngx_str_set(&code, "unauthorized_request");
-            ngx_str_set(&message, "Access denied due to missing, invalid or expired credentials");
-        }
-        else
-        {
-            ngx_str_set(&code, "server_error");
-            ngx_str_set(&message, "Problem encountered processing the request");
-        }
-
-        /* The string length calculation replaces the two '%V' markers with their actual values */
-        error_format = "{\"code\":\"%V\",\"message\":\"%V\"}";
-        error_len = ngx_strlen(error_format) + code.len + message.len - 4;
-        ngx_snprintf(json_error_data, sizeof(json_error_data) - 1, error_format, &code, &message);
-        json_error_data[error_len] = 0;
-
-        request->headers_out.status = status;
-        request->headers_out.content_length_n = error_len;
-        ngx_str_set(&request->headers_out.content_type, "application/json");
-
-        rc = ngx_http_send_header(request);
-        if (rc == NGX_ERROR || rc > NGX_OK || request->header_only) {
-            return rc;
-        }
-        
-        body->pos = json_error_data;
-        body->last = json_error_data + error_len;
-        body->memory = 1;
-        body->last_buf = 1;
-        body->last_in_chain = 1;
-        output.buf = body;
-        output.next = NULL;
-
-        /* Return an error result, which also requires finalize_request to be called, to prevent a 'header already sent' warning in logs
-           https://forum.nginx.org/read.php?29,280514,280521#msg-280521 */
-        rc = ngx_http_output_filter(request, &output);
-        ngx_http_finalize_request(request, rc);
-        return NGX_DONE;
-    }
 }
