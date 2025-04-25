@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Curity AB
+ *  Copyright 2025 Curity AB
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,32 +21,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "phantom_token.h"
-#include "phantom_token_headers_more.h"
 #include "phantom_token_utils.h"
-
-/**
- * Sets the request's Accept header to the given value.
- *
- * @param request the request to which the header value will be set
- * @param value the value to set
- * @return NGX_OK if no error has occurred; NGX_ERROR if an error occurs.
- */
-ngx_int_t utils_set_accept_header_value(ngx_http_request_t *request,
-                                         ngx_str_t value)
-{
-
-    ngx_str_t accept = ngx_string("Accept");
-    ngx_uint_t found = headers_more_set_header_in(request, accept, value, &request->headers_in.accept);
-
-    if (found != NGX_OK)
-    {
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0,
-                      "Failed to set header accept: %V", &value);
-        return NGX_ERROR;
-    }
-
-    return NGX_OK;
-}
 
 /**
  * Add the error response as a JSON object that is easier to handle than the default HTML response that NGINX returns

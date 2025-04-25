@@ -15,7 +15,7 @@
  */
 
 /********************************************************************************************************************
- * This module manipulates headers using code from the mature and widely used headers-more library.
+ * This module manipulates headers using code from the mature headers-more library.
  * The code is based on the 0.38 tag from January 2025 and is slightly adapted to remove headers-more specific types.
  * - https://github.com/openresty/headers-more-nginx-module
  *
@@ -31,122 +31,49 @@
 #include <ngx_string.h>
 #include <assert.h>
 
-/**
- * Remove an element from the list and the part that contains it
- * See the headers more function: ngx_http_headers_more_rm_header_helper
- */
-ngx_int_t headers_more_remove_header_in(ngx_list_t *l,
-                                        ngx_list_part_t *cur,
-                                        ngx_uint_t i) {
-    ngx_table_elt_t *data;
-    ngx_list_part_t *new, *part;
-
-    data = cur->elts;
-
-    if (i == 0) {
-        cur->elts = (char *)cur->elts + l->size;
-        cur->nelts--;
-
-        if (cur == l->last) {
-            if (cur->nelts == 0) {
-#if 1
-                part = &l->part;
-
-                if (part == cur) {
-                    cur->elts = (char *)cur->elts - l->size;
-                    /* do nothing */
-
-                } else {
-                    while (part->next != cur) {
-                        if (part->next == NULL) {
-                            return NGX_ERROR;
-                        }
-
-                        part = part->next;
-                    }
-
-                    l->last = part;
-                    part->next = NULL;
-                    l->nalloc = part->nelts;
-                }
-#endif
-
-            } else {
-                l->nalloc--;
-            }
-
-            return NGX_OK;
-        }
-
-        if (cur->nelts == 0) {
-            part = &l->part;
-
-            if (part == cur) {
-                assert(cur->next != NULL);
-
-                if (l->last == cur->next) {
-                    l->part = *(cur->next);
-                    l->last = part;
-                    l->nalloc = part->nelts;
-
-                } else {
-                    l->part = *(cur->next);
-                }
-
-            } else {
-                while (part->next != cur) {
-                    if (part->next == NULL) {
-                        return NGX_ERROR;
-                    }
-
-                    part = part->next;
-                }
-
-                part->next = cur->next;
-            }
-
-            return NGX_OK;
-        }
-
-        return NGX_OK;
-    }
-
-    if (i == cur->nelts - 1) {
-        cur->nelts--;
-
-        if (cur == l->last) {
-            l->nalloc = cur->nelts;
-        }
-
-        return NGX_OK;
-    }
-
-    new = ngx_palloc(l->pool, sizeof(ngx_list_part_t));
-    if (new == NULL) {
-        return NGX_ERROR;
-    }
-
-    new->elts = &data[i + 1];
-    new->nelts = cur->nelts - i - 1;
-    new->next = cur->next;
-
-    cur->nelts = i;
-    cur->next = new;
-    if (cur == l->last) {
-        l->last = new;
-        l->nalloc = new->nelts;
-    }
-
-    return NGX_OK;
-}
+static ngx_int_t headers_more_set_header_in_internal(ngx_http_request_t *r, ngx_str_t key, ngx_str_t value, ngx_table_elt_t **output_header);
+static ngx_int_t headers_more_remove_header_in(ngx_list_t *l, ngx_list_part_t *cur, ngx_uint_t i);
 
 /**
  * Set the header with the given key from the list
  * See the headers-more function: set_header_helper
  */
-ngx_int_t headers_more_set_header_in(ngx_http_request_t *r, ngx_str_t key,
-                                     ngx_str_t value,
-                                     ngx_table_elt_t **output_header) {
+ngx_int_t headers_more_set_header_in(
+    ngx_http_request_t *r,
+    ngx_str_t key,
+    ngx_str_t value,
+    ngx_table_elt_t **output_header)
+{
+    ngx_int_t result = headers_more_set_header_in_internal(r, key, value, output_header);
+    if (result == NGX_OK) {
+
+        // TODO: Why is this not handled by headers-more?
+        if (r->headers_in.headers.part.next == NULL) {
+            r->headers_in.headers.part.nelts = r->headers_in.headers.last->nelts;
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Clear a header and update buffers
+ */
+ngx_int_t headers_more_clear_header_in(ngx_http_request_t *r, ngx_str_t key)
+{
+    ngx_str_t value = ngx_null_string;
+    return headers_more_set_header_in_internal(r, key, value, NULL);
+}
+
+/**
+ * The internal version does not update nelts
+ */
+ngx_int_t headers_more_set_header_in_internal(
+    ngx_http_request_t *r,
+    ngx_str_t key,
+    ngx_str_t value,
+    ngx_table_elt_t **output_header) {
+
     ngx_list_part_t *part;
     ngx_table_elt_t *h, *matched;
     ngx_uint_t rc;
@@ -258,12 +185,111 @@ retry:
     return NGX_OK;
 }
 
-
 /**
- * Clear a header and update buffers
+ * Remove an element from the list and the part that contains it
+ * See the headers more function: ngx_http_headers_more_rm_header_helper
  */
-void headers_more_clear_header_in(ngx_http_request_t *r, ngx_str_t key)
-{
-    ngx_str_t value = ngx_null_string;
-    headers_more_set_header_in(r, key, value, NULL);
+ngx_int_t headers_more_remove_header_in(ngx_list_t *l,
+                                        ngx_list_part_t *cur,
+                                        ngx_uint_t i) {
+    ngx_table_elt_t *data;
+    ngx_list_part_t *new, *part;
+
+    data = cur->elts;
+
+    if (i == 0) {
+        cur->elts = (char *)cur->elts + l->size;
+        cur->nelts--;
+
+        if (cur == l->last) {
+            if (cur->nelts == 0) {
+#if 1
+                part = &l->part;
+
+                if (part == cur) {
+                    cur->elts = (char *)cur->elts - l->size;
+                    /* do nothing */
+
+                } else {
+                    while (part->next != cur) {
+                        if (part->next == NULL) {
+                            return NGX_ERROR;
+                        }
+
+                        part = part->next;
+                    }
+
+                    l->last = part;
+                    part->next = NULL;
+                    l->nalloc = part->nelts;
+                }
+#endif
+
+            } else {
+                l->nalloc--;
+            }
+
+            return NGX_OK;
+        }
+
+        if (cur->nelts == 0) {
+            part = &l->part;
+
+            if (part == cur) {
+                assert(cur->next != NULL);
+
+                if (l->last == cur->next) {
+                    l->part = *(cur->next);
+                    l->last = part;
+                    l->nalloc = part->nelts;
+
+                } else {
+                    l->part = *(cur->next);
+                }
+
+            } else {
+                while (part->next != cur) {
+                    if (part->next == NULL) {
+                        return NGX_ERROR;
+                    }
+
+                    part = part->next;
+                }
+
+                part->next = cur->next;
+            }
+
+            return NGX_OK;
+        }
+
+        return NGX_OK;
+    }
+
+    if (i == cur->nelts - 1) {
+        cur->nelts--;
+
+        if (cur == l->last) {
+            l->nalloc = cur->nelts;
+        }
+
+        return NGX_OK;
+    }
+
+    new = ngx_palloc(l->pool, sizeof(ngx_list_part_t));
+    if (new == NULL) {
+        return NGX_ERROR;
+    }
+
+    new->elts = &data[i + 1];
+    new->nelts = cur->nelts - i - 1;
+    new->next = cur->next;
+
+    cur->nelts = i;
+    cur->next = new;
+    if (cur == l->last) {
+        l->last = new;
+        l->nalloc = new->nelts;
+    }
+
+    return NGX_OK;
 }
