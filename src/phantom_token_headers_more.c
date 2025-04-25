@@ -26,10 +26,13 @@
 This code was adapted from tag 0.38 of the headers-more library, from January 2025.
 - https://github.com/openresty/headers-more-nginx-module
 
+The same approach is used by OpenResty:
+- https://github.com/openresty/lua-nginx-module
+
 In NGINX, headers are a linked list of buffers (ngx_list_t).
 Each buffer (.part) is an array of struct header (ngx_list_part_t *).
 When a header is set, removed or updated, buffers and nelts values must be updated accurately.
-This module deals with all low-level processing to keep other module code business-focused.
+This module deals with all low-level processing to keep code in other mdoules business-focused.
 **********************************************************************************************/
 
 #include <ngx_config.h>
@@ -43,7 +46,7 @@ static ngx_int_t headers_more_remove_header_in(ngx_list_t *l, ngx_list_part_t *c
 
 /**
  * Set the header with the given key from the list
- * See the headers-more function: set_header_helper
+ * See the headers-more function named 'ngx_http_set_header_helper'
  */
 ngx_int_t headers_more_set_header_in(
     ngx_http_request_t *r,
@@ -54,7 +57,7 @@ ngx_int_t headers_more_set_header_in(
     ngx_int_t result = headers_more_set_header_in_internal(r, key, value, output_header);
     if (result == NGX_OK) {
 
-        // TODO: Why is this not handled by headers-more?
+        // TODO: This seems to work but needs further justification
         if (r->headers_in.headers.part.next == NULL) {
             r->headers_in.headers.part.nelts = r->headers_in.headers.last->nelts;
         }
@@ -168,16 +171,19 @@ retry:
     if (h == NULL) {
         return NGX_ERROR;
     }
+
     h->hash = 1;
     h->key = key;
     h->value = value;
 #if defined(nginx_version) && nginx_version >= 1023000
     h->next = NULL;
 #endif
+
     h->lowcase_key = ngx_pnalloc(r->pool, h->key.len);
     if (h->lowcase_key == NULL) {
         return NGX_ERROR;
     }
+
     ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
 
     if (output_header) {
@@ -194,7 +200,7 @@ retry:
 
 /**
  * Remove an element from the list and the part that contains it
- * See the headers more function: ngx_http_headers_more_rm_header_helper
+ * See the headers more function named 'ngx_http_headers_more_rm_header_helper'
  */
 ngx_int_t headers_more_remove_header_in(ngx_list_t *l,
                                         ngx_list_part_t *cur,
