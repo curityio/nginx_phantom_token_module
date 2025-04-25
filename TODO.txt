@@ -1,8 +1,0 @@
-1. Complete header tests
-
-2. Understand why I need to update nelts after setting the content-type introspect header
-
-3. Headers more logging of errors
-
-4. General error logging improvements
-

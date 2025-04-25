@@ -279,7 +279,6 @@ ngx_int_t handler(ngx_http_request_t *request)
     if (!module_location_config->enable)
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Module disabled");
-
         return NGX_DECLINED;
     }
 
@@ -295,7 +294,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     if (module_location_config->base64encoded_client_credential.len == 0)
     {
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-                      "Module not configured properly: missing client ID and secret");
+             "Module not configured properly: missing client ID and secret");
 
         return NGX_DECLINED;
     }
@@ -305,7 +304,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     if (module_location_config->introspection_endpoint.len == 0)
     {
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-                      "Module not configured properly: missing introspection endpoint");
+            "Module not configured properly: missing introspection endpoint");
 
         return NGX_DECLINED;
     }
@@ -322,6 +321,7 @@ ngx_int_t handler(ngx_http_request_t *request)
                 // Introspection was successful. Replace the incoming Authorization header with one that has the JWT.
                 if (headers_more_set_header_in(request, AUTHORIZATION_HEADER_NAME, module_context->jwt, &request->headers_in.authorization) != NGX_OK)
                 {
+                    utils_log_upstream_set_header_error(request, AUTHORIZATION_HEADER_NAME);
                     return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
                 }
 
@@ -329,6 +329,7 @@ ngx_int_t handler(ngx_http_request_t *request)
                 {
                     if (headers_more_clear_header_in(request, CONTENT_TYPE_HEADER_NAME) != NGX_OK)
                     {
+                        utils_log_upstream_set_header_error(request, CONTENT_TYPE_HEADER_NAME);
                         return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
                     }
                 }
@@ -336,6 +337,7 @@ ngx_int_t handler(ngx_http_request_t *request)
                 {
                     if (headers_more_set_header_in(request, CONTENT_TYPE_HEADER_NAME, module_context->original_content_type_header, &request->headers_in.content_type) != NGX_OK)
                     {
+                        utils_log_upstream_set_header_error(request, CONTENT_TYPE_HEADER_NAME);
                         return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
                     }
                 }
@@ -345,6 +347,7 @@ ngx_int_t handler(ngx_http_request_t *request)
                     ngx_str_t accept_value = ngx_string("*/*");
                     if (headers_more_set_header_in(request, ACCEPT_HEADER_NAME, accept_value, &request->headers_in.accept) != NGX_OK)
                     {
+                        utils_log_upstream_set_header_error(request, ACCEPT_HEADER_NAME);
                         return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
                     }
                 }
@@ -352,6 +355,7 @@ ngx_int_t handler(ngx_http_request_t *request)
                 {
                     if (headers_more_set_header_in(request, ACCEPT_HEADER_NAME, module_context->original_accept_header, &request->headers_in.accept) != NGX_OK)
                     {
+                        utils_log_upstream_set_header_error(request, ACCEPT_HEADER_NAME);
                         return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
                     }
                 }
@@ -366,8 +370,10 @@ ngx_int_t handler(ngx_http_request_t *request)
             {
                 return utils_write_error_response(request, NGX_HTTP_SERVICE_UNAVAILABLE, module_location_config);
             }
-            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR || module_context->status == NGX_HTTP_NOT_FOUND
-                  || module_context->status == NGX_HTTP_UNAUTHORIZED || module_context->status == NGX_HTTP_FORBIDDEN)
+            else if (module_context->status >= NGX_HTTP_INTERNAL_SERVER_ERROR ||
+                     module_context->status == NGX_HTTP_NOT_FOUND ||
+                     module_context->status == NGX_HTTP_UNAUTHORIZED ||
+                     module_context->status == NGX_HTTP_FORBIDDEN)
             {
                 return utils_write_error_response(request, NGX_HTTP_BAD_GATEWAY, module_location_config);
             }
@@ -376,7 +382,7 @@ ngx_int_t handler(ngx_http_request_t *request)
         }
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
-                       "Called again without having received the response from Curity");
+            "Called again without having received the introspection response");
 
         return NGX_AGAIN;
     }
@@ -384,8 +390,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     // return unauthorized when no Authorization header is present
     if (!request->headers_in.authorization || request->headers_in.authorization->value.len <= 0)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
-
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Authorization header not present");
         return utils_set_www_authenticate_header(request, module_location_config, NULL);
     }
 
@@ -395,10 +400,7 @@ ngx_int_t handler(ngx_http_request_t *request)
         (char*)BEARER, BEARER_SIZE - 1)) == NULL)
     {
         // return unauthorized when Authorization header is not Bearer
-
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
-                       "Authorization header does not contain a bearer token");
-
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Authorization header does not contain a bearer token");
         return utils_set_www_authenticate_header(request, module_location_config, NULL);
     }
 
@@ -411,16 +413,16 @@ ngx_int_t handler(ngx_http_request_t *request)
     }
 
     module_context = ngx_pcalloc(request->pool, sizeof(phantom_token_module_context_t));
-
     if (module_context == NULL)
     {
+        utils_set_memory_allocation_error(request, "module_context");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_http_post_subrequest_t *introspection_request_callback = ngx_pcalloc(request->pool, sizeof(ngx_http_post_subrequest_t));
-
     if (introspection_request_callback == NULL)
     {
+        utils_set_memory_allocation_error(request, "introspection_request_callback");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -441,16 +443,16 @@ ngx_int_t handler(ngx_http_request_t *request)
 
     // extract access token from header
     u_char *introspect_body_data = ngx_pcalloc(request->pool, request->headers_in.authorization->value.len);
-
     if (introspect_body_data == NULL)
     {
+        utils_set_memory_allocation_error(request, "introspect_body_data");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_str_t *introspection_body = ngx_pcalloc(request->pool, sizeof(ngx_str_t));
-
     if (introspection_body == NULL)
     {
+        utils_set_memory_allocation_error(request, "introspection_body");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -460,23 +462,23 @@ ngx_int_t handler(ngx_http_request_t *request)
     introspection_body->len = ngx_strlen(introspection_body->data);
 
     introspection_request->request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
-
     if (introspection_request->request_body == NULL)
     {
+        utils_set_memory_allocation_error(request, "introspection_request->request_body");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_http_request_body_t *introspection_request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
-
     if (introspection_request_body == NULL)
     {
+        utils_set_memory_allocation_error(request, "introspection_request_body");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_buf_t *introspection_request_body_buffer = ngx_calloc_buf(request->pool);
-
     if (introspection_request_body_buffer == NULL)
     {
+        utils_set_memory_allocation_error(request, "introspection_request_body_buffer");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -487,9 +489,9 @@ ngx_int_t handler(ngx_http_request_t *request)
     introspection_request_body_buffer->temporary = true;
 
     introspection_request_body->bufs = ngx_alloc_chain_link(request->pool);
-
     if (introspection_request_body->bufs == NULL)
     {
+        utils_set_memory_allocation_error(request, "introspection_request_body->bufs");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -509,6 +511,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     ngx_str_t application_jwt = ngx_string("application/jwt");
     if (headers_more_set_header_in(introspection_request, ACCEPT_HEADER_NAME, application_jwt, &introspection_request->headers_in.accept) != NGX_OK)
     {
+        utils_log_subrequest_set_header_error(request, ACCEPT_HEADER_NAME);
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -522,6 +525,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     ngx_str_t form_url_encoded = ngx_string("application/x-www-form-urlencoded");
     if (headers_more_set_header_in(introspection_request, CONTENT_TYPE_HEADER_NAME, form_url_encoded, &introspection_request->headers_in.content_type) != NGX_OK)
     {
+        utils_log_subrequest_set_header_error(request, CONTENT_TYPE_HEADER_NAME);
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -537,7 +541,7 @@ ngx_int_t handler(ngx_http_request_t *request)
 
     if (authorization_header_data == NULL)
     {
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for authorization header data");
+        utils_set_memory_allocation_error(request, "authorization_header_data");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -546,6 +550,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     ngx_str_t authorization_value = {authorization_header_data_len, authorization_header_data};
     if (headers_more_set_header_in(introspection_request, AUTHORIZATION_HEADER_NAME, authorization_value, &introspection_request->headers_in.authorization) != NGX_OK)
     {
+        utils_log_subrequest_set_header_error(request, AUTHORIZATION_HEADER_NAME);
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -579,7 +584,11 @@ static ngx_int_t introspection_response_handler(
     // Fail early for not 200 response
     if (request->headers_out.status != NGX_HTTP_OK)
     {
-        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection subrequest to returned response code: %d", request->headers_out.status);
+        // Log any error except 204 expiry responses, which are expected
+        if (request->headers_out.status != NGX_HTTP_NO_CONTENT) {
+            ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Introspection subrequest returned response code: %d", request->headers_out.status);
+        }
+        
         module_context->done = 1;
         return introspection_subrequest_status_code;
     }
@@ -652,8 +661,8 @@ static ngx_int_t introspection_response_handler(
 
     if (jwt_start == NULL)
     {
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0,
-                       "Failed to obtain JWT from introspection response or, if applicable, cache");
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0,
+            "Failed to obtain JWT access token from introspection response or cache");
 
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
@@ -663,17 +672,16 @@ static ngx_int_t introspection_response_handler(
 
     module_context->jwt.len = bearer_jwt_len;
     module_context->jwt.data = ngx_pnalloc(request->pool, bearer_jwt_len);
-
     if (module_context->jwt.data == NULL)
     {
+        utils_set_memory_allocation_error(request, "module_context->jwt.data");
+
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;
-
         return introspection_subrequest_status_code;
     }
 
     p = ngx_copy(module_context->jwt.data, BEARER, BEARER_SIZE);
-
     ngx_memcpy(p, jwt_start, jwt_len);
 
     if (cache_data.len > 0)

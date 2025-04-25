@@ -1,29 +1,35 @@
-/*
- *  Copyright 2025 Curity AB
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/************************************************************************
+ headers-more-nginx-module LICENSE:
+ - https://github.com/openresty/headers-more-nginx-module
+ 
+ This module is licensed under the terms of the BSD license.
 
-/********************************************************************************************************************
- * This module manipulates headers using code from the mature headers-more library.
- * The code is based on the 0.38 tag from January 2025 and is slightly adapted to remove headers-more specific types.
- * - https://github.com/openresty/headers-more-nginx-module
- *
- * In NGINX, headers are a linked list of buffers (ngx_list_t).
- * Each buffer (.part) is an array of struct header (ngx_list_part_t *).
- * When a header is set, removed or updated, buffers and nelts values must be updated accurately.
- * This module deals with all low-level processing to keep other module code business-focused.
- ********************************************************************************************************************/
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+
+ * Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+ 
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*************************************************************************/
+
+/**********************************************************************************************
+ In NGINX, headers are a linked list of buffers (ngx_list_t).
+ Each buffer (.part) is an array of struct header (ngx_list_part_t *).
+ When a header is set, removed or updated, buffers and nelts values must be updated accurately.
+ This module deals with all low-level processing to keep other module code business-focused.
+***********************************************************************************************/
 
 #include <ngx_config.h>
 #include <ngx_core.h>

@@ -81,13 +81,13 @@ location /t {
     phantom_token_introspection_endpoint tt;
 }
 
---- error_code: 200
-
 --- request
 GET /t
 
 --- more_headers eval
 "Authorization: bearer " . $main::token
+
+--- error_code: 200
 
 --- response_body_filters eval
 main::process_json_from_backend()

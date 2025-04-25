@@ -24,6 +24,27 @@
 #include "phantom_token_utils.h"
 
 /**
+ * A common routine to attempt to log memory allocation errors
+ */
+void utils_set_memory_allocation_error(ngx_http_request_t *request, const char *operation) {
+    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocation memory for: %s", operation);
+}
+
+/**
+ * A common routine to log an error setting a header for the upstream
+ */
+void utils_log_upstream_set_header_error(ngx_http_request_t *request, ngx_str_t header_name) {
+    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Unable to set upstream header: %V", &header_name);
+}
+
+/**
+ * A common routine to log an error setting a header for a subrequest
+ */
+void utils_log_subrequest_set_header_error(ngx_http_request_t *request, ngx_str_t header_name) {
+    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Unable to set subrequest header: %V", &header_name);
+}
+
+/**
  * Add the error response as a JSON object that is easier to handle than the default HTML response that NGINX returns
  * http://nginx.org/en/docs/dev/development_guide.html#http_response_body
  */

@@ -41,25 +41,6 @@ sub get_token_from_idsvr {
     return $result;
 }
 
-#
-# Read the JWT access token from the introspection response
-#
-sub process_json_from_backend {
-    return sub {
-        my ($response) = @_;
-        
-        # Uncomment to see the introspection response data
-        # print("$response\n");
-
-        if ($response =~ /Authorization": "[Bb]earer ey/) {
-            return "GOOD"; # A JWT (which starts with "ey") was forwarded to the back-end
-        }
-        else {
-            return $response;
-        }
-    }
-}
-
 __DATA__
 
 === TEST HEADER_1: Upstream receives browser headers correctly
@@ -95,8 +76,6 @@ location /target {
     return 200;
 }
 
---- error_code: 200
-
 --- request
 GET /t
 
@@ -118,6 +97,8 @@ $request_headers .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537
 $request_headers .= "x-custom-1: custom header 1\n";
 $request_headers .= "x-custom-2: custom header 2\n";
 $request_headers;
+
+--- error_code: 200
 
 --- response_headers eval
 my $response_headers;
@@ -159,8 +140,6 @@ location /target {
     return 200;
 }
 
---- error_code: 200
-
 --- request
 GET /t
 
@@ -170,6 +149,8 @@ $request_headers .= "authorization: Bearer $main::token\n";
 $request_headers .= "x-custom-1: custom header 1\n";
 $request_headers .= "x-custom-2: custom header 2\n";
 $request_headers;
+
+--- error_code: 200
 
 --- response_headers eval
 my $response_headers;
