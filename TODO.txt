@@ -1,0 +1,8 @@
+1. All updates to headers go via the headers-more lower-level module
+   This is a maintained repo and the code is derived from version 0.38.
+
+2. No lower-level code in the module logic, such as updates to nelts fields
+
+3. Split the code up into multiple source files
+
+4. Add a header tests module and test conditions related to original content-type and accept headers

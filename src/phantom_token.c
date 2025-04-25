@@ -20,6 +20,7 @@
 #include <ngx_string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include "phantom_token_headers_more.h"
 
 #define UNENCODED_CLIENT_CREDENTIALS_BUF_LEN 255
 
@@ -193,30 +194,19 @@ ngx_module_t ngx_curity_http_phantom_token_module =
  * @param value the value to set
  * @return NGX_OK if no error has occurred; NGX_ERROR if an error occurs.
  */
-static ngx_int_t set_accept_header_value(ngx_http_request_t *request, const char* value)
+static ngx_int_t set_accept_header_value(ngx_http_request_t *request,
+                                         ngx_str_t value)
 {
-    ngx_table_elt_t  *accept_header;
-    accept_header = ngx_list_push(&request->headers_in.headers);
 
-    if (accept_header == NULL)
+    ngx_str_t accept = ngx_string("Accept");
+    ngx_uint_t found = headers_more_set_header(request, accept, value, &request->headers_in.accept);
+
+    if (found != NGX_OK)
     {
+        ngx_log_error(NGX_LOG_ERR, request->connection->log, 0,
+                      "Failed to set header accept: %V", &value);
         return NGX_ERROR;
     }
-
-    accept_header->hash = 1;
-    ngx_str_set(&accept_header->key, "Accept");
-    accept_header->value.len = ngx_strlen(value);
-    accept_header->value.data = (u_char *)value;
-    accept_header->lowcase_key = (u_char *)"accept";
-
-    request->headers_in.accept = accept_header;
-    
-    // TODO 1: This logic assumes that 'part' and 'last' are the same, which is not true for large requests.
-    // It needs updating with a more robust header removal or update mechanism.
-    /*if (request->headers_in.headers.part.next == NULL) {
-        
-        request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts;
-    }*/
 
     return NGX_OK;
 }
@@ -271,30 +261,25 @@ static ngx_int_t handler(ngx_http_request_t *request)
             if (module_context->status == NGX_HTTP_OK)
             {
                 // Introspection was successful. Replace the incoming Authorization header with one that has the JWT.
-                request->headers_in.authorization->value.len = module_context->jwt.len;
-                request->headers_in.authorization->value.data = module_context->jwt.data;
-
+                ngx_str_t authorization = ngx_string("Authorization");
+                headers_more_set_header(request, authorization, module_context->jwt, &request->headers_in.authorization);
+                
+                ngx_str_t content_type = ngx_string("Content-Type");
                 if (module_context->original_content_type_header.data == NULL)
                 {
-                    // TODO 2: This logic assumes that 'part' and 'last' are the same, which is not true for large requests.
-                    // It needs updating with a more robust header removal or update mechanism.
-                    if (request->headers_in.headers.part.next == NULL) {
-                        
-                        // This causes basic requests to work, where part.next = NULL, e.g with an update from 5 to 4.
-                        // It also causes large requests to truncate headers, where part.next != NULL, e.g. with an update from 20 to 5.
-                        request->headers_in.headers.part.nelts = request->headers_in.headers.last->nelts = request->headers_in.headers.last->nelts - 1;
-                    }
+                    headers_more_clear_header(request, content_type);
                 }
                 else
                 {
-                    request->headers_in.content_type->value = module_context->original_content_type_header;
+                    headers_more_set_header(request, content_type, module_context->original_content_type_header, &request->headers_in.content_type);
                 }
 
                 if (request->headers_in.accept == NULL)
                 {
                     ngx_int_t result;
+                    ngx_str_t accept_value = ngx_string("*/*");
 
-                    if ((result = set_accept_header_value(request, "*/*") != NGX_OK))
+                    if ((result = set_accept_header_value(request, accept_value) != NGX_OK))
                     {
                         return result;
                     }
@@ -446,8 +431,9 @@ static ngx_int_t handler(ngx_http_request_t *request)
     if (request->headers_in.accept == NULL)
     {
         ngx_int_t result;
+        ngx_str_t application_jwt = ngx_string("application/jwt");
 
-        if ((result = set_accept_header_value(introspection_request, "application/jwt") != NGX_OK))
+        if ((result = set_accept_header_value(introspection_request, application_jwt) != NGX_OK))
         {
             return result;
         }
