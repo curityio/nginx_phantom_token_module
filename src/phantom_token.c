@@ -415,14 +415,14 @@ ngx_int_t handler(ngx_http_request_t *request)
     module_context = ngx_pcalloc(request->pool, sizeof(phantom_token_module_context_t));
     if (module_context == NULL)
     {
-        utils_set_memory_allocation_error(request, "module_context");
+        utils_log_memory_allocation_error(request, "module_context");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_http_post_subrequest_t *introspection_request_callback = ngx_pcalloc(request->pool, sizeof(ngx_http_post_subrequest_t));
     if (introspection_request_callback == NULL)
     {
-        utils_set_memory_allocation_error(request, "introspection_request_callback");
+        utils_log_memory_allocation_error(request, "introspection_request_callback");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -445,14 +445,14 @@ ngx_int_t handler(ngx_http_request_t *request)
     u_char *introspect_body_data = ngx_pcalloc(request->pool, request->headers_in.authorization->value.len);
     if (introspect_body_data == NULL)
     {
-        utils_set_memory_allocation_error(request, "introspect_body_data");
+        utils_log_memory_allocation_error(request, "introspect_body_data");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_str_t *introspection_body = ngx_pcalloc(request->pool, sizeof(ngx_str_t));
     if (introspection_body == NULL)
     {
-        utils_set_memory_allocation_error(request, "introspection_body");
+        utils_log_memory_allocation_error(request, "introspection_body");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -464,21 +464,21 @@ ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
     if (introspection_request->request_body == NULL)
     {
-        utils_set_memory_allocation_error(request, "introspection_request->request_body");
+        utils_log_memory_allocation_error(request, "introspection_request->request_body");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_http_request_body_t *introspection_request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
     if (introspection_request_body == NULL)
     {
-        utils_set_memory_allocation_error(request, "introspection_request_body");
+        utils_log_memory_allocation_error(request, "introspection_request_body");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_buf_t *introspection_request_body_buffer = ngx_calloc_buf(request->pool);
     if (introspection_request_body_buffer == NULL)
     {
-        utils_set_memory_allocation_error(request, "introspection_request_body_buffer");
+        utils_log_memory_allocation_error(request, "introspection_request_body_buffer");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -491,7 +491,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     introspection_request_body->bufs = ngx_alloc_chain_link(request->pool);
     if (introspection_request_body->bufs == NULL)
     {
-        utils_set_memory_allocation_error(request, "introspection_request_body->bufs");
+        utils_log_memory_allocation_error(request, "introspection_request_body->bufs");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -541,7 +541,7 @@ ngx_int_t handler(ngx_http_request_t *request)
 
     if (authorization_header_data == NULL)
     {
-        utils_set_memory_allocation_error(request, "authorization_header_data");
+        utils_log_memory_allocation_error(request, "authorization_header_data");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -674,7 +674,7 @@ static ngx_int_t introspection_response_handler(
     module_context->jwt.data = ngx_pnalloc(request->pool, bearer_jwt_len);
     if (module_context->jwt.data == NULL)
     {
-        utils_set_memory_allocation_error(request, "module_context->jwt.data");
+        utils_log_memory_allocation_error(request, "module_context->jwt.data");
 
         module_context->done = 1;
         module_context->status = NGX_HTTP_UNAUTHORIZED;

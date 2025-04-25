@@ -26,8 +26,8 @@
 /**
  * A common routine to attempt to log memory allocation errors
  */
-void utils_set_memory_allocation_error(ngx_http_request_t *request, const char *operation) {
-    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocation memory for: %s", operation);
+void utils_log_memory_allocation_error(ngx_http_request_t *request, const char *operation) {
+    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for: %s", operation);
 }
 
 /**
