@@ -1,7 +1,5 @@
 /************************************************************************
  headers-more-nginx-module LICENSE:
- - https://github.com/openresty/headers-more-nginx-module
- 
  This module is licensed under the terms of the BSD license.
 
  Redistribution and use in source and binary forms, with or without
@@ -24,12 +22,15 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 
-/**********************************************************************************************
- In NGINX, headers are a linked list of buffers (ngx_list_t).
- Each buffer (.part) is an array of struct header (ngx_list_part_t *).
- When a header is set, removed or updated, buffers and nelts values must be updated accurately.
- This module deals with all low-level processing to keep other module code business-focused.
-***********************************************************************************************/
+/*********************************************************************************************
+This code was adapted from tag 0.38 of the headers-more library, from January 2025.
+- https://github.com/openresty/headers-more-nginx-module
+
+In NGINX, headers are a linked list of buffers (ngx_list_t).
+Each buffer (.part) is an array of struct header (ngx_list_part_t *).
+When a header is set, removed or updated, buffers and nelts values must be updated accurately.
+This module deals with all low-level processing to keep other module code business-focused.
+**********************************************************************************************/
 
 #include <ngx_config.h>
 #include <ngx_core.h>
