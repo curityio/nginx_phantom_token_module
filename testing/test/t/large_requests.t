@@ -123,6 +123,9 @@ content-type: application/json
 --- response_body_like chomp
 {"code":"server_error","message":"Problem encountered processing the request"}
 
+--- error_log
+The introspection response buffer is too small to contain the JWT: increase the proxy_buffer_size configuration setting
+
 === TEST LARGE_DATA_3: Upstream receives a large JWT and many custom headers correctly
 
 --- config

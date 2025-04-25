@@ -90,7 +90,7 @@ main::process_json_from_backend()
 
 --- response_body: GOOD
 
-=== Test REQUEST_2: An unknown token results in an access denied error
+=== Test REQUEST_2: An invalid or expired token results in an access denied error
 
 --- config
 location tt {
@@ -120,7 +120,7 @@ WWW-Authenticate: Bearer realm="api"
 --- response_body_like chomp
 {"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
 
-=== Test REQUEST_3: The wrong kind of HTTP method is used results in an access denied error
+=== Test REQUEST_3: The wrong kind of HTTP authorization method is used results in an access denied error
 
 --- config
 location tt {
@@ -142,6 +142,9 @@ Authorization: basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 GET /t
 
 --- error_code: 401
+
+--- error_log
+Authorization header does not contain a bearer token
 
 === Test REQUEST_4: A request with no authorization request header results in an access denied error
 
@@ -169,6 +172,9 @@ WWW-Authenticate: Bearer realm="api"
 
 --- response_body_like chomp
 {"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
+
+--- error_log
+Authorization header not found
 
 === Test REQUEST_5: A valid token with trash after results in an access denied error
 
@@ -310,6 +316,9 @@ content-type: application/json
 --- response_body_like chomp
 {"code":"server_error","message":"Problem encountered processing the request"}
 
+--- error_log
+Introspection subrequest returned response code: 401
+
 === Test REQUEST_10: An unreachable authorization server results in a 502 error
 
 --- config
@@ -338,3 +347,6 @@ content-type: application/json
 
 --- response_body_like chomp
 {"code":"server_error","message":"Problem encountered processing the request"}
+
+--- error_log
+Introspection subrequest returned response code: 502

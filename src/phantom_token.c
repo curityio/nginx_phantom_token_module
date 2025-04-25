@@ -390,7 +390,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     // return unauthorized when no Authorization header is present
     if (!request->headers_in.authorization || request->headers_in.authorization->value.len <= 0)
     {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Authorization header not present");
+        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Authorization header not found");
         return utils_set_www_authenticate_header(request, module_location_config, NULL);
     }
 

@@ -41,7 +41,6 @@ docker compose up -d
 #
 echo 'Waiting for the Curity Identity Server to start...'
 c=0; while [[ $c -lt 25 && "$(curl -fs -w ''%{http_code}'' localhost:8443)" != "404" ]]; do ((c++)); echo -n "."; sleep 2; done
-sleep 10
 
 #
 # Run integration tests
