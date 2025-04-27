@@ -45,7 +45,7 @@ static ngx_int_t headers_more_set_header_in_internal(ngx_http_request_t *r, ngx_
 static ngx_int_t headers_more_remove_header_in(ngx_list_t *l, ngx_list_part_t *cur, ngx_uint_t i);
 
 /**
- * Set the header with the given key from the list
+ * Set the header with the given key from the list and correctly handle upserts and removal of headers
  * See the headers-more function named 'ngx_http_set_header_helper'
  */
 ngx_int_t headers_more_set_header_in(
