@@ -59,7 +59,7 @@ ngx_int_t headers_more_set_header_in(
 
         // When 'part' is the final buffer, nginx_list_push updates last->nelts but not part->nelts.
         // When 'part' is not the final buffer, nginx_list_push updates both values correctly.
-        // Without this code, malformed introspection subrequests get sent.
+        // Without this code, malformed introspection subrequests get sent without a correct request body.
         // - https://github.com/nginx/nginx/blob/master/src/core/ngx_list.c
         if (r->headers_in.headers.part.next == NULL) {
             r->headers_in.headers.part.nelts = r->headers_in.headers.last->nelts;
