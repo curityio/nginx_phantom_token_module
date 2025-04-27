@@ -57,7 +57,8 @@ ngx_int_t headers_more_set_header_in(
     ngx_int_t result = headers_more_set_header_in_internal(r, key, value, output_header);
     if (result == NGX_OK) {
 
-        // TODO: This seems to work but needs further justification
+        // When a new header is added, NGINX updates last->nelts but not part->nelts, so we must make an adjustment here
+        // - https://github.com/nginx/nginx/blob/master/src/core/ngx_list.c
         if (r->headers_in.headers.part.next == NULL) {
             r->headers_in.headers.part.nelts = r->headers_in.headers.last->nelts;
         }
