@@ -461,13 +461,6 @@ ngx_int_t handler(ngx_http_request_t *request)
     introspection_body->data = introspect_body_data;
     introspection_body->len = ngx_strlen(introspection_body->data);
 
-    introspection_request->request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
-    if (introspection_request->request_body == NULL)
-    {
-        utils_log_memory_allocation_error(request, "introspection_request->request_body");
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
     ngx_http_request_body_t *introspection_request_body = ngx_pcalloc(request->pool, sizeof(ngx_http_request_body_t));
     if (introspection_request_body == NULL)
     {
