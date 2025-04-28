@@ -133,6 +133,9 @@ ngx_module_t ngx_curity_http_phantom_token_module =
     NGX_MODULE_V1_PADDING
 };
 
+const char BEARER[] = "Bearer ";
+const size_t BEARER_SIZE = sizeof(BEARER) - 1;
+
 static ngx_str_t ACCEPT_HEADER_NAME = ngx_string("Accept");
 static ngx_str_t CONTENT_TYPE_HEADER_NAME = ngx_string("Content-Type");
 static ngx_str_t AUTHORIZATION_HEADER_NAME = ngx_string("Authorization");

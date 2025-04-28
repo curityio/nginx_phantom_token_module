@@ -17,9 +17,6 @@
 #ifndef PHANTOM_TOKEN_UTILS
 #define PHANTOM_TOKEN_UTILS
 
-static const char BEARER[] = "Bearer ";
-static const size_t BEARER_SIZE = sizeof(BEARER) - 1;
-
 void utils_log_memory_allocation_error(ngx_http_request_t *request, const char *operation);
 void utils_log_upstream_set_header_error(ngx_http_request_t *request, ngx_str_t header_name);
 void utils_log_subrequest_set_header_error(ngx_http_request_t *request, ngx_str_t header_name);

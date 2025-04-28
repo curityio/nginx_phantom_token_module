@@ -23,6 +23,9 @@
 #include "phantom_token.h"
 #include "phantom_token_utils.h"
 
+extern const char BEARER[];
+extern const size_t BEARER_SIZE;
+
 /**
  * A common routine to attempt to log memory allocation errors
  */
