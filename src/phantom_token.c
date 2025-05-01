@@ -318,10 +318,9 @@ ngx_int_t handler(ngx_http_request_t *request)
     {
         if (module_context->done)
         {
-            // return appropriate status
             if (module_context->status == NGX_HTTP_OK)
             {
-                // Introspection was successful. Replace the incoming Authorization header with one that has the JWT.
+                // Introspection was successful - replace the incoming authorization header with one that has the JWT
                 if (headers_more_set_header_in(request, AUTHORIZATION_HEADER_NAME, module_context->jwt, &request->headers_in.authorization) != NGX_OK)
                 {
                     utils_log_upstream_set_header_error(request, AUTHORIZATION_HEADER_NAME);
@@ -330,6 +329,7 @@ ngx_int_t handler(ngx_http_request_t *request)
 
                 if (module_context->original_content_type_header.data == NULL)
                 {
+                    // Clear the content-type header used for introspection
                     if (headers_more_clear_header_in(request, CONTENT_TYPE_HEADER_NAME) != NGX_OK)
                     {
                         utils_log_upstream_set_header_error(request, CONTENT_TYPE_HEADER_NAME);
@@ -338,6 +338,7 @@ ngx_int_t handler(ngx_http_request_t *request)
                 }
                 else
                 {
+                    // Restore the content-type header from before introspection
                     if (headers_more_set_header_in(request, CONTENT_TYPE_HEADER_NAME, module_context->original_content_type_header, &request->headers_in.content_type) != NGX_OK)
                     {
                         utils_log_upstream_set_header_error(request, CONTENT_TYPE_HEADER_NAME);
@@ -347,6 +348,7 @@ ngx_int_t handler(ngx_http_request_t *request)
 
                 if (request->headers_in.accept == NULL)
                 {
+                    // The phantom token module has always added a default value here
                     ngx_str_t accept_value = ngx_string("*/*");
                     if (headers_more_set_header_in(request, ACCEPT_HEADER_NAME, accept_value, &request->headers_in.accept) != NGX_OK)
                     {
@@ -356,6 +358,7 @@ ngx_int_t handler(ngx_http_request_t *request)
                 }
                 else
                 {
+                    // Restore the accept header from before introspection
                     if (headers_more_set_header_in(request, ACCEPT_HEADER_NAME, module_context->original_accept_header, &request->headers_in.accept) != NGX_OK)
                     {
                         utils_log_upstream_set_header_error(request, ACCEPT_HEADER_NAME);
@@ -390,7 +393,7 @@ ngx_int_t handler(ngx_http_request_t *request)
         return NGX_AGAIN;
     }
 
-    // return unauthorized when no Authorization header is present
+    // return unauthorized when no authorization header is present
     if (!request->headers_in.authorization || request->headers_in.authorization->value.len <= 0)
     {
         ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Authorization header not found");
