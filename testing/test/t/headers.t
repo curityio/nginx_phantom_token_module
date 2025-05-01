@@ -59,10 +59,8 @@ location /t {
 }
 
 location /target {
-    add_header 'accept' $http_accept;
     add_header 'accept-language' $http_accept_language;
     add_header 'cache-control' $http_cache_control;
-    add_header 'content-type-received' $http_content_type;
     add_header 'dnt' $http_dnt;
     add_header 'origin' $http_origin;
     add_header 'pragma' $http_pragma;
@@ -90,11 +88,9 @@ GET /t
 
 --- more_headers eval
 my $request_headers;
-$request_headers .= "accept: application/json\n";
 $request_headers .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
 $request_headers .= "authorization: Bearer $main::token\n";
 $request_headers .= "cache-control: no-cache\n";
-$request_headers .= "content-type: application/json\n";
 $request_headers .= "dnt: 1\n";
 $request_headers .= "origin: https://random.example.com\n";
 $request_headers .= "pragma: no-cache\n";
@@ -120,10 +116,8 @@ $request_headers;
 
 --- response_headers eval
 my $response_headers;
-$response_headers .= "accept: application/json\n";
 $response_headers .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
 $response_headers .= "cache-control: no-cache\n";
-$response_headers .= "content-type-received: application/json\n";
 $response_headers .= "dnt: 1\n";
 $response_headers .= "origin: https://random.example.com\n";
 $response_headers .= "pragma: no-cache\n";
