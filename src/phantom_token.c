@@ -396,7 +396,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     // return unauthorized when no authorization header is present
     if (!request->headers_in.authorization || request->headers_in.authorization->value.len <= 0)
     {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Authorization header not found");
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header not present");
         return utils_set_www_authenticate_header(request, module_location_config, NULL);
     }
 
@@ -406,7 +406,7 @@ ngx_int_t handler(ngx_http_request_t *request)
         (char*)BEARER, BEARER_SIZE - 1)) == NULL)
     {
         // return unauthorized when Authorization header is not Bearer
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0, "Authorization header does not contain a bearer token");
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Authorization header does not contain a bearer token");
         return utils_set_www_authenticate_header(request, module_location_config, NULL);
     }
 

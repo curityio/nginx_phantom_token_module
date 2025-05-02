@@ -118,30 +118,28 @@ $request_headers;
 
 --- error_code: 200
 
---- response_headers eval
-my $response_headers;
-$response_headers .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
-$response_headers .= "cache-control: no-cache\n";
-$response_headers .= "dnt: 1\n";
-$response_headers .= "origin: https://random.example.com\n";
-$response_headers .= "pragma: no-cache\n";
-$response_headers .= "priority: u=1, i\n";
-$response_headers .= "referer: https://random.example.com/\n";
-$response_headers .= "sec-fetch-dest: empty\n";
-$response_headers .= "sec-fetch-mode: cors\n";
-$response_headers .= "sec-fetch-site: same-site\n";
-$response_headers .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\n";
-$response_headers .= "x-custom-0: custom header 0\n";
-$response_headers .= "x-custom-1: custom header 1\n";
-$response_headers .= "x-custom-2: custom header 2\n";
-$response_headers .= "x-custom-3: custom header 3\n";
-$response_headers .= "x-custom-4: custom header 4\n";
-$response_headers .= "x-custom-5: custom header 5\n";
-$response_headers .= "x-custom-6: custom header 6\n";
-$response_headers .= "x-custom-7: custom header 7\n";
-$response_headers .= "x-custom-8: custom header 8\n";
-$response_headers .= "x-custom-9: custom header 9\n";
-$response_headers;
+--- response_headers
+accept-language: en-GB,en-US;q=0.9,en;q=0.8
+cache-control: no-cache
+dnt: 1
+origin: https://random.example.com
+pragma: no-cache
+priority: u=1, i
+referer: https://random.example.com/
+sec-fetch-dest: empty
+sec-fetch-mode: cors
+sec-fetch-site: same-site
+user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36
+x-custom-0: custom header 0
+x-custom-1: custom header 1
+x-custom-2: custom header 2
+x-custom-3: custom header 3
+x-custom-4: custom header 4
+x-custom-5: custom header 5
+x-custom-6: custom header 6
+x-custom-7: custom header 7
+x-custom-8: custom header 8
+x-custom-9: custom header 9
 
 === TEST HEADER_2: Upstream receives 44 browser headers correctly, to use 3 buffers
 
@@ -254,50 +252,48 @@ $request_headers;
 
 --- error_code: 200
 
---- response_headers eval
-my $response_headers;
-$response_headers .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
-$response_headers .= "cache-control: no-cache\n";
-$response_headers .= "dnt: 1\n";
-$response_headers .= "origin: https://random.example.com\n";
-$response_headers .= "pragma: no-cache\n";
-$response_headers .= "priority: u=1, i\n";
-$response_headers .= "referer: https://random.example.com/\n";
-$response_headers .= "sec-fetch-dest: empty\n";
-$response_headers .= "sec-fetch-mode: cors\n";
-$response_headers .= "sec-fetch-site: same-site\n";
-$response_headers .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\n";
-$response_headers .= "x-custom-00: custom header 00\n";
-$response_headers .= "x-custom-01: custom header 01\n";
-$response_headers .= "x-custom-02: custom header 02\n";
-$response_headers .= "x-custom-03: custom header 03\n";
-$response_headers .= "x-custom-04: custom header 04\n";
-$response_headers .= "x-custom-05: custom header 05\n";
-$response_headers .= "x-custom-06: custom header 06\n";
-$response_headers .= "x-custom-07: custom header 07\n";
-$response_headers .= "x-custom-08: custom header 08\n";
-$response_headers .= "x-custom-09: custom header 09\n";
-$response_headers .= "x-custom-10: custom header 10\n";
-$response_headers .= "x-custom-11: custom header 11\n";
-$response_headers .= "x-custom-12: custom header 12\n";
-$response_headers .= "x-custom-13: custom header 13\n";
-$response_headers .= "x-custom-14: custom header 14\n";
-$response_headers .= "x-custom-15: custom header 15\n";
-$response_headers .= "x-custom-16: custom header 16\n";
-$response_headers .= "x-custom-17: custom header 17\n";
-$response_headers .= "x-custom-18: custom header 18\n";
-$response_headers .= "x-custom-19: custom header 19\n";
-$response_headers .= "x-custom-20: custom header 20\n";
-$response_headers .= "x-custom-21: custom header 21\n";
-$response_headers .= "x-custom-22: custom header 22\n";
-$response_headers .= "x-custom-23: custom header 23\n";
-$response_headers .= "x-custom-24: custom header 24\n";
-$response_headers .= "x-custom-25: custom header 25\n";
-$response_headers .= "x-custom-26: custom header 26\n";
-$response_headers .= "x-custom-27: custom header 27\n";
-$response_headers .= "x-custom-28: custom header 28\n";
-$response_headers .= "x-custom-29: custom header 29\n";
-$response_headers;
+--- response_headers
+accept-language: en-GB,en-US;q=0.9,en;q=0.8
+cache-control: no-cache
+dnt: 1
+origin: https://random.example.com
+pragma: no-cache
+priority: u=1, i
+referer: https://random.example.com/
+sec-fetch-dest: empty
+sec-fetch-mode: cors
+sec-fetch-site: same-site
+user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36
+x-custom-00: custom header 00
+x-custom-01: custom header 01
+x-custom-02: custom header 02
+x-custom-03: custom header 03
+x-custom-04: custom header 04
+x-custom-05: custom header 05
+x-custom-06: custom header 06
+x-custom-07: custom header 07
+x-custom-08: custom header 08
+x-custom-09: custom header 09
+x-custom-10: custom header 10
+x-custom-11: custom header 11
+x-custom-12: custom header 12
+x-custom-13: custom header 13
+x-custom-14: custom header 14
+x-custom-15: custom header 15
+x-custom-16: custom header 16
+x-custom-17: custom header 17
+x-custom-18: custom header 18
+x-custom-19: custom header 19
+x-custom-20: custom header 20
+x-custom-21: custom header 21
+x-custom-22: custom header 22
+x-custom-23: custom header 23
+x-custom-24: custom header 24
+x-custom-25: custom header 25
+x-custom-26: custom header 26
+x-custom-27: custom header 27
+x-custom-28: custom header 28
+x-custom-29: custom header 29
 
 === TEST HEADER_3 Upstream can receive exactly 20 browser headers when Accept and Content-Type are added for introspection
 
@@ -363,25 +359,24 @@ $request_headers;
 
 --- error_code: 200
 
---- response_headers eval
-my $response_headers;
-$response_headers .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";
-$response_headers .= "cache-control: no-cache\n";
-$response_headers .= "dnt: 1\n";
-$response_headers .= "origin: https://random.example.com\n";
-$response_headers .= "pragma: no-cache\n";
-$response_headers .= "priority: u=1, i\n";
-$response_headers .= "referer: https://random.example.com/\n";
-$response_headers .= "sec-fetch-dest: empty\n";
-$response_headers .= "sec-fetch-mode: cors\n";
-$response_headers .= "sec-fetch-site: same-site\n";
-$response_headers .= "user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\n";
-$response_headers .= "x-custom-0: custom header 0\n";
-$response_headers .= "x-custom-1: custom header 1\n";
-$response_headers .= "x-custom-2: custom header 2\n";
-$response_headers .= "x-custom-3: custom header 3\n";
-$response_headers .= "x-custom-4: custom header 4\n";
-$response_headers .= "x-custom-5: custom header 5\n";
+--- response_headers
+accept-language: en-GB,en-US;q=0.9,en;q=0.8
+cache-control: no-cache
+dnt: 1
+origin: https://random.example.com
+pragma: no-cache
+priority: u=1, i
+referer: https://random.example.com/
+sec-fetch-dest: empty
+sec-fetch-mode: cors
+sec-fetch-site: same-site
+user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36
+x-custom-0: custom header 0
+x-custom-1: custom header 1
+x-custom-2: custom header 2
+x-custom-3: custom header 3
+x-custom-4: custom header 4
+x-custom-5: custom header 5
 $response_headers;
 
 === TEST HEADER_4: For a missing accept header the upstream receives a default value

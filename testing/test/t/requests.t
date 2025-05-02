@@ -174,7 +174,7 @@ WWW-Authenticate: Bearer realm="api"
 {"code":"unauthorized_request","message":"Access denied due to missing, invalid or expired credentials"}
 
 --- error_log
-Authorization header not found
+Authorization header not present
 
 === Test REQUEST_5: A valid token with trash after results in an access denied error
 
