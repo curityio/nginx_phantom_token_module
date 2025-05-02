@@ -17,6 +17,10 @@ If the module is also configured to cache the results of the call to the Curity 
 
 The tl;dr is a very simple API gateway that is blazing fast, highly scalable, and without any bells and whistles to get in the way. All the code is here, so it's easy to change and use with other OAuth servers even!
 
+## History
+
+See the [HISTORY](HISTORY.md) for any breaking changes from earlier releases.
+
 ## Configuration Directives
 
 ### Required Configuration Directives
@@ -157,6 +161,8 @@ server {
     
     location curity {
         proxy_pass "https://curity.example.com/oauth/v2/introspection";
+        proxy_set_header Accept "application/jwt";
+        proxy_set_header Content-Type "application/x-www-form-urlencoded";
     }
 }
 ```
@@ -181,6 +187,8 @@ server {
     
     location curity {
         proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+        proxy_set_header Accept "application/jwt";
+        proxy_set_header Content-Type "application/x-www-form-urlencoded";
     }
 }
 
@@ -219,6 +227,8 @@ http {
         
         location curity {
             proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+            proxy_set_header Accept "application/jwt";
+            proxy_set_header Content-Type "application/x-www-form-urlencoded";
             
             proxy_cache_methods POST;
             proxy_cache my_cache;
@@ -257,6 +267,8 @@ http {
         
         location curity {
             proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+            proxy_set_header Accept "application/jwt";
+            proxy_set_header Content-Type "application/x-www-form-urlencoded";
             proxy_ignore_headers Set-Cookie;
             proxy_buffer_size 16k;
             proxy_buffers 4 16k;

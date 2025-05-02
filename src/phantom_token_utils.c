@@ -245,19 +245,3 @@ void utils_log_memory_allocation_error(ngx_http_request_t *request, const char *
 {
     ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Failed to allocate memory for: %s", operation);
 }
-
-/**
- * A common routine to log an error setting a header for the upstream
- */
-void utils_log_upstream_set_header_error(ngx_http_request_t *request, ngx_str_t header_name)
-{
-    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Unable to set upstream header: %V", &header_name);
-}
-
-/**
- * A common routine to log an error setting a header for a subrequest
- */
-void utils_log_subrequest_set_header_error(ngx_http_request_t *request, ngx_str_t header_name)
-{
-    ngx_log_error(NGX_LOG_ERR, request->connection->log, 0, "Unable to set subrequest header: %V", &header_name);
-}

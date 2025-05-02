@@ -67,6 +67,8 @@ __DATA__
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -95,6 +97,8 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -125,6 +129,8 @@ WWW-Authenticate: Bearer realm="api"
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -151,6 +157,8 @@ Authorization header does not contain a bearer token
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -181,6 +189,8 @@ Authorization header not present
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -208,6 +218,8 @@ WWW-Authenticate: Bearer realm="api"
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -236,6 +248,8 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -264,6 +278,8 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -292,6 +308,8 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -324,6 +342,8 @@ Introspection subrequest returned response code: 401
 --- config
 location tt {
     proxy_pass "http://localhost:9443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {

@@ -21,7 +21,6 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "phantom_token.h"
-#include "phantom_token_headers_more.h"
 #include "phantom_token_utils.h"
 
 #define UNENCODED_CLIENT_CREDENTIALS_BUF_LEN 255
@@ -31,8 +30,6 @@ typedef struct
     ngx_uint_t done;
     ngx_uint_t status;
     ngx_str_t jwt;
-    ngx_str_t original_accept_header;
-    ngx_str_t original_content_type_header;
 } phantom_token_module_context_t;
 
 static ngx_int_t post_configuration(ngx_conf_t *config);
@@ -135,10 +132,6 @@ ngx_module_t ngx_curity_http_phantom_token_module =
 
 const char BEARER[] = "Bearer ";
 const size_t BEARER_SIZE = sizeof(BEARER) - 1;
-
-static ngx_str_t ACCEPT_HEADER_NAME = ngx_string("Accept");
-static ngx_str_t CONTENT_TYPE_HEADER_NAME = ngx_string("Content-Type");
-static ngx_str_t AUTHORIZATION_HEADER_NAME = ngx_string("Authorization");
 
 static ngx_int_t post_configuration(ngx_conf_t *config)
 {
@@ -321,51 +314,8 @@ ngx_int_t handler(ngx_http_request_t *request)
             if (module_context->status == NGX_HTTP_OK)
             {
                 // Introspection was successful - replace the incoming authorization header with one that has the JWT
-                if (headers_more_set_header_in(request, AUTHORIZATION_HEADER_NAME, module_context->jwt, &request->headers_in.authorization) != NGX_OK)
-                {
-                    utils_log_upstream_set_header_error(request, AUTHORIZATION_HEADER_NAME);
-                    return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
-                }
-
-                if (module_context->original_content_type_header.data == NULL)
-                {
-                    // Clear the content-type header used for introspection
-                    if (headers_more_clear_header_in(request, CONTENT_TYPE_HEADER_NAME) != NGX_OK)
-                    {
-                        utils_log_upstream_set_header_error(request, CONTENT_TYPE_HEADER_NAME);
-                        return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
-                    }
-                }
-                else
-                {
-                    // Restore the content-type header from before introspection
-                    if (headers_more_set_header_in(request, CONTENT_TYPE_HEADER_NAME, module_context->original_content_type_header, &request->headers_in.content_type) != NGX_OK)
-                    {
-                        utils_log_upstream_set_header_error(request, CONTENT_TYPE_HEADER_NAME);
-                        return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
-                    }
-                }
-
-                if (request->headers_in.accept == NULL)
-                {
-                    // The phantom token module has always added a default value here
-                    ngx_str_t accept_value = ngx_string("*/*");
-                    if (headers_more_set_header_in(request, ACCEPT_HEADER_NAME, accept_value, &request->headers_in.accept) != NGX_OK)
-                    {
-                        utils_log_upstream_set_header_error(request, ACCEPT_HEADER_NAME);
-                        return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
-                    }
-                }
-                else
-                {
-                    // Restore the accept header from before introspection
-                    if (headers_more_set_header_in(request, ACCEPT_HEADER_NAME, module_context->original_accept_header, &request->headers_in.accept) != NGX_OK)
-                    {
-                        utils_log_upstream_set_header_error(request, ACCEPT_HEADER_NAME);
-                        return utils_write_error_response(request, NGX_HTTP_INTERNAL_SERVER_ERROR, module_location_config);
-                    }
-                }
-
+                request->headers_in.authorization->value.len = module_context->jwt.len;
+                request->headers_in.authorization->value.data = module_context->jwt.data;
                 return NGX_OK;
             }
             else if (module_context->status == NGX_HTTP_NO_CONTENT)
@@ -500,34 +450,7 @@ ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->request_body = introspection_request_body;
     introspection_request->headers_in.content_length_n = ngx_buf_size(introspection_request_body_buffer);
 
-#if (NGX_HTTP_HEADERS)
-
-    if (request->headers_in.accept != NULL)
-    {
-        module_context->original_accept_header = request->headers_in.accept->value;
-    }
-
-    ngx_str_t application_jwt = ngx_string("application/jwt");
-    if (headers_more_set_header_in(introspection_request, ACCEPT_HEADER_NAME, application_jwt, &introspection_request->headers_in.accept) != NGX_OK)
-    {
-        utils_log_subrequest_set_header_error(request, ACCEPT_HEADER_NAME);
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-#endif
-
-    if (request->headers_in.content_type != NULL)
-    {
-        module_context->original_content_type_header = request->headers_in.content_type->value;
-    }
-
-    ngx_str_t form_url_encoded = ngx_string("application/x-www-form-urlencoded");
-    if (headers_more_set_header_in(introspection_request, CONTENT_TYPE_HEADER_NAME, form_url_encoded, &introspection_request->headers_in.content_type) != NGX_OK)
-    {
-        utils_log_subrequest_set_header_error(request, CONTENT_TYPE_HEADER_NAME);
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
+    // Don't send the incoming request's body in the introspection request
     introspection_request->header_only = true;
 
     // Change subrequest method to POST
@@ -546,31 +469,9 @@ ngx_int_t handler(ngx_http_request_t *request)
 
     ngx_snprintf(authorization_header_data, authorization_header_data_len, "Basic %V", &encoded_client_credentials);
 
-    ngx_str_t authorization_value = {authorization_header_data_len, authorization_header_data};
-    if (headers_more_set_header_in(introspection_request, AUTHORIZATION_HEADER_NAME, authorization_value, &introspection_request->headers_in.authorization) != NGX_OK)
-    {
-        utils_log_subrequest_set_header_error(request, AUTHORIZATION_HEADER_NAME);
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    // If there is a next part, the incoming request has more than 20 headers
-    // In that case we take no action so that all headers get sent to the upstream
-    if (introspection_request->headers_in.headers.part.next == NULL)
-    {
-        if (introspection_request->headers_in.headers.part.nelts < introspection_request->headers_in.headers.last->nelts)
-        {
-            // Make sure the single buffer's number of elements is up to date so that the Accept and Content-Type headers are sent
-            introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
-        }
-
-        if (introspection_request->headers_in.headers.part.nelts > introspection_request->headers_in.headers.last->nelts)
-        {
-            // Adding the Accept and Content-Type headers has created a new buffer
-            // Make sure the current part points to next so that the Accept and Content-Type headers are sent
-            introspection_request->headers_in.headers.part.next = introspection_request->headers_in.headers.last;
-        }
-    }
-
+    introspection_request->headers_in.authorization->value.len = authorization_header_data_len;
+    introspection_request->headers_in.authorization->value.data = authorization_header_data;
+   
     ngx_http_set_ctx(request, module_context, ngx_curity_http_phantom_token_module);
     return NGX_AGAIN;
 }
