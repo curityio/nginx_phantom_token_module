@@ -41,47 +41,12 @@ This module deals with all low-level processing to keep code in other mdoules bu
 #include <ngx_string.h>
 #include <assert.h>
 
-static ngx_int_t headers_more_set_header_in_internal(ngx_http_request_t *r, ngx_str_t key, ngx_str_t value, ngx_table_elt_t **output_header);
 static ngx_int_t headers_more_remove_header_in(ngx_list_t *l, ngx_list_part_t *cur, ngx_uint_t i);
-
-/**
- * Set the header with the given key from the list and correctly handle upserts and removal of headers
- * See the headers-more function named 'ngx_http_set_header_helper'
- */
-ngx_int_t headers_more_set_header_in(
-    ngx_http_request_t *r,
-    ngx_str_t key,
-    ngx_str_t value,
-    ngx_table_elt_t **output_header)
-{
-    ngx_int_t result = headers_more_set_header_in_internal(r, key, value, output_header);
-    if (result == NGX_OK) {
-
-        // When 'part' is the final buffer, nginx_list_push updates last->nelts but not part->nelts.
-        // When 'part' is not the final buffer, nginx_list_push updates both values correctly.
-        // Without this code, malformed introspection subrequests get sent without a correct request body.
-        // - https://github.com/nginx/nginx/blob/master/src/core/ngx_list.c
-        if (r->headers_in.headers.part.next == NULL) {
-            r->headers_in.headers.part.nelts = r->headers_in.headers.last->nelts;
-        }
-    }
-
-    return result;
-}
-
-/**
- * Clear a header and update buffers
- */
-ngx_int_t headers_more_clear_header_in(ngx_http_request_t *r, ngx_str_t key)
-{
-    ngx_str_t value = ngx_null_string;
-    return headers_more_set_header_in_internal(r, key, value, NULL);
-}
 
 /**
  * The internal version does not update nelts
  */
-ngx_int_t headers_more_set_header_in_internal(
+ngx_int_t headers_more_set_header_in(
     ngx_http_request_t *r,
     ngx_str_t key,
     ngx_str_t value,
@@ -199,6 +164,15 @@ retry:
                    &key);
 
     return NGX_OK;
+}
+
+/**
+ * Clear a header and update buffers
+ */
+ngx_int_t headers_more_clear_header_in(ngx_http_request_t *r, ngx_str_t key)
+{
+    ngx_str_t value = ngx_null_string;
+    return headers_more_set_header_in(r, key, value, NULL);
 }
 
 /**

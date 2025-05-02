@@ -363,8 +363,6 @@ $request_headers;
 
 --- error_code: 200
 
---- SKIP
-
 --- response_headers eval
 my $response_headers;
 $response_headers .= "accept-language: en-GB,en-US;q=0.9,en;q=0.8\n";

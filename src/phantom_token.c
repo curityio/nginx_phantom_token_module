@@ -553,7 +553,20 @@ ngx_int_t handler(ngx_http_request_t *request)
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    ngx_http_set_ctx(request, module_context, ngx_curity_http_phantom_token_module)
+    // If current is the last buffer, make sure its number of elements are up to date so that any added headers are sent
+    if (introspection_request->headers_in.headers.part.next == NULL && 
+        introspection_request->headers_in.headers.part.nelts < introspection_request->headers_in.headers.last->nelts)
+    {
+        introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
+    }
+
+    // If the below condition is true, current is not the last buffer, so move to last to ensure that any added headers are sent
+    if (introspection_request->headers_in.headers.part.nelts > introspection_request->headers_in.headers.last->nelts)
+    {
+        introspection_request->headers_in.headers.part.next = introspection_request->headers_in.headers.last;
+    }
+
+    ngx_http_set_ctx(request, module_context, ngx_curity_http_phantom_token_module);
 
     return NGX_AGAIN;
 }
