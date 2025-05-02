@@ -17,10 +17,6 @@ If the module is also configured to cache the results of the call to the Curity 
 
 The tl;dr is a very simple API gateway that is blazing fast, highly scalable, and without any bells and whistles to get in the way. All the code is here, so it's easy to change and use with other OAuth servers even!
 
-## History
-
-See the [HISTORY](HISTORY.md) for any breaking changes from earlier releases.
-
 ## Configuration Directives
 
 ### Required Configuration Directives
@@ -135,6 +131,19 @@ location / {
 
 ## Sample Configuration
 
+### Versions
+
+If you use version 2.0+ of the module you must include the Accept and Content-Type headers as shown here.\
+If you use version 1.x of the module you must omit the Accept and Content-Type headers from the configuration.
+
+```nginx
+location curity {
+    proxy_pass "https://login.example.com/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
+}
+```
+
 ### Loading the Module
 
 If the module is downloaded from GitHub or compiled as a shared library (the default) and not explicitly compiled into NGINX, it will need to be loaded using the [load_module](http://nginx.org/en/docs/ngx_core_module.html#load_module) directive. This needs to be done in the _main_ part of the NGINX configuration:
@@ -161,8 +170,6 @@ server {
     
     location curity {
         proxy_pass "https://curity.example.com/oauth/v2/introspection";
-        proxy_set_header Accept "application/jwt";
-        proxy_set_header Content-Type "application/x-www-form-urlencoded";
     }
 }
 ```
@@ -187,8 +194,6 @@ server {
     
     location curity {
         proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
-        proxy_set_header Accept "application/jwt";
-        proxy_set_header Content-Type "application/x-www-form-urlencoded";
     }
 }
 
@@ -227,8 +232,6 @@ http {
         
         location curity {
             proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
-            proxy_set_header Accept "application/jwt";
-            proxy_set_header Content-Type "application/x-www-form-urlencoded";
             
             proxy_cache_methods POST;
             proxy_cache my_cache;
@@ -267,8 +270,6 @@ http {
         
         location curity {
             proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
-            proxy_set_header Accept "application/jwt";
-            proxy_set_header Content-Type "application/x-www-form-urlencoded";
             proxy_ignore_headers Set-Cookie;
             proxy_buffer_size 16k;
             proxy_buffers 4 16k;
