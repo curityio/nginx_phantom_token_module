@@ -553,21 +553,25 @@ ngx_int_t handler(ngx_http_request_t *request)
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    // If current is the last buffer, make sure its number of elements are up to date so that any added headers are sent
-    if (introspection_request->headers_in.headers.part.next == NULL && 
-        introspection_request->headers_in.headers.part.nelts < introspection_request->headers_in.headers.last->nelts)
+    // If there is a next part, the incoming request has more than 20 headers
+    // In that case we take no action so that all headers get sent to the upstream
+    if (introspection_request->headers_in.headers.part.next == NULL)
     {
-        introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
-    }
+        if (introspection_request->headers_in.headers.part.nelts < introspection_request->headers_in.headers.last->nelts)
+        {
+            // Make sure the single buffer's number of elements is up to date so that the Accept and Content-Type headers are sent
+            introspection_request->headers_in.headers.part.nelts = introspection_request->headers_in.headers.last->nelts;
+        }
 
-    // If the below condition is true, current is not the last buffer, so move to last to ensure that any added headers are sent
-    if (introspection_request->headers_in.headers.part.nelts > introspection_request->headers_in.headers.last->nelts)
-    {
-        introspection_request->headers_in.headers.part.next = introspection_request->headers_in.headers.last;
+        if (introspection_request->headers_in.headers.part.nelts > introspection_request->headers_in.headers.last->nelts)
+        {
+            // Adding the Accept and Content-Type headers has created a new buffer
+            // Make sure the current part points to next so that the Accept and Content-Type headers are sent
+            introspection_request->headers_in.headers.part.next = introspection_request->headers_in.headers.last;
+        }
     }
 
     ngx_http_set_ctx(request, module_context, ngx_curity_http_phantom_token_module);
-
     return NGX_AGAIN;
 }
 
