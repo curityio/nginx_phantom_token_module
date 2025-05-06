@@ -19,6 +19,9 @@ The tl;dr is a very simple API gateway that is blazing fast, highly scalable, an
 
 ## Configuration Directives
 
+Use the below directives for version 2.0 or higher of the phantom token module.\
+See the [Version 1.0 Configuration Directives](V1-CONFIGURATION-DIRECTIVES.md) for older versions.
+
 ### Required Configuration Directives
 
 All the directives in this subsection are required; if any of these are omitted, the module will be disabled.
@@ -31,14 +34,6 @@ All the directives in this subsection are required; if any of these are omitted,
 >
 > **Context**: `location`
 
-#### phantom_token_client_credential
-
-> **Syntax**: **`phantom_token_client_credential`** _`string`_ _`string`_ 
-> 
-> **Default**: *`—`*                                                                
-> 
-> **Context**: `location`                                                           
- 
 The client ID and secret of the OAuth client which will be used for introspection. The first argument to this directive is the client ID and the second is the secret. The maximum total length of the two arguments must be less than 255 characters. Both should be printable ASCII values; non-ASCII values _may_ work but are untested. If this directive is not configured, then the module will be disabled.
 
 #### phantom_token_introspection_endpoint
@@ -49,22 +44,6 @@ The client ID and secret of the OAuth client which will be used for introspectio
 >
 > **Context**: `location`
 
-The name of the location that proxies requests to the Curity Identity Server. Note that this location needs to be in the same server as the one referring to it using this directive.
-
-Example configuration:
-
-```nginx
-server {
-    location /api {
-        ...
-        phantom_token_introspection_endpoint my_good_location_name_for_curity;
-    }
-    
-    location my_good_location_name_for_curity {
-        ...
-    }
-}
-```
 
 ### Optional Configuration Directives
 
@@ -131,18 +110,8 @@ location / {
 
 ## Sample Configuration
 
-### Versions
-
-If you use version 2.0+ of the module you must include the Accept and Content-Type headers as shown here.\
-If you use version 1.x of the module you must omit the Accept and Content-Type headers from the configuration.
-
-```nginx
-location curity {
-    proxy_pass "https://login.example.com/oauth/v2/oauth-introspect";
-    proxy_set_header Accept "application/jwt";
-    proxy_set_header Content-Type "application/x-www-form-urlencoded";
-}
-```
+In addition to module parameters you must also configure standard NGINX headers sent to the introspection request.\
+The following examples show a number of complete configurations.
 
 ### Loading the Module
 
@@ -162,14 +131,16 @@ The following is a simple configuration that might be used in demo or developmen
 server {
     location /api {
         proxy_pass         https://example.com/api;
-
         phantom_token on;
-        phantom_token_client_credential "client_id" "client_secret";
         phantom_token_introspection_endpoint curity;
     }
     
     location curity {
         proxy_pass "https://curity.example.com/oauth/v2/introspection";
+        proxy_pass_request_headers off;
+        proxy_set_header Accept "application/jwt";
+        proxy_set_header Content-Type "application/x-www-form-urlencoded";
+        proxy_set_header Authorization "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="; # client_id:client_secret
     }
 }
 ```
@@ -183,17 +154,18 @@ server {
     server_name server1.example.com;n
     location /api {
         proxy_pass         https://example.com/api;
-
         phantom_token on;
-        phantom_token_client_credential "client_id" "client_secret";
         phantom_token_introspection_endpoint curity;
-        
         phantom_token_realm "myGoodAPI";
         phantom_token_scopes "scope_a scope_b scope_c";
     }
     
     location curity {
         proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+        proxy_pass_request_headers off;
+        proxy_set_header Accept "application/jwt";
+        proxy_set_header Content-Type "application/x-www-form-urlencoded";
+        proxy_set_header Authorization "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="; # client_id:client_secret
     }
 }
 
@@ -222,9 +194,7 @@ http {
         server_name server1.example.com;
         location /api {
             proxy_pass         https://example.com/api;
-
             phantom_token on;
-            phantom_token_client_credential "client_id" "client_secret";
             phantom_token_introspection_endpoint curity;
             phantom_token_scopes "scope_a scope_b scope_c";
             phantom_token_realm "myGoodAPI";
@@ -232,6 +202,10 @@ http {
         
         location curity {
             proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+            proxy_pass_request_headers off;
+            proxy_set_header Accept "application/jwt";
+            proxy_set_header Content-Type "application/x-www-form-urlencoded";
+            proxy_set_header Authorization "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="; # client_id:client_secret
             
             proxy_cache_methods POST;
             proxy_cache my_cache;
@@ -260,9 +234,7 @@ http {
         server_name server1.example.com;
         location /api {
             proxy_pass         https://example.com/api;
-
             phantom_token on;
-            phantom_token_client_credential "client_id" "client_secret";
             phantom_token_introspection_endpoint curity;
             phantom_token_scopes "scope_a scope_b scope_c";
             phantom_token_realm "myGoodAPI";
@@ -270,6 +242,11 @@ http {
         
         location curity {
             proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+            proxy_pass_request_headers off;
+            proxy_set_header Accept "application/jwt";
+            proxy_set_header Content-Type "application/x-www-form-urlencoded";
+            proxy_set_header Authorization "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="; # client_id:client_secret
+            
             proxy_ignore_headers Set-Cookie;
             proxy_buffer_size 16k;
             proxy_buffers 4 16k;

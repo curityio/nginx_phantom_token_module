@@ -67,15 +67,15 @@ __DATA__
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;
 }
 
@@ -97,16 +97,16 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
-    phantom_token_introspection_endpoint tt;    
+    phantom_token_introspection_endpoint tt;
 }
 
 --- more_headers 
@@ -129,15 +129,15 @@ WWW-Authenticate: Bearer realm="api"
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -157,15 +157,15 @@ Authorization header does not contain a bearer token
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -189,15 +189,15 @@ Authorization header not present
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -218,15 +218,15 @@ WWW-Authenticate: Bearer realm="api"
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -248,15 +248,15 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -278,15 +278,15 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;    
 }
 
@@ -308,15 +308,15 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQz"; # test-nginx:secret3"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "incorrect_secret";
     phantom_token_introspection_endpoint tt;
 }
 
@@ -342,15 +342,15 @@ Introspection subrequest returned response code: 401
 --- config
 location tt {
     proxy_pass "http://localhost:9443/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
 }
 
 location /t {
     proxy_pass         "http://localhost:8080/anything";
-
     phantom_token on;
-    phantom_token_client_credential "test-nginx" "secret2";
     phantom_token_introspection_endpoint tt;
 }
 

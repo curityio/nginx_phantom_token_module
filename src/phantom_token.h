@@ -19,7 +19,6 @@
 
 typedef struct
 {
-    ngx_str_t base64encoded_client_credential;
     ngx_str_t introspection_endpoint;
     ngx_str_t realm;
     ngx_array_t *scopes;

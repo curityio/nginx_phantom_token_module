@@ -23,8 +23,6 @@
 #include "phantom_token.h"
 #include "phantom_token_utils.h"
 
-#define UNENCODED_CLIENT_CREDENTIALS_BUF_LEN 255
-
 typedef struct
 {
     ngx_uint_t done;
@@ -38,8 +36,6 @@ static void *create_location_configuration(ngx_conf_t *config);
 
 static char *merge_location_configuration(ngx_conf_t *main_config, void *parent, void *child);
 
-static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result);
-
 static ngx_int_t handler(ngx_http_request_t *request);
 
 static ngx_int_t introspection_response_handler(ngx_http_request_t *request, void *data, ngx_int_t introspection_subrequest_status_code);
@@ -47,19 +43,11 @@ static ngx_int_t introspection_response_handler(ngx_http_request_t *request, voi
 static ngx_command_t phantom_token_module_directives[] =
 {
     {
-          ngx_string("phantom_token"),
-          NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_CONF_FLAG,
-          ngx_conf_set_flag_slot,
-          NGX_HTTP_LOC_CONF_OFFSET,
-          offsetof(phantom_token_configuration_t, enable),
-          NULL
-    },
-    {
-        ngx_string("phantom_token_client_credential"),
-        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE2,
-        set_client_credential_configuration_slot,
+        ngx_string("phantom_token"),
+        NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_CONF_FLAG,
+        ngx_conf_set_flag_slot,
         NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(phantom_token_configuration_t, base64encoded_client_credential),
+        offsetof(phantom_token_configuration_t, enable),
         NULL
     },
     {
@@ -172,8 +160,6 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
     ngx_conf_merge_str_value(child_config->realm, parent_config->realm, "api")
     ngx_conf_merge_ptr_value(child_config->scopes, parent_config->scopes, NULL)
     ngx_conf_merge_str_value(child_config->space_separated_scopes, parent_config->space_separated_scopes, "")
-    ngx_conf_merge_str_value(child_config->base64encoded_client_credential,
-                             parent_config->base64encoded_client_credential, "")
 
     if (child_config->scopes != NULL && child_config->space_separated_scopes.len == 0)
     {
@@ -215,54 +201,6 @@ static char *merge_location_configuration(ngx_conf_t *main_config, void *parent,
 }
 
 /**
- * Sets the base-64-encoded client ID and secret in the module's configuration setting structure.
- *
- * This method assumes the module's command where this setter function (<code>set</code>) is used has a
- * configuration (<code>conf</code>) of <code>NGX_HTTP_LOC_CONF_OFFSET<code> and an <code>offset</code> of
- * <code>base64encoded_client_credential</code>. If this is not the case, the result pointer <em>may</em> point to an
- * unexpected location and the handler may not be able to use the configured values. Also, the command should have a
- * type that includes <code>NGX_CONF_TAKE2</code>.
- *
- * @param config_setting the configuration setting that is being set
- * @param command the module's command where this slot setter function is being used
- * @param result a pointer to the location where the result will be stored; it should be a pointer to a
- * <code>ngx_str_t</code>.
- *
- * @return <code>NGX_CONF_OK</code> upon success; some other character string on failure.
- */
-static char* set_client_credential_configuration_slot(ngx_conf_t *config_setting, ngx_command_t *command, void *result)
-{
-    ngx_str_t *base64encoded_client_credential = result;
-    ngx_str_t *args = config_setting->args->elts;
-    ngx_str_t client_id = args[1], client_secret = args[2]; // sub 0 is the directive itself
-
-    if (client_id.len > 0 && client_secret.len > 0)
-    {
-        u_char unencoded_client_credentials_data[UNENCODED_CLIENT_CREDENTIALS_BUF_LEN];
-        u_char *p = ngx_snprintf(unencoded_client_credentials_data, sizeof(unencoded_client_credentials_data), "%V:%V",
-                                 &client_id, &client_secret);
-        ngx_str_t unencoded_client_credentials = { p - unencoded_client_credentials_data,
-                                                   unencoded_client_credentials_data };
-
-        base64encoded_client_credential->data = ngx_palloc(
-                config_setting->pool, ngx_base64_encoded_length(unencoded_client_credentials.len));
-
-        if (base64encoded_client_credential->data == NULL)
-        {
-            return NGX_CONF_ERROR;
-        }
-
-        ngx_encode_base64(base64encoded_client_credential, &unencoded_client_credentials);
-
-        return NGX_CONF_OK;
-    }
-
-    ngx_conf_log_error(NGX_LOG_EMERG, config_setting, 0, "invalid client ID and/or secret");
-
-    return "invalid_client_credential";
-}
-
-/**
  * The main handler logic
  */
 ngx_int_t handler(ngx_http_request_t *request)
@@ -286,16 +224,6 @@ ngx_int_t handler(ngx_http_request_t *request)
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Handling request to convert token to JWT");
-
-    if (module_location_config->base64encoded_client_credential.len == 0)
-    {
-        ngx_log_error(NGX_LOG_WARN, request->connection->log, 0,
-             "Module not configured properly: missing client ID and secret");
-
-        return NGX_DECLINED;
-    }
-
-    ngx_str_t encoded_client_credentials = module_location_config->base64encoded_client_credential;
 
     if (module_location_config->introspection_endpoint.len == 0)
     {
@@ -457,21 +385,6 @@ ngx_int_t handler(ngx_http_request_t *request)
     introspection_request->method = NGX_HTTP_POST;
     ngx_str_set(&introspection_request->method_name, "POST");
 
-    // set authorization credentials header to Basic base64encoded_client_credential
-    size_t authorization_header_data_len = encoded_client_credentials.len + sizeof("Basic ") - 1;
-    u_char *authorization_header_data = ngx_pcalloc(request->pool, authorization_header_data_len);
-
-    if (authorization_header_data == NULL)
-    {
-        utils_log_memory_allocation_error(request, "authorization_header_data");
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    ngx_snprintf(authorization_header_data, authorization_header_data_len, "Basic %V", &encoded_client_credentials);
-
-    introspection_request->headers_in.authorization->value.len = authorization_header_data_len;
-    introspection_request->headers_in.authorization->value.data = authorization_header_data;
-   
     ngx_http_set_ctx(request, module_context, ngx_curity_http_phantom_token_module);
     return NGX_AGAIN;
 }
