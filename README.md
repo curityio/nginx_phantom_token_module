@@ -19,12 +19,12 @@ The tl;dr is a very simple API gateway that is blazing fast, highly scalable, an
 
 ## Module Configuration Directives
 
-Use the below directives for version 2.0 or higher of the phantom token module.\
-See the [Version 1.0 Configuration Directives](V1-CONFIGURATION-DIRECTIVES.md) for older versions.
+Version 2.0 introduced a **BREAKING CHANGE** to use updated configuration directives.\
+See [previous configuration instructions](https://github.com/curityio/nginx_phantom_token_module/tree/1.6.0) to configure older releases.
 
 ### Required Configuration Directives
 
-All the directives in this subsection are required; if any of these are omitted, the module will be disabled.
+The directives in this subsection are required; if any of these are omitted, the module will be disabled.
 
 #### phantom_token
 
@@ -33,8 +33,6 @@ All the directives in this subsection are required; if any of these are omitted,
 > **Default**: *`off`*
 >
 > **Context**: `location`
-
-The client ID and secret of the OAuth client which will be used for introspection. The first argument to this directive is the client ID and the second is the secret. The maximum total length of the two arguments must be less than 255 characters. Both should be printable ASCII values; non-ASCII values _may_ work but are untested. If this directive is not configured, then the module will be disabled.
 
 #### phantom_token_introspection_endpoint
 
@@ -122,11 +120,12 @@ The file can be an absolute or relative path. If it is not absolute, it should b
 
 ### NGINX Parameters for the Introspection Endpoint
 
-You must also configure standard NGINX parameters for the introspection request:
+You must also configure the following NGINX parameters for the introspection subrequest:
 
 ```nginx
 location curity {
     proxy_pass "https://curity.example.com/oauth/v2/oauth-introspect";
+
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
@@ -134,8 +133,15 @@ location curity {
 }
 ```
 
-Use a command of the following form to create the base64 introspection credential.
-Then configure the result in the Basic Authorization header.
+| Introspection Setting | Description |
+| --------------------- | ----------- |
+| proxy_pass_request_headers | Set to off to avoid using the main request's headers in the introspection subrequest. |
+| Accept header | Configure a fixed value of `application/jwt`. |
+| Content-Type header | Configure a fixed value of `application/x-www-form-urlencoded`. |
+| Authorization header | Configure a basic credential with the introspection client ID and client secret. |
+
+To get the basic credential, concatenate the client ID, a colon character and the client secret, then base64 encode them.\
+The following command provides an example.
 
 ```bash
 echo -n "my_client_id:my_client_secret" | base64
