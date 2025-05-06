@@ -124,17 +124,18 @@ You must also configure the following NGINX parameters for the introspection sub
 
 ```nginx
 location curity {
-    proxy_pass "https://curity.example.com/oauth/v2/oauth-introspect";
-
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
+    proxy_pass "https://curity.example.com/oauth/v2/oauth-introspect";
 }
 ```
 
 | Introspection Setting | Description |
 | --------------------- | ----------- |
+| internal | Prevent the introspection endpoint being externally available. |
 | proxy_pass_request_headers | Set to off to avoid using the main request's headers in the introspection subrequest. |
 | Accept header | Configure a fixed value of `application/jwt`. |
 | Content-Type header | Configure a fixed value of `application/x-www-form-urlencoded`. |
@@ -153,17 +154,18 @@ The following is a simple configuration that might be used in demo or developmen
 ```nginx
 server {
     location /api {
-        proxy_pass https://example.com/api;
         phantom_token on;
         phantom_token_introspection_endpoint curity;
+        proxy_pass https://example.com/api;
     }
     
     location curity {
-        proxy_pass "https://curity.example.com/oauth/v2/oauth-introspect";
+        internal;
         proxy_pass_request_headers off;
         proxy_set_header Accept "application/jwt";
         proxy_set_header Content-Type "application/x-www-form-urlencoded";
         proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
+        proxy_pass "https://curity.example.com/oauth/v2/oauth-introspect";
     }
 }
 ```
@@ -176,19 +178,20 @@ The following is a more complex configuration where the NGINX reverse proxy is o
 server {
     server_name server1.example.com;n
     location /api {
-        proxy_pass https://example.com/api;
         phantom_token on;
         phantom_token_introspection_endpoint curity;
         phantom_token_realm "myGoodAPI";
         phantom_token_scopes "scope_a scope_b scope_c";
+        proxy_pass https://example.com/api;
     }
     
     location curity {
-        proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
+        internal;
         proxy_pass_request_headers off;
         proxy_set_header Accept "application/jwt";
         proxy_set_header Content-Type "application/x-www-form-urlencoded";
         proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
+        proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
     }
 }
 
@@ -216,24 +219,26 @@ http {
     server {
         server_name server1.example.com;
         location /api {
-            proxy_pass https://example.com/api;
             phantom_token on;
             phantom_token_introspection_endpoint curity;
             phantom_token_scopes "scope_a scope_b scope_c";
             phantom_token_realm "myGoodAPI";
+            proxy_pass https://example.com/api;
         }
         
         location curity {
-            proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
+            internal;            
             proxy_pass_request_headers off;
             proxy_set_header Accept "application/jwt";
             proxy_set_header Content-Type "application/x-www-form-urlencoded";
             proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
-            
+
             proxy_cache_methods POST;
             proxy_cache my_cache;
             proxy_cache_key $request_body;
             proxy_ignore_headers Set-Cookie;
+
+            proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
         }
     }
     
@@ -256,23 +261,25 @@ http {
     server {
         server_name server1.example.com;
         location /api {
-            proxy_pass https://example.com/api;
             phantom_token on;
             phantom_token_introspection_endpoint curity;
             phantom_token_scopes "scope_a scope_b scope_c";
             phantom_token_realm "myGoodAPI";
+            proxy_pass https://example.com/api;
         }
         
         location curity {
-            proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
+            internal;
             proxy_pass_request_headers off;
             proxy_set_header Accept "application/jwt";
             proxy_set_header Content-Type "application/x-www-form-urlencoded";
             proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
-            
+
             proxy_ignore_headers Set-Cookie;
             proxy_buffer_size 16k;
             proxy_buffers 4 16k;
+
+            proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
         }
     }
     

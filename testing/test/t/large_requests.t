@@ -68,19 +68,20 @@ __DATA__
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
-    proxy_buffer_size 16k;
-    proxy_buffers 4 16k;
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_buffer_size 16k;
+    proxy_buffers 4 16k;
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://localhost:8080/anything";
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass "http://localhost:8080/anything";
 }
 
 --- request
@@ -100,17 +101,18 @@ main::process_json_from_backend()
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass         "http://localhost:8080/anything";
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass "http://localhost:8080/anything";
 }
 
 --- error_code: 502
@@ -134,22 +136,22 @@ The introspection response buffer is too small to contain the JWT: increase the 
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
-    proxy_buffer_size 16k;
-    proxy_buffers 4 16k;
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_buffer_size 16k;
+    proxy_buffers 4 16k;
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass http://localhost:1984/target;
     proxy_buffer_size 16k;
     proxy_buffers 4 16k;
-
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass http://localhost:1984/target;
 }
 
 location /target {

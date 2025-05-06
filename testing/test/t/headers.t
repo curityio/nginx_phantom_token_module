@@ -49,17 +49,18 @@ __DATA__
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass http://localhost:1984/target;
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass http://localhost:1984/target;
 }
 
 location /target {
@@ -146,17 +147,18 @@ x-custom-9: custom header 9
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass http://localhost:1984/target;
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass http://localhost:1984/target;
 }
 
 location /target {
@@ -302,17 +304,18 @@ x-custom-29: custom header 29
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass http://localhost:1984/target;
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass http://localhost:1984/target;
 }
 
 location /target {
@@ -388,17 +391,18 @@ $response_headers;
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass http://localhost:1984/target;
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass http://localhost:1984/target;
 }
 
 location /target {
@@ -423,17 +427,18 @@ accept:
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass http://localhost:1984/target;
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass http://localhost:1984/target;
 }
 
 location /target {
@@ -459,17 +464,18 @@ accept: application/json
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass http://localhost:1984/target;
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass http://localhost:1984/target;
 }
 
 location /target {
@@ -495,17 +501,18 @@ content-type-received:
 
 --- config
 location tt {
-    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    internal;
     proxy_pass_request_headers off;
     proxy_set_header Accept "application/jwt";
     proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_set_header Authorization "Basic dGVzdC1uZ2lueDpzZWNyZXQy"; # test-nginx:secret2"
+    proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
 }
 
 location /t {
-    proxy_pass http://localhost:1984/target;
     phantom_token on;
     phantom_token_introspection_endpoint tt;
+    proxy_pass http://localhost:1984/target;
 }
 
 location /target {
