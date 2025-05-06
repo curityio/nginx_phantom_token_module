@@ -140,8 +140,7 @@ location curity {
 | Content-Type header | Configure a fixed value of `application/x-www-form-urlencoded`. |
 | Authorization header | Configure a basic credential with the introspection client ID and client secret. |
 
-To get the basic credential, concatenate the client ID, a colon character and the client secret, then base64 encode them.\
-The following command provides an example.
+To get the basic credential, concatenate the client ID, a colon character and the client secret, then base64 encode them. The following command provides an example.
 
 ```bash
 echo -n "my_client_id:my_client_secret" | base64
