@@ -131,6 +131,19 @@ location / {
 
 ## Sample Configuration
 
+### Versions
+
+If you use version 2.0+ of the module you must include the Accept and Content-Type headers as shown here.\
+If you use version 1.x of the module you must omit the Accept and Content-Type headers from the configuration.
+
+```nginx
+location curity {
+    proxy_pass "https://login.example.com/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
+}
+```
+
 ### Loading the Module
 
 If the module is downloaded from GitHub or compiled as a shared library (the default) and not explicitly compiled into NGINX, it will need to be loaded using the [load_module](http://nginx.org/en/docs/ngx_core_module.html#load_module) directive. This needs to be done in the _main_ part of the NGINX configuration:

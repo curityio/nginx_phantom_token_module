@@ -71,6 +71,8 @@ location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
     proxy_buffer_size 16k;
     proxy_buffers 4 16k;
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -99,6 +101,8 @@ main::process_json_from_backend()
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -131,6 +135,8 @@ The introspection response buffer is too small to contain the JWT: increase the 
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
     proxy_buffer_size 16k;
     proxy_buffers 4 16k;
 }

@@ -5,8 +5,7 @@ ngx_addon_name=ngx_${company_name}_${protocol}_${addon_base_name}_module
 
 PHANTOM_TOKEN_SRCS="\
 $ngx_addon_dir/src/phantom_token.c \
-$ngx_addon_dir/src/phantom_token_utils.c \
-$ngx_addon_dir/src/phantom_token_headers_more.c
+$ngx_addon_dir/src/phantom_token_utils.c
 "
 
 if test -n "$ngx_module_link"; then

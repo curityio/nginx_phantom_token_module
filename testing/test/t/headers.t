@@ -1,11 +1,10 @@
 #!/usr/bin/perl
 
-###################################################################################################################
-# Tests to ensure that header update logic is correct.
+###############################################################################################################
+# Tests to ensure that headers reach the target API correctly.
 # A subrequest is a new request within the context of the main request and inherits the main request's headers.
-# Therefore, accept and content-type headers used for introspection must be undone before calling the upstream API.
-# The incoming request always contains Host and Connection headers and tests add further headers.
-###################################################################################################################
+# Therefore, accept and content-type headers used for introspection must have no impact on the upstream API.
+###############################################################################################################
 
 use strict;
 use warnings;
@@ -51,6 +50,8 @@ __DATA__
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -146,6 +147,8 @@ x-custom-9: custom header 9
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -300,6 +303,8 @@ x-custom-29: custom header 29
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -379,11 +384,13 @@ x-custom-4: custom header 4
 x-custom-5: custom header 5
 $response_headers;
 
-=== TEST HEADER_4: For a missing accept header the upstream receives a default value
+=== TEST HEADER_4: For a missing accept header the upstream receives no value
 
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -410,13 +417,15 @@ $request_headers;
 --- error_code: 200
 
 --- response_headers
-accept: */*
+accept:
 
 === TEST HEADER_5: When the client sends an accept header the upstream receives the correct value
 
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -451,6 +460,8 @@ accept: application/json
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
@@ -485,6 +496,8 @@ content-type-received:
 --- config
 location tt {
     proxy_pass "http://localhost:8443/oauth/v2/oauth-introspect";
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
 }
 
 location /t {
