@@ -17,7 +17,7 @@ If the module is also configured to cache the results of the call to the Curity 
 
 The tl;dr is a very simple API gateway that is blazing fast, highly scalable, and without any bells and whistles to get in the way. All the code is here, so it's easy to change and use with other OAuth servers even!
 
-## Configuration Directives
+## Module Configuration Directives
 
 Use the below directives for version 2.0 or higher of the phantom token module.\
 See the [Version 1.0 Configuration Directives](V1-CONFIGURATION-DIRECTIVES.md) for older versions.
@@ -110,9 +110,6 @@ location / {
 
 ## Sample Configuration
 
-In addition to module parameters you must also configure standard NGINX headers sent to the introspection request.\
-The following examples show a number of complete configurations.
-
 ### Loading the Module
 
 If the module is downloaded from GitHub or compiled as a shared library (the default) and not explicitly compiled into NGINX, it will need to be loaded using the [load_module](http://nginx.org/en/docs/ngx_core_module.html#load_module) directive. This needs to be done in the _main_ part of the NGINX configuration:
@@ -123,6 +120,27 @@ load_module modules/ngx_curity_http_phantom_token_module.so;
 
 The file can be an absolute or relative path. If it is not absolute, it should be relative to the NGINX root directory.
 
+### NGINX Parameters for the Introspection Endpoint
+
+You must also configure standard NGINX parameters for the introspection request:
+
+```nginx
+location curity {
+    proxy_pass "https://curity.example.com/oauth/v2/oauth-introspect";
+    proxy_pass_request_headers off;
+    proxy_set_header Accept "application/jwt";
+    proxy_set_header Content-Type "application/x-www-form-urlencoded";
+    proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
+}
+```
+
+Use a command of the following form to create the base64 introspection credential.
+Then configure the result in the Basic Authorization header.
+
+```bash
+echo -n "my_client_id:my_client_secret" | base64
+```
+
 ### Simple Configuration
 
 The following is a simple configuration that might be used in demo or development environments where the NGINX reverse proxy is on the same host as the Curity Identity Server:
@@ -130,13 +148,13 @@ The following is a simple configuration that might be used in demo or developmen
 ```nginx
 server {
     location /api {
-        proxy_pass         https://example.com/api;
+        proxy_pass https://example.com/api;
         phantom_token on;
         phantom_token_introspection_endpoint curity;
     }
     
     location curity {
-        proxy_pass "https://curity.example.com/oauth/v2/introspection";
+        proxy_pass "https://curity.example.com/oauth/v2/oauth-introspect";
         proxy_pass_request_headers off;
         proxy_set_header Accept "application/jwt";
         proxy_set_header Content-Type "application/x-www-form-urlencoded";
@@ -153,7 +171,7 @@ The following is a more complex configuration where the NGINX reverse proxy is o
 server {
     server_name server1.example.com;n
     location /api {
-        proxy_pass         https://example.com/api;
+        proxy_pass https://example.com/api;
         phantom_token on;
         phantom_token_introspection_endpoint curity;
         phantom_token_realm "myGoodAPI";
@@ -161,7 +179,7 @@ server {
     }
     
     location curity {
-        proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+        proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
         proxy_pass_request_headers off;
         proxy_set_header Accept "application/jwt";
         proxy_set_header Content-Type "application/x-www-form-urlencoded";
@@ -193,7 +211,7 @@ http {
     server {
         server_name server1.example.com;
         location /api {
-            proxy_pass         https://example.com/api;
+            proxy_pass https://example.com/api;
             phantom_token on;
             phantom_token_introspection_endpoint curity;
             phantom_token_scopes "scope_a scope_b scope_c";
@@ -201,7 +219,7 @@ http {
         }
         
         location curity {
-            proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+            proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
             proxy_pass_request_headers off;
             proxy_set_header Accept "application/jwt";
             proxy_set_header Content-Type "application/x-www-form-urlencoded";
@@ -233,7 +251,7 @@ http {
     server {
         server_name server1.example.com;
         location /api {
-            proxy_pass         https://example.com/api;
+            proxy_pass https://example.com/api;
             phantom_token on;
             phantom_token_introspection_endpoint curity;
             phantom_token_scopes "scope_a scope_b scope_c";
@@ -241,7 +259,7 @@ http {
         }
         
         location curity {
-            proxy_pass "https://server2.example.com:8443/oauth/v2/introspection";
+            proxy_pass "https://server2.example.com:8443/oauth/v2/oauth-introspect";
             proxy_pass_request_headers off;
             proxy_set_header Accept "application/jwt";
             proxy_set_header Content-Type "application/x-www-form-urlencoded";
