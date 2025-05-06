@@ -158,7 +158,7 @@ server {
         proxy_pass_request_headers off;
         proxy_set_header Accept "application/jwt";
         proxy_set_header Content-Type "application/x-www-form-urlencoded";
-        proxy_set_header Authorization "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="; # client_id:client_secret
+        proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
     }
 }
 ```
@@ -183,7 +183,7 @@ server {
         proxy_pass_request_headers off;
         proxy_set_header Accept "application/jwt";
         proxy_set_header Content-Type "application/x-www-form-urlencoded";
-        proxy_set_header Authorization "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="; # client_id:client_secret
+        proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
     }
 }
 
@@ -223,7 +223,7 @@ http {
             proxy_pass_request_headers off;
             proxy_set_header Accept "application/jwt";
             proxy_set_header Content-Type "application/x-www-form-urlencoded";
-            proxy_set_header Authorization "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="; # client_id:client_secret
+            proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
             
             proxy_cache_methods POST;
             proxy_cache my_cache;
@@ -263,7 +263,7 @@ http {
             proxy_pass_request_headers off;
             proxy_set_header Accept "application/jwt";
             proxy_set_header Content-Type "application/x-www-form-urlencoded";
-            proxy_set_header Authorization "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="; # client_id:client_secret
+            proxy_set_header Authorization "Basic bXlfY2xpZW50X2lkOm15X2NsaWVudF9zZWNyZXQ=";
             
             proxy_ignore_headers Set-Cookie;
             proxy_buffer_size 16k;
