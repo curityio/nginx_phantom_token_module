@@ -209,7 +209,7 @@ ngx_int_t handler(ngx_http_request_t *request)
             request,
             ngx_curity_http_phantom_token_module);
 
-    // Return OK if the module is not active
+    // Return immediately if the module is not active
     if (!module_location_config->enable)
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, request->connection->log, 0, "Module disabled");
