@@ -4,7 +4,7 @@
 # Builds a particular NGINX version for a particular Linux OS and version
 #########################################################################
 
-NGINX_VERSION=${NGINX_VERSION:-1.25.5}
+NGINX_VERSION=${NGINX_VERSION:-1.27.4}
 NGINX_TARBALL=nginx-${NGINX_VERSION}.tar.gz
 LINUX_DISTRO=${LINUX_DISTRO:-alpine}
 
