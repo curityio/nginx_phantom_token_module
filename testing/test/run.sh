@@ -3,48 +3,34 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 #
-# Input parameters
+# To run tests multiple times without needing to redeploy the Curity Identity Server, use commands like these:
 #
-ADMIN_PASSWORD=Password1
-
+# export LICENSE_FILE_PATH=~/Desktop/license.json
+# ./testing/test/deploy.sh
+# make test
+# make test
+# make test
+# ./testing/test/teardown.sh
 #
-# Prompt if required, and expand relative paths such as those containing ~
-#
-if [ "$LICENSE_FILE_PATH" == '' ]; then
-  read -t 10 -p 'Enter the path to the license file for the Curity Identity Server: ' LICENSE_FILE_PATH || :
-fi
-LICENSE_FILE_PATH=$(eval echo "$LICENSE_FILE_PATH")
-
-#
-# Check we have valid data before proceeding
-#
-if [ ! -f "$LICENSE_FILE_PATH" ]; then
-  >&2 echo 'A valid LICENSE_FILE_PATH parameter was not supplied'
-  exit 1
-fi
-LICENSE_KEY=$(cat "$LICENSE_FILE_PATH" | jq -r .License)
-if [ "$LICENSE_KEY" == '' ]; then
-  >&2 echo 'A valid license key was not found'
-  exit 1 
+IS_DEPLOYED="$(docker ps | grep curity)"
+if [ "$IS_DEPLOYED" == '' ]; then
+   ./deploy.sh
 fi
 
 #
-# Deploy the system
+# To focus on a particular test, first filter on its source file:
+# - prove -v -f t/large_requests.t
 #
-export LICENSE_KEY && export ADMIN_PASSWORD && docker compose up -d
-
+# Then add the '--- ONLY' directive to limit the test run to the particular test
 #
-# Wait for the Identity Server to come up
+# Them use debug statements and look in the 'testing/test/t/servroot/logs/error.log' file for NGINX details
 #
-echo 'Waiting for the Curity Identity Server to start...'
-c=0; while [[ $c -lt 25 && "$(curl -fs -w ''%{http_code}'' localhost:8443)" != "404" ]]; do ((c++)); echo -n "."; sleep 1; done
-
+# Read more in the wiki:
+# - https://github.com/curityio/nginx_phantom_token_module/wiki/2.-Running-Tests
 #
-# Run integration tests
-#
+echo 'Running tests ...'
 PATH="$NGINX_SRC_DIR/objs:$PATH" prove -v -f t/
 
-#
-# Free resources
-#
-docker-compose down
+if [ "$IS_DEPLOYED" == '' ]; then
+  ./teardown.sh
+fi

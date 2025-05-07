@@ -15,7 +15,7 @@ services:
     environment:
       - ADMIN=true
       - SERVICE_ROLE=default
-      - LICENSE_KEY=${LICENSE_KEY:?err}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?err}
+      - LICENSE_KEY=${LICENSE_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     volumes:
       - ../curity-test-config.xml:/opt/idsvr/etc/init/curity-test-config.xml

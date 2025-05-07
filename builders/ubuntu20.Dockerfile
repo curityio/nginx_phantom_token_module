@@ -6,7 +6,7 @@ RUN apt-get update && \
 COPY configure /tmp
 COPY config /tmp
 COPY Makefile /tmp
-COPY phantom_token.c /tmp
+COPY src/* /tmp/src/
 ARG NGINX_VERSION
 ENV NGINX_VERSION=$NGINX_VERSION
 ADD nginx-$NGINX_VERSION.tar.gz /tmp/

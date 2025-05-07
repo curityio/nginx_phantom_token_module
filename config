@@ -3,13 +3,18 @@ protocol=http
 company_name=curity
 ngx_addon_name=ngx_${company_name}_${protocol}_${addon_base_name}_module
 
+PHANTOM_TOKEN_SRCS="\
+$ngx_addon_dir/src/phantom_token.c \
+$ngx_addon_dir/src/phantom_token_utils.c
+"
+
 if test -n "$ngx_module_link"; then
     ngx_module_type=HTTP
     ngx_module_name=$ngx_addon_name
-    ngx_module_srcs="$ngx_addon_dir/$addon_base_name.c"
+    ngx_module_srcs="$PHANTOM_TOKEN_SRCS"
 
     . auto/module
 else
     HTTP_MODULES="$HTTP_MODULES $ngx_addon_name"
-    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/$addon_base_name.c"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $PHANTOM_TOKEN_SRCS"
 fi
