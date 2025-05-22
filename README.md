@@ -317,8 +317,8 @@ Pre-built binaries of this module are provided for the following versions of NGI
 
 To build the latest code against older NGINX versions or Linux distributions, follow the instructions in the [Development Wiki](https://github.com/curityio/nginx_phantom_token_module/wiki).
 
-- [Build a Module](https://github.com/curityio/nginx_phantom_token_module/wiki/3.-Builds)
-- [Deploy a Version](https://github.com/curityio/nginx_phantom_token_module/wiki/4.-Testing-Deployment)
+- [Build the Module](https://github.com/curityio/nginx_phantom_token_module/wiki/3.-Builds)
+- [Deploy the Module](https://github.com/curityio/nginx_phantom_token_module/wiki/4.-Testing-Deployment)
 
 ## More Information
 
