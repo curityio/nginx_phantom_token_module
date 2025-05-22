@@ -20,7 +20,7 @@ The tl;dr is a very simple API gateway that is blazing fast, highly scalable, an
 ## Module Configuration Directives
 
 Version 2.0 introduced a **BREAKING CHANGE** to use updated configuration directives.\
-See [previous configuration instructions](https://github.com/curityio/nginx_phantom_token_module/tree/2.0.0) to configure older releases.
+See [previous configuration instructions](https://github.com/curityio/nginx_phantom_token_module/tree/1.6.0) to configure older releases.
 
 ### Required Configuration Directives
 
