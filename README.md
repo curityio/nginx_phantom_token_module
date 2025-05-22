@@ -295,9 +295,9 @@ http {
 
 ## Compatibility
 
-This module is compatible with Curity Identity Server versions >= 2.2. It has been tested with NGINX 1.13.7 (NGINX Plus Release 14) and NGINX 1.13.10 (NGINX Plus Release 15). It is likely to work with other, newish versions of NGINX, but only these have been tested, pre-built and verified.
+Our binary releases align with the 24 month supported release cycle of [NGINX Plus](https://docs.nginx.com/nginx/releases/) to keep the NGINX secure environment up to date. The module's code has also run to a production level with many previous NGINX releases.
 
-### Releases
+### Pre-Built Releases
 
 Pre-built binaries of this module are provided for the following versions of NGINX on the corresponding operating system distributions:
 
@@ -313,14 +313,17 @@ Pre-built binaries of this module are provided for the following versions of NGI
 | Amazon Linux 2023                  | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/2.0.0/amzn2023.ngx_curity_http_phantom_token_module_1.27.4.so)           | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/2.0.0/amzn2023.ngx_curity_http_phantom_token_module_1.27.2.so)           | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/2.0.0/amzn2023.ngx_curity_http_phantom_token_module_1.25.5.so)           | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/2.0.0/amzn2023.ngx_curity_http_phantom_token_module_1.25.3.so)           | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/2.0.0/amzn2023.ngx_curity_http_phantom_token_module_1.25.1.so)           |
 | CentOS Stream 9.0+                 | x | x | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/2.0.0/centos.stream.9.ngx_curity_http_phantom_token_module_1.25.5.so) | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/2.0.0/centos.stream.9.ngx_curity_http_phantom_token_module_1.25.3.so) | [⇓](https://github.com/curityio/nginx_phantom_token_module/releases/download/2.0.0/centos.stream.9.ngx_curity_http_phantom_token_module_1.25.1.so) |
 
-## Status
-This module is fit for production usage. 
+## Building From Source
 
-## Development Setup
-If you wish to build this module from source, in order to run against other NGINX versions, or to change the module's logic, see the [Development Wiki](https://github.com/curityio/nginx_phantom_token_module/wiki) for instructions.
+To build the latest code against older NGINX versions or Linux distributions, follow the instructions in the [Development Wiki](https://github.com/curityio/nginx_phantom_token_module/wiki).
+
+- [Build a Module](https://github.com/curityio/nginx_phantom_token_module/wiki/3.-Builds)
+- [Deploy a Version](https://github.com/curityio/nginx_phantom_token_module/wiki/4.-Testing-Deployment)
 
 ## More Information
+
 For more information about the Curity Identity Server, its capabilities, and how to use it to issue phantom tokens for microservices, visit [curity.io](https://curity.io/product/token-service/?=use-cases?tab=microservices). For background information on using the Curity Identity Server to secure API access, see our [API security resources](https://curity.io/resources/api-security).
 
 ## Licensing
+
 This software is copyright (C) 2022 Curity AB. It is open source software that is licensed under the [Apache v. 2](LICENSE). For commercial support of this module, please contact [Curity sales](mailto:sales@curity.io).
