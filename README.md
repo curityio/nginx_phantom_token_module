@@ -295,7 +295,7 @@ http {
 
 ## Compatibility
 
-Our binary releases align with the 24 month supported release cycle of [NGINX Plus](https://docs.nginx.com/nginx/releases/) to keep the NGINX secure environment up to date. The module's code has also run to a production level with many previous NGINX releases.
+The binary releases align with the 24 month supported release cycle of [NGINX Plus](https://docs.nginx.com/nginx/releases/) to keep the NGINX secure environment up to date. The module's code has also run to a production level with many previous NGINX releases.
 
 ### Pre-Built Releases
 
