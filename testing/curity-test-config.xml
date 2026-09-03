@@ -165,6 +165,8 @@
         <id>default-datasource</id>
         <jdbc xmlns="https://curity.se/ns/ext-conf/jdbc">
           <connection-string>data:text/plain;aes,v:S.RkJCdWdNeXBHNHJHSFYzTw==.Q8-bXO3V4Iegf0m7rr4pTA==._1W6wuom64Xk3ROjTL6ruigYYhueYQbwqzQLUpMt1vbyu16q6W3-pmFyUd-Ir5SiO5csQ58EyNq3MhyiQLAmnwqtEDtDqGAzzYXvisbI71XySKQnDHhmBISEPkKJtBQD.JmrhUBoQrNCqRsAGiRa3SFPJk726gyKmz2RIZ87Ps3E=</connection-string>
+          <standard-credentials-mode>
+          </standard-credentials-mode>
           <driver>org.hsqldb.jdbc.JDBCDriver</driver>
           <username>SA</username>
         </jdbc>
