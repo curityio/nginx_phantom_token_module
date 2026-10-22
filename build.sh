@@ -8,6 +8,12 @@ NGINX_VERSION=${NGINX_VERSION:-1.29.8}
 NGINX_TARBALL=nginx-${NGINX_VERSION}.tar.gz
 LINUX_DISTRO=${LINUX_DISTRO:-alpine}
 
+#
+# Default to building for deployed Linux environments
+# For local macOS Docker integrations this can be overridden, e.g. PLATFORM=linux/arm64
+#
+PLATFORM=${PLATFORM:-linux/amd64}
+
 if [ "$LINUX_DISTRO" != 'alpine' ] &&
    [ "$LINUX_DISTRO" != 'debian12' ] &&
    [ "$LINUX_DISTRO" != 'debian13' ] &&
@@ -54,7 +60,7 @@ if [[ ! -r $NGINX_TARBALL ]]; then
   $DOWNLOAD_PROGRAM https://nginx.org/download/nginx-"${NGINX_VERSION}".tar.gz
 fi
 
-docker build --no-cache -t nginx-module-builder \
+docker build --platform "$PLATFORM" --no-cache -t nginx-module-builder \
   --build-arg NGINX_VERSION="$NGINX_VERSION" \
   -f builders/$LINUX_DISTRO.Dockerfile .
 if [ $? -ne 0 ]; then
