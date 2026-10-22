@@ -1,6 +1,9 @@
 name: Build and Release New Version
 
 on:
+  push:
+    tags:
+      - '*'
   workflow_dispatch:
     inputs:
       version:
@@ -22,13 +25,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set release info
+        id: info
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build all modules
         run: chmod +x buildall.sh build.sh && ./buildall.sh
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.event.inputs.version }}
-          name: v${{ github.event.inputs.version }}
+          tag_name: ${{ steps.info.outputs.tag }}
+          name: ${{ steps.info.outputs.tag }}
           body: ${{ github.event.inputs.description }}
           files: build/*.so
