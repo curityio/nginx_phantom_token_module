@@ -9,8 +9,8 @@ NGINX_TARBALL=nginx-${NGINX_VERSION}.tar.gz
 LINUX_DISTRO=${LINUX_DISTRO:-alpine}
 
 #
-# Default to building for deployed Linux environments
-# For local macOS Docker integrations this can be overridden, e.g. PLATFORM=linux/arm64
+# Official builds are for deployed Linux environments and use linux/amd64
+# To build for local Docker integrations on an ARM64 computer, override this environment variable to linux/arm64
 #
 PLATFORM=${PLATFORM:-linux/amd64}
 
