@@ -1,7 +1,7 @@
-FROM quay.io/centos/centos:stream9
+FROM debian:trixie
 
-RUN yum install -y \
-     gcc pcre2-devel zlib-devel make
+RUN apt update && apt install -y \
+    build-essential git tree dirmngr libpcre2-dev zlib1g-dev
 
 COPY configure /tmp
 COPY config /tmp

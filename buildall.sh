@@ -4,8 +4,8 @@
 # Builds an entire release with all supported NGINX versions and Linux OS versions
 ##################################################################################
 
-NGINX_VERSIONS=('1.31.6' '1.30.6' '1.29.8' '1.29.3' '1.29.0' '1.27.4')
-LINUX_DISTROS=('alpine' 'debian11' 'debian12' 'ubuntu20' 'ubuntu22' 'ubuntu24' 'amazon2' 'amazon2023' 'centosstream9')
+NGINX_VERSIONS=('1.29.8' '1.29.3' '1.29.0' '1.27.4' '1.27.2')
+LINUX_DISTROS=('alpine' 'debian12' 'debian13' 'ubuntu20' 'ubuntu22' 'ubuntu24' 'amazon2' 'amazon2023')
 rm log.txt 2>/dev/null
 
 #
@@ -15,9 +15,9 @@ function isValidBuild() {
     local LINUX_DISTRO_PARAM=$1
     local NGINX_VERSION_PARAM=$2
     
-    if [ "$LINUX_DISTRO_PARAM" == 'ubuntu24' ] && [[ "$NGINX_VERSION_PARAM" < '1.25.5' ]]; then
+    if [ "$LINUX_DISTRO_PARAM" == 'ubuntu20' ] && [[ "$NGINX_VERSION_PARAM" > '1.27.4'  ]]; then
       echo 'false'
-    elif [ "$LINUX_DISTRO_PARAM" == 'centosstream9' ] && [[ "$NGINX_VERSION_PARAM" > '1.25.5'  ]]; then
+    elif [ "$LINUX_DISTRO_PARAM" == 'debian13' ] && [[ "$NGINX_VERSION_PARAM" < '1.29.8' ]]; then
       echo 'false'
     else
       echo 'true'
@@ -38,6 +38,7 @@ do
       export LINUX_DISTRO=$LINUX_DISTRO
       ./build.sh 1>>./log.txt 2>&1
       if [ $? -ne 0 ]; then
+        echo "Build failed for NGINX $NGINX_VERSION and $LINUX_DISTRO ..."  
         exit 1
       fi
 

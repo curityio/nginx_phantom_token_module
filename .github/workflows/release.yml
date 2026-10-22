@@ -1,0 +1,34 @@
+name: Build and Release New Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 2.1.0)'
+        required: true
+      description:
+        description: 'Release description (e.g. Add support for NGINX 1.29.8)'
+        required: true
+
+jobs:
+  build-and-release:
+    name: Build and Release New Version
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build all modules
+        run: chmod +x buildall.sh build.sh && ./buildall.sh
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          name: v${{ github.event.inputs.version }}
+          body: ${{ github.event.inputs.description }}
+          files: build/*.so

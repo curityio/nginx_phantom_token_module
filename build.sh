@@ -4,19 +4,18 @@
 # Builds a particular NGINX version for a particular Linux OS and version
 #########################################################################
 
-NGINX_VERSION=${NGINX_VERSION:-1.31.6}
+NGINX_VERSION=${NGINX_VERSION:-1.29.8}
 NGINX_TARBALL=nginx-${NGINX_VERSION}.tar.gz
 LINUX_DISTRO=${LINUX_DISTRO:-alpine}
 
 if [ "$LINUX_DISTRO" != 'alpine' ] &&
-   [ "$LINUX_DISTRO" != 'debian11' ] &&
    [ "$LINUX_DISTRO" != 'debian12' ] &&
+   [ "$LINUX_DISTRO" != 'debian13' ] &&
    [ "$LINUX_DISTRO" != 'ubuntu20' ] &&
    [ "$LINUX_DISTRO" != 'ubuntu22' ] &&
    [ "$LINUX_DISTRO" != 'ubuntu24' ] &&
    [ "$LINUX_DISTRO" != 'amazon2' ] &&
-   [ "$LINUX_DISTRO" != 'amazon2023' ] &&
-   [ "$LINUX_DISTRO" != 'centosstream9' ]; then
+   [ "$LINUX_DISTRO" != 'amazon2023' ]; then
   echo "$LINUX_DISTRO is not a supported Linux distribution"
   exit 1
 fi
@@ -24,10 +23,10 @@ fi
 function getLibraryPrefix() {
   if [ "$LINUX_DISTRO" == 'alpine' ]; then
     echo 'alpine'
-  elif [ "$LINUX_DISTRO" == 'debian11' ]; then
-    echo 'debian.bullseye'
   elif [ "$LINUX_DISTRO" == 'debian12' ]; then
     echo 'debian.bookworm'
+  elif [ "$LINUX_DISTRO" == 'debian13' ]; then
+    echo 'debian.trixie'
   elif [ "$LINUX_DISTRO" == 'ubuntu20' ]; then
     echo 'ubuntu.20.04'
   elif [ "$LINUX_DISTRO" == 'ubuntu22' ]; then
@@ -38,8 +37,6 @@ function getLibraryPrefix() {
     echo 'amzn2'
   elif [ "$LINUX_DISTRO" == 'amazon2023' ]; then
     echo 'amzn2023'
-  elif [ "$LINUX_DISTRO" == 'centosstream9' ]; then
-    echo 'centos.stream.9'
   fi
 }
 
