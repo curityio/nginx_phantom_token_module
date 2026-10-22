@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 2.1.0)'
+        description: 'Release version (e.g. 2.0.1)'
         required: true
       description:
         description: 'Release description (e.g. Add support for NGINX 1.29.8)'
