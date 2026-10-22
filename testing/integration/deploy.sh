@@ -84,13 +84,6 @@ case $LINUX_DISTRO in
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
-  'ubuntu26')
-    MODULE_FILE="ubuntu.26.04.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
-    MODULE_FOLDER='/usr/lib/nginx/modules'
-    NGINX_PATH='/usr/sbin/nginx'
-    CONF_PATH='/etc/nginx/nginx.conf'
-    ;;    
-
   'amazon2')
     MODULE_FILE="amzn2.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/etc/nginx/modules'
