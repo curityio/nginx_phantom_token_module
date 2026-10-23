@@ -1,0 +1,63 @@
+name: Build and Release New Version
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 2.0.1)'
+        required: true
+      description:
+        description: 'Release description (e.g. Add support for NGINX R35, R36 and R37)'
+        required: true
+
+jobs:
+  build-and-release:
+    name: Build and Release New Version
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set release info
+        id: info
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_DESCRIPTION: ${{ github.event.inputs.description }}
+        run: |
+          if [ "$EVENT_NAME" = "push" ]; then
+            TAG="$REF_NAME"
+            # checkout creates a lightweight tag, so re-fetch the annotated tag object
+            git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+            BODY="$(git tag -l --format='%(contents)' "$TAG")"
+          else
+            TAG="v$INPUT_VERSION"
+            BODY="$INPUT_DESCRIPTION"
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          {
+            echo "body<<EOF_BODY"
+            echo "$BODY"
+            echo "EOF_BODY"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build all modules
+        run: chmod +x buildall.sh build.sh && ./buildall.sh
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.info.outputs.tag }}
+          name: ${{ steps.info.outputs.tag }}
+          body: ${{ steps.info.outputs.body }}
+          files: build/*.so
+          fail_on_unmatched_files: true

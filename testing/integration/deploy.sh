@@ -33,7 +33,7 @@ if [ "$LINUX_DISTRO" == '' ]; then
   LINUX_DISTRO='alpine'
 fi
 if [ "$NGINX_VERSION" == '' ]; then
-  NGINX_VERSION='1.27.4'
+  NGINX_VERSION='1.29.8'
 fi
 echo "Deploying for $LINUX_DISTRO with NGINX version $NGINX_VERSION ..."
 
@@ -49,15 +49,15 @@ case $LINUX_DISTRO in
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
-  'debian11')
-    MODULE_FILE="debian.bullseye.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
+  'debian12')
+    MODULE_FILE="debian.bookworm.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/usr/lib/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
     ;;
 
-  'debian12')
-    MODULE_FILE="debian.bookworm.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
+  'debian13')
+    MODULE_FILE="debian.trixie.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/usr/lib/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
@@ -93,13 +93,6 @@ case $LINUX_DISTRO in
 
   'amazon2023')
     MODULE_FILE="amzn2023.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
-    MODULE_FOLDER='/etc/nginx/modules'
-    NGINX_PATH='/usr/sbin/nginx'
-    CONF_PATH='/etc/nginx/nginx.conf'
-    ;;
-
-  'centosstream9')
-    MODULE_FILE="centos.stream.9.ngx_curity_http_phantom_token_module_$NGINX_VERSION.so"
     MODULE_FOLDER='/etc/nginx/modules'
     NGINX_PATH='/usr/sbin/nginx'
     CONF_PATH='/etc/nginx/nginx.conf'
