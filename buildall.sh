@@ -4,7 +4,7 @@
 # Builds an entire release with all supported NGINX versions and Linux OS versions
 ##################################################################################
 
-NGINX_VERSIONS=('1.29.8' '1.29.3' '1.29.0' '1.27.4' '1.27.2')
+NGINX_VERSIONS=('1.31.6' '1.29.8' '1.29.3' '1.29.0' '1.27.4' '1.27.2')
 LINUX_DISTROS=('alpine' 'debian12' 'debian13' 'ubuntu20' 'ubuntu22' 'ubuntu24' 'amazon2' 'amazon2023')
 rm log.txt 2>/dev/null
 
@@ -16,6 +16,8 @@ function isValidBuild() {
     local NGINX_VERSION_PARAM=$2
     
     if [ "$LINUX_DISTRO_PARAM" == 'ubuntu20' ] && [[ "$NGINX_VERSION_PARAM" > '1.27.4'  ]]; then
+      echo 'false'
+    elif [ "$LINUX_DISTRO_PARAM" == 'amazon2' ] && [[ "$NGINX_VERSION_PARAM" > '1.29.8' ]]; then
       echo 'false'
     elif [ "$LINUX_DISTRO_PARAM" == 'debian13' ] && [[ "$NGINX_VERSION_PARAM" < '1.29.8' ]]; then
       echo 'false'
